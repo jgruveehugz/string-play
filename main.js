@@ -148,6 +148,7 @@
   var hapticsStatusEl = document.getElementById("hapticsStatus");
   var fullFxToggle = document.getElementById("fullFxToggle");
   var musicPaletteSelect = document.getElementById("musicPaletteSelect");
+  var musicGenreSelect = document.getElementById("musicGenreSelect");
   var musicAutoToggle = document.getElementById("musicAutoToggle");
   var qualityStatusEl = document.getElementById("qualityStatus");
   var resetProgressButton = document.getElementById("resetProgressButton");
@@ -475,6 +476,68 @@
       swing: 0
     }
   };
+  // Genre drum feel (music genres seq 1). kick/snare/hat/kickHi placement in 16th
+  // steps. The sector palette keeps its own bass line and key; the genre only reskins
+  // the drum feel. Read by getActiveGroove (later item); electronic uses palette.groove
+  // and never touches this table.
+  var GENRE_DRUMS = {
+    backbeat: { kick: [0, 4, 8, 12], snare: [4, 12], hat: [2, 6, 10, 14], kickHi: [10] }, // pop: four-on-floor + hard backbeat
+    swing:    { kick: [0, 8],        snare: [4, 12], hat: [2, 5, 8, 11, 14], kickHi: null }, // jazz: ride-ish, kick on 1 and 3
+    drag:     { kick: [0, 10],       snare: [8],     hat: [4, 12], kickHi: null }            // trip-hop: sparse, snare on 3, half-time base
+  };
+  // Genre bundles (music genres seq 1). A genre is applied ON TOP of whichever of the 16
+  // sector palettes is active: it reskins harmonic richness, drum feel, instrument family,
+  // and density while the palette keeps key/mode/root/progression/mood. Electronic is the
+  // identity element: every field null/false, so getGenre-aware call sites return today's
+  // exact behavior until a non-electronic genre opts them in. Read only through getGenre().
+  var GENRES = {
+    electronic: {
+      id: "electronic", label: "Electronic",
+      drums: null, swing: null, swingMax: null, forceHalfTime: false, snareDragMs: 0,
+      chordDegrees: null, chordColor: null, preferBrightScale: false, bassMode: null, drumKit: null,
+      filterScale: 1, vinylNoiseGain: 0, leadVoice: null, padVoice: null, bassVoice: null,
+      pieceTrim: 1, gateShift: 0, floorBonus: 0, energyCap: 1, extraLayer: null
+    },
+    pop: {
+      id: "pop", label: "Pop",
+      drums: "backbeat", swing: 0.08, swingMax: 0.14, forceHalfTime: false, snareDragMs: 0,
+      chordDegrees: { low: [0, 2, 3, 4], high: [0, 2, 3, 4, 6] }, // full major-6 / 6-9: root+3rd+5th(deg3)+6th, +9th(deg6) on top. The 5th anchors it unambiguously major (vs the rootless [0,2,4]=6-no-5), the most consonant/radio stack; all pentatonic offsets, so in-key on any 16th
+      chordColor: null, preferBrightScale: true, bassMode: "root", drumKit: "clean",
+      filterScale: 1.12, vinylNoiseGain: 0, leadVoice: "warm", padVoice: "air", bassVoice: "sub",
+      pieceTrim: 1, gateShift: -0.1, floorBonus: 0.06, energyCap: 1, extraLayer: "topline"
+    },
+    jazzy: {
+      // Tuned electric-jazz/lounge (music genres seq 7), the richest preset: 6/9 stacks + a
+      // guarded b7/9 rhodes color (the real extended sound), a walking bass approaching each
+      // chord root, a triplet-leaning swing shuffle with a laid-back snare drag, brush/ride kit,
+      // rhodes lead/comp over a warm pad, a warm 0.95 filter, and a 0.9 energy cap so it stays
+      // cool. Stylized electric jazz over a synth trio, not acoustic bebop (see spec 8).
+      id: "jazzy", label: "Jazzy",
+      drums: "swing", swing: 0.42, swingMax: 0.5, forceHalfTime: false, snareDragMs: 6,
+      chordDegrees: { low: [0, 2, 4, 6], high: [0, 2, 4, 6, 8] }, // rootless 6/9 (low) -> add-9/11 (high), all in-scale. DELIBERATELY omits the 5th (deg 3) that pop adds: the open, 5th-less stack is the electric-jazz color, not a grounded major triad. deg 6 = the 9th, deg 8 = the 11th/12th
+      chordColor: [10, 14], preferBrightScale: false, bassMode: "walking", drumKit: "brush", // chordColor +10=b7 / +14=9 fire ONLY on the sustained rhodes comp in playPadChord, guarded against a min2 clash, never on bass/fast leads
+      filterScale: 0.95, vinylNoiseGain: 0, leadVoice: "rhodes", padVoice: "warm", bassVoice: "sub",
+      pieceTrim: 0.92, gateShift: 0, floorBonus: 0.02, energyCap: 0.9, extraLayer: "comp" // medium density; the 0.9 cap holds the whole mix cool even at climax, the extraLayer is the rhodes offbeat comp behind the head
+    },
+    triphop: {
+      // Tuned trip-hop (music genres seq 8), the sparsest/darkest preset. Consumes the reused
+      // shipped half-time path so 124 FEELS ~62 (campaign only; Rush/Daily fall back to
+      // straight-but-dark per the audio locks). Sparse dyad/triad voicings on the sector's dark
+      // scale (no bright lift), the drag sparse kit (snare on 3, heavy 14ms drag), a gentle 0.2
+      // swing, dark hollow/sub voices pulled down by the 0.68 filter, the dusty rounded boom-bap
+      // kit, the continuous vinyl crackle bed, and the sparsest arrangement (+0.12 gate, -0.04
+      // floor, 0.72 cap so it stays laid-back even at climax). The existing delay/feedback bus
+      // supplies the reverb-drenched tail. Bed gain lifted 0.012 -> 0.014 to hold its continuous
+      // surface-noise presence after warming vinylNoiseCutoff 3600 -> 3000 (see AUDIO_TUNING); the
+      // warmer band tucks the un-scaled bed under the dark mix as dust, not hiss.
+      id: "triphop", label: "Trip-Hop",
+      drums: "drag", swing: 0.2, swingMax: 0.28, forceHalfTime: true, snareDragMs: 14, // forced half-time is the spine; the drag pattern itself only surfaces in Rush/Daily since campaign's GROOVES.half override owns kick/snare placement, while the dusty timbre + 14ms drag + 0.2 swing still apply over it
+      chordDegrees: { low: [0, 2], high: [0, 2, 4] }, // sparse root+4th dyad / quartal root-4-b7 triad on a minor-pentatonic sector; space IS the genre, so no fill and no bright lift
+      chordColor: null, preferBrightScale: false, bassMode: "root", drumKit: "dusty",
+      filterScale: 0.68, vinylNoiseGain: 0.014, leadVoice: "hollow", padVoice: "sub", bassVoice: "sub", // hollow lead over sub pad + sub bass, all pulled dark by the 0.68 global filter (clamped at genreFilterScaleMin 0.6)
+      pieceTrim: 0.9, gateShift: 0.12, floorBonus: -0.04, energyCap: 0.72, extraLayer: null
+    }
+  };
   // Voice-character synthesis table (seq 4). The shared richer-oscillator layer that
   // playBurst/addLayer/specials (seq 5-7) opt into via playTone's trailing `voice` arg.
   // A voice=null note keeps the shipped single-oscillator path untouched. Each character
@@ -501,7 +564,11 @@
     pluck:  { type: "fm",     ratio: 3, index: 4, fmDecay: 0.05,       filtEnv: { octaves: 3.0, decay: 0.05 } },
     sub:    { type: "stack",  wave: "triangle", detune: 4,  sub: 0.6,  filtEnv: { octaves: 1.0, decay: 0.22 } },
     air:    { type: "single", wave: "sine",     shimmer: 3,            filtEnv: { octaves: 1.4, decay: 0.30 } },
-    nova:   { type: "stack",  wave: "sawtooth", detune: 16, sub: 0.2,  filtEnv: { octaves: 2.6, decay: 0.10 } }
+    nova:   { type: "stack",  wave: "sawtooth", detune: 16, sub: 0.2,  filtEnv: { octaves: 2.6, decay: 0.10 } },
+    // FM electric piano (Rhodes) for the jazz genre (music genres seq 2): the sustained
+    // comp/pad voice that carries the 6/9 stacks and the guarded b7/9 color tones. A soft
+    // ratio-1 FM bell with a slow filter bloom = the DX7-style tine sound, no samples.
+    rhodes: { type: "fm",     ratio: 1, index: 2.4, fmDecay: 0.20, wave: "sine", filtEnv: { octaves: 1.4, decay: 0.28 } }
   };
   var MUSIC_PALETTES = [
     {
@@ -980,6 +1047,8 @@
     grooveKickHiGate: 0.58, // board energy needed before soft kickHi accents join the kick pattern (0-1)
     gateHysteresis: 0.06, // energy drop below a groove gate before that part exits; stops parts flapping at the threshold (0-0.12)
     grooveSwingMax: 0.25, // hard cap on per-palette swing so off-16ths never smear past feel (0-0.4)
+    genreSwingMaxJazz: 0.5, // hard cap on genre swing past grooveSwingMax; keeps the shuffle from smearing (0.3-0.6)
+    genreSnareDragMax: 18, // hard cap on genre snare drag behind the grid (ms, 0-30)
     flatlineOctave: 2, // octaves above the palette root for the rush-end flatline tone (1-3)
     flatlineGain: 0.046, // flatline tone gain (0-0.08)
     flatlineDur: 0.78, // flatline tone length (seconds, 0.4-1.2)
@@ -1096,7 +1165,22 @@
     bridgePadGain: 0.05, // peak gain of each bridge pad-swell voice (0-0.12)
     bridgeLeadGain: 0.055, // peak gain of each bridge lead-turnaround note (0-0.1)
     bridgeLeadFigure: [7, 5, 4, 2, 0], // lead turnaround scale degrees; MUST end on 0 so the fill lands on the tonic (in-scale degrees)
-    bridgeRiserGain: 0.05 // peak gain of the soft noise riser that builds into the downbeat (0-0.12)
+    bridgeRiserGain: 0.05, // peak gain of the soft noise riser that builds into the downbeat (0-0.12)
+    // Genre harmony extension (music genres seq 2). Feel knobs for the jazz color tones and
+    // walking bass; both are no-ops unless a genre opts in (electronic keeps today's sound).
+    jazzColorGain: 0.008, // per-tone gain of an added jazz color extension (b7/9) on the sustained rhodes comp; lifted from 0.006 so the tine 7th/9th actually reads as the extended-chord color while staying under the warm pad (0-0.02)
+    walkingBassGain: 0.06, // jazz walking-bass per-note gain; the signature quarter-note walk, lifted from 0.05 so it anchors the trio yet stays under the energy-scaled electronic bass peak so jazz reads cool (0-0.09)
+    jazzTurnaround: [1, 3, 0, 0], // jazz-only seeded-bridge ii-V-I: scale-degree ROOT indices (supertonic, dominant fifth, tonic, tonic), all in-scale; length 4 splits the 8-bar bridge into two clean turnarounds that resolve home
+    // Genre voice/timbre extension (music genres seq 4). The global filter-scale clamp and
+    // the trip-hop vinyl crackle bed. All no-ops unless a non-electronic genre opts in.
+    genreFilterScaleMin: 0.6, // clamp on how dark a genre may pull the global filter scale (0.5-1)
+    vinylNoiseCutoff: 3000, // bandpass center of the trip-hop vinyl crackle bed; warmed from 3600 so the un-scaled bed (it bypasses the 0.68 global filter) tucks under the dark trip-hop mix as dust rather than hissing on top. Only trip-hop lifts vinylNoiseGain off zero, so this is effectively its knob (Hz, 2000-6000)
+    vinylNoiseGainMax: 0.02, // hard cap on the vinyl crackle bed gain (0-0.04)
+    // Genre arrangement/density extension (music genres seq 5). Per-note gains for the two
+    // genre-conditional persistent layers; both stay silent unless pop/jazz is the live genre.
+    // The gate shift, floor bonus, and energy cap are per-genre fields on GENRES, not scalars.
+    popToplineGain: 0.018, // pop persistent octave-up topline hook layer gain; nudged up to sit just over the fuller 6-9 pad so the hook still cuts on top (0-0.03)
+    jazzCompGain: 0.014 // jazz rhodes offbeat comping layer gain (0-0.03)
   };
   var MOTION = {
     gemLerp: 30,
@@ -1691,6 +1775,12 @@
     pulseWaves: null,
     pwmLfo: null,
     pwmLfoGain: null,
+    // Vinyl crackle bed (music genres seq 4): a single persistent looped-noise texture,
+    // silent by default, lifted off zero only for trip-hop. Persistent by design, never
+    // per-note, so it starts once at graph init and lives with the graph (no one-shot leak).
+    vinyl: null,
+    vinylFilter: null,
+    vinylGain: null,
     started: false,
     muted: settings.muted === true,
     unlockStamp: 0,
@@ -3660,6 +3750,13 @@
     // Walking sub-bass: roots [0,0,4,4] one note per bar at palette.bassRatio, sub character,
     // gated later (subMovementOnsetMin) so the low end only starts moving deep in a session.
     audio.layers.push({ degrees: [0, 0, 4, 4], division: 16, phase: 0, duration: loopStepSeconds * 14, wave: getMusicPalette().bassWave, gain: AUDIO_TUNING.subMovementGain, pan: 0, filter: 600, octave: getMusicPalette().bassRatio, voice: VOICE_CHARACTERS.sub, sessionOnsetMin: AUDIO_TUNING.subMovementOnsetMin, rampMinutes: AUDIO_TUNING.counterMelodyRampMin, expiresAt: 1e9, persistent: true, polyloop: true });
+    // Genre extra layer (music genres seq 5): one genre-conditional persistent layer, tagged
+    // genreLayer:true so the seq-9 selector can strip/re-push it on a live genre change. Pop
+    // rides an octave-up warm topline hook (the track motif +1 octave); jazz adds an offbeat
+    // rhodes comp rolling the chord tones; trip-hop and electronic add nothing. polyloop:true
+    // keeps the layer's identity stable against habituation, like the ghost/counter layers, and
+    // every degree resolves through getHarmonyToneFreq so the layer stays in-scale on the grid.
+    pushGenreExtraLayer();
     if (!isSplashOpen()) {
       maybeStartSectorReveal();
       maybeQueueFinaleIntro();
@@ -10487,10 +10584,11 @@
         fullFx: parsed.fullFx !== false,
         muted: parsed.muted === true,
         musicPalette: normalizeMusicPaletteId(parsed.musicPalette),
+        musicGenre: normalizeMusicGenre(parsed.musicGenre),
         musicAuto: parsed.musicAuto !== false
       };
     } catch (error) {
-      return { haptics: true, fullFx: true, muted: false, musicPalette: "neon", musicAuto: true };
+      return { haptics: true, fullFx: true, muted: false, musicPalette: "neon", musicGenre: "electronic", musicAuto: true };
     }
   }
 
@@ -10520,6 +10618,23 @@
     });
   }
 
+  // The four genres are always available (genre gates nothing behind progression), so this
+  // is a static fill unlike the unlock-gated palette list (music genres seq 9). Fixed order
+  // Electronic, Pop, Jazzy, Trip-Hop; labels read from GENRES so the select mirrors the data.
+  var MUSIC_GENRE_ORDER = ["electronic", "pop", "jazzy", "triphop"];
+
+  function populateMusicGenreSelect() {
+    musicGenreSelect.innerHTML = "";
+    MUSIC_GENRE_ORDER.forEach(function (id) {
+      var genre = GENRES[id];
+      if (!genre) return;
+      var option = document.createElement("option");
+      option.value = genre.id;
+      option.textContent = genre.label;
+      musicGenreSelect.appendChild(option);
+    });
+  }
+
   function syncSettingsUi() {
     var hapticSupport = getHapticSupportKind();
     hapticsToggle.disabled = !hapticSupport;
@@ -10531,6 +10646,7 @@
     if (musicPaletteSelect.selectedIndex < 0 && musicPaletteSelect.options.length) {
       musicPaletteSelect.selectedIndex = 0;
     }
+    musicGenreSelect.value = normalizeMusicGenre(settings.musicGenre);
     musicAutoToggle.checked = settings.musicAuto !== false;
     updateQualityStatus();
   }
@@ -10543,6 +10659,7 @@
     closeStore();
     closeSetlist();
     populateMusicPaletteSelect();
+    populateMusicGenreSelect();
     syncSettingsUi();
     settingsPanel.classList.add("is-open");
     settingsPanel.setAttribute("aria-hidden", "false");
@@ -10683,10 +10800,36 @@
     updateHud();
   }
 
+  function updateMusicGenre(id) {
+    // Player-facing genre swap (music genres seq 9). Genre is orthogonal to the palette: it
+    // never touches board/score/seed/determinism, so unlike updateMusicPalette it does NOT
+    // clear musicAuto. Sector Music keeps rotating palettes WITHIN the chosen genre. Safe
+    // mid-level: applyAudioGenre retunes the only persistent nodes (vinyl bed + genre layer),
+    // and groove/swing/chords/voices/filter all read getGenre() live on the next step.
+    settings.musicGenre = normalizeMusicGenre(id);
+    writeSettings();
+    applyAudioGenre();
+    addCallout(getGenre().label.toUpperCase(), "#7a6bff", 18);
+    updateHud();
+  }
+
   function normalizeMusicPaletteId(id) {
     return MUSIC_PALETTES.some(function (palette) {
       return palette.id === id;
     }) ? id : "neon";
+  }
+
+  function normalizeMusicGenre(id) {
+    // Any non-key falls back to the identity genre so a bad/absent stored value
+    // never changes the shipped sound (music genres seq 1).
+    return Object.prototype.hasOwnProperty.call(GENRES, id) ? id : "electronic";
+  }
+
+  function getGenre() {
+    // The one accessor every genre-aware helper reads. Defaults to the identity
+    // element (all no-ops) so existing behavior is unchanged until the player picks
+    // another. No accessor consumes this yet (music genres seq 1).
+    return GENRES[settings && settings.musicGenre] || GENRES.electronic;
   }
 
   function getMusicPaletteById(id) {
@@ -10712,6 +10855,19 @@
 
   function getMusicPalette() {
     return getMusicPaletteById(getActiveMusicPaletteId());
+  }
+
+  function getActiveGroove() {
+    // Genre reskins only the DRUMS and keeps the sector's own bassline, key, and
+    // swing (music genres seq 3). Electronic (or any genre with drums unset)
+    // returns palette.groove untouched, so every shipped sector groove is
+    // byte-for-byte unchanged. A non-electronic genre merges the GENRE_DRUMS
+    // kick/snare/hat/kickHi template over the palette's bass + swing.
+    var palette = getMusicPalette();
+    var g = getGenre();
+    if (!g.drums) return palette.groove;
+    var dr = GENRE_DRUMS[g.drums];
+    return { kick: dr.kick, snare: dr.snare, hat: dr.hat, kickHi: dr.kickHi, bass: palette.groove.bass, swing: palette.groove.swing };
   }
 
   function getBaseFreq() {
@@ -10750,7 +10906,7 @@
     if (audio.surprise.borrowUntilStep && audio.step < audio.surprise.borrowUntilStep) {
       return scaleDegreeSemitoneIn(getParallelPentatonic(getMusicScale()), index);
     }
-    return scaleDegreeSemitoneIn(getMusicScale(), index);
+    return scaleDegreeSemitoneIn(getGenreScale(), index);
   }
 
   function getParallelPentatonic(scale) {
@@ -10764,10 +10920,37 @@
     return PENT_MIN;
   }
 
+  function getGenreScale() {
+    // Bright-scale bias (music genres seq 2, pop): a genre with preferBrightScale lifts a
+    // dark sector (minor / "man" pentatonic) to its parallel major on the same root, so the
+    // whole track reads brighter and more radio. getScaleDegreeSemitone routes pad, bass,
+    // motif, and every harmony read through here, so one wrap re-keys them together. Value
+    // comparison (not reference ===) because some palettes inline the scale literal instead
+    // of the PENT_ constant. Electronic/jazz/trip-hop leave the sector scale untouched.
+    var scale = getMusicScale();
+    var g = getGenre();
+    if (g.preferBrightScale) {
+      var key = scale.join(",");
+      if (key === PENT_MIN.join(",") || key === PENT_MAN.join(",")) return getParallelPentatonic(scale);
+    }
+    return scale;
+  }
+
   function getBridgeProgression(palette) {
     // Bridge chord order: optional palette.progressionB, else a motifRotate-style
     // rotation of the home progression by 2 (same chords, a variation order).
     // Both draw from the same pentatonic, so a bridge re-voices without changing key.
+    // Jazz-only (music genres seq 7): inside the already-seeded, campaign-only bridge
+    // window, walk a ii-V-I turnaround instead. jazzTurnaround holds scale-degree ROOT
+    // indices (1=supertonic, 3=dominant fifth, 0=tonic), so every root resolves through
+    // getScaleDegreeSemitone and stays in the sector's key. On a major-pentatonic sector
+    // 1->3->0 is a textbook ii-V-I; on a minor sector it is a dominant->tonic resolution.
+    // The pad, bass, and motif all read getHarmonyRootIndex, so they follow the turnaround
+    // together. Length 4 divides the 8-bar bridge into two clean cycles, the bridge gate is
+    // already seeded per section, and genre never touches the board/score/seed, so a long
+    // jazz take occasionally walks a turnaround with full determinism and no change to the
+    // sector's home progression. Electronic/pop/trip-hop keep the shipped rotation below.
+    if (getGenre().id === "jazzy") return AUDIO_TUNING.jazzTurnaround;
     if (palette.progressionB) return palette.progressionB;
     var prog = palette.progression || [0, 3, 4, 2];
     var shift = prog.length ? 2 % prog.length : 0;
@@ -10831,6 +11014,30 @@
 
   function getPadChordDegrees() {
     return energy > 0.58 ? [0, 2, 3, 5] : [0, 2, 3];
+  }
+
+  function getChordDegrees() {
+    // Genre chord vocabulary (music genres seq 2). Routes the pad/comp voicing through the
+    // genre's scale-degree stack; every degree stays a pentatonic offset, so it reads through
+    // getScaleDegreeSemitone and stays consonant on any 16th. Electronic returns the shipped
+    // triad -> add-degree stack unchanged. Pop [0,2,4]/[0,2,4,6] is a fuller 6/9; jazz
+    // [0,2,4,6]/[0,2,4,6,8] stacks a 7th/9th in-scale; trip-hop [0,2]/[0,2,4] leaves space.
+    var g = getGenre();
+    if (!g.chordDegrees) return getPadChordDegrees();
+    return energy > 0.58 ? g.chordDegrees.high : g.chordDegrees.low;
+  }
+
+  function getWalkingBassDegree(step) {
+    // Jazz walking bass (music genres seq 2): a quarter-note walk that lands the chord root on
+    // beat 1 and steps toward the next chord's root across the bar. Returns a scale-degree
+    // index, so it resolves through getScaleDegreeSemitone and every walk note stays in-key.
+    var stepsPerChord = getHarmonyStepsPerChord(step);
+    var beatsPerChord = Math.max(1, stepsPerChord / 4);
+    var beat = Math.floor((step % stepsPerChord) / 4);
+    var thisRoot = getHarmonyRootIndex(step);
+    if (beat === 0) return thisRoot; // beat 1 lands home
+    var nextRoot = getHarmonyRootIndex(step + stepsPerChord);
+    return Math.round(thisRoot + (nextRoot - thisRoot) * (beat / beatsPerChord)); // walk toward the next root
   }
 
   // Call-and-response phrase machine: the front half of each phraseBars window
@@ -14557,6 +14764,24 @@
       }
     }
 
+    // Vinyl crackle bed (music genres seq 4): one persistent looped-noise texture behind the
+    // whole mix, gated to silence by default. applyAudioGenre() lifts its gain only for
+    // trip-hop, so the other three genres pay nothing for it. It starts once here and lives
+    // with the graph (no per-note allocation, so nothing to stop()/GC per step).
+    audio.vinyl = audio.ctx.createBufferSource();
+    audio.vinyl.buffer = getNoiseBuffer();
+    audio.vinyl.loop = true;
+    audio.vinylFilter = audio.ctx.createBiquadFilter();
+    audio.vinylFilter.type = "bandpass";
+    audio.vinylFilter.frequency.value = AUDIO_TUNING.vinylNoiseCutoff;
+    audio.vinylGain = audio.ctx.createGain();
+    audio.vinylGain.gain.value = 0;
+    audio.vinyl.connect(audio.vinylFilter);
+    audio.vinylFilter.connect(audio.vinylGain);
+    audio.vinylGain.connect(audio.master);
+    audio.vinyl.start();
+    applyAudioGenre(); // honor a persisted non-electronic genre on reload (lifts the bed if trip-hop)
+
     if (audio.ctx.addEventListener) {
       audio.ctx.addEventListener("statechange", updateAudioButtonState);
     }
@@ -14684,6 +14909,11 @@
     } else if (tier === 2) {
       floor += AUDIO_TUNING.tier2FloorBonus;
     }
+    // Genre density nudge (seq 5): add the genre floor bonus to the resolved
+    // floor, clamped 0-1. Pop +0.06 keeps the bed present; trip-hop -0.04 opens
+    // more space. Electronic/jazz-neutral leave it. The soft fail-ramp fade above
+    // is left untouched so a lost song still eases to failFloorBase cleanly.
+    floor = Math.max(0, Math.min(1, floor + getGenre().floorBonus));
     return { progress: progress, floor: floor, cap: cap, tier: tier };
   }
 
@@ -14743,6 +14973,11 @@
     // half-time off because the pulse-danger heartbeat owns the low state
     // there (audio locks).
     if (gameMode !== MODE_CAMPAIGN) return false;
+    // Forced half-time (trip-hop): reuse the entire shipped half-time path so 124
+    // BPM FEELS ~62 (GROOVES.half, grooveHalf thinning, motifStretch x2,
+    // halfHarmonySteps 64). Campaign-only, matching the audio locks; Rush/Daily
+    // let the pulse-danger heartbeat own the low state and play straight-but-dark.
+    if (getGenre().forceHalfTime && gameMode === MODE_CAMPAIGN) return true;
     if (isDirectorRecoveryActive(step)) return true;
     return isNightGovernorHour() && step < AUDIO_TUNING.halfNightBars * 16;
   }
@@ -14816,9 +15051,13 @@
     // Hysteresis pair: a part enters above its gate but exits only below
     // gate - gateHysteresis, so energy hovering at a threshold cannot flap
     // the instrument in and out between bars. Base kick stays ungated.
+    // Genre density nudge (seq 5): shift the gate by the genre's gateShift.
+    // Pop -0.1 lowers the gate so parts enter sooner (fuller mix); trip-hop
+    // +0.12 raises it so they hold out longer (sparser). Electronic 0 no-op.
+    var shifted = onThreshold + getGenre().gateShift;
     var engaged = audio.gateState[name]
-      ? effectiveEnergy >= onThreshold - AUDIO_TUNING.gateHysteresis
-      : effectiveEnergy > onThreshold;
+      ? effectiveEnergy >= shifted - AUDIO_TUNING.gateHysteresis
+      : effectiveEnergy > shifted;
     audio.gateState[name] = engaged;
     return engaged;
   }
@@ -14884,9 +15123,14 @@
     if (step % AUDIO_TUNING.directorTickSteps === 0) tickDirector(step, arrange);
     var dir = audio.director;
     var dirBias = Math.max(-AUDIO_TUNING.directorBiasMax, Math.min(AUDIO_TUNING.directorBiasMax, dir.bias));
+    // Genre density nudge (seq 5): fold the genre energy cap into the clamp so
+    // trip-hop 0.72 stays laid-back even at climax and jazz 0.9 stays cool.
+    // Electronic/pop 1.0 is a no-op. Applied in both campaign and Rush/Daily
+    // branches, so trip-hop reads dark in every mode (half-time is still campaign-only).
+    var genreEnergyCap = getGenre().energyCap;
     var effectiveEnergy = arrange
-      ? Math.max(0, Math.min(Math.min(arrange.cap, dir.ceiling), Math.max(energy, arrange.floor) + dirBias))
-      : Math.max(0, Math.min(dir.ceiling, energy + dirBias));
+      ? Math.max(0, Math.min(Math.min(arrange.cap, dir.ceiling), genreEnergyCap, Math.max(energy, arrange.floor) + dirBias))
+      : Math.max(0, Math.min(dir.ceiling, genreEnergyCap, energy + dirBias));
     audio.effectiveEnergy = effectiveEnergy;
     if (arrange && arrange.progress >= AUDIO_TUNING.climaxProgress) {
       if (audio.climaxStep < 0) audio.climaxStep = step;
@@ -14923,8 +15167,19 @@
     if (bar === 0 && getPhraseBar(step) === 0) {
       dir.grooveOverride = wantsHalfTimeFeel(step) ? GROOVES.half : null;
     }
-    var g = dir.grooveOverride || palette.groove;
-    var swung = bar % 2 === 1 ? time + Math.min(g.swing, AUDIO_TUNING.grooveSwingMax) * stepSeconds : time;
+    var g = dir.grooveOverride || getActiveGroove();
+    // Genre swing: take the wider of the palette swing and the genre swing floor,
+    // capped at the genre's own swingMax (itself clamped to genreSwingMaxJazz).
+    // Electronic (swingMax unset) falls back to the shipped grooveSwingMax, so its
+    // feel is byte-for-byte unchanged. Jazz 0.42 pushes the off-16th toward the
+    // triplet shuffle; trip-hop 0.2 is a gentler drag; pop 0.08 is near-straight.
+    var genre = getGenre();
+    var swingAmt = Math.max(g.swing || 0, genre.swing || 0);
+    var swingCap = genre.swingMax != null ? Math.min(genre.swingMax, AUDIO_TUNING.genreSwingMaxJazz) : AUDIO_TUNING.grooveSwingMax;
+    var swung = bar % 2 === 1 ? time + Math.min(swingAmt, swingCap) * stepSeconds : time;
+    // Genre snare drag: a laid-back snare lands a hair behind the grid (jazz 6ms,
+    // trip-hop 14ms) while kick + hat stay locked. Electronic/pop drag 0 = no-op.
+    var snareTime = swung + Math.min(genre.snareDragMs, AUDIO_TUNING.genreSnareDragMax) / 1000;
     if (step < audio.revealUntilStep) {
       // Sector-entry hold: pad, root drone, and motif only. The full groove lands at revealSteps;
       // the first kick there is the payoff, so nothing here fades into it.
@@ -14950,8 +15205,8 @@
       // Pad swell once per bar on the tonic (root index 0 at step 0): getPadChordDegrees over
       // the palette pad voice, a long filtered bloom under the fill.
       if (bar === 0) {
-        var padDegrees = getPadChordDegrees();
-        var padVoice = paletteVoice(palette, "padVoice");
+        var padDegrees = getChordDegrees();
+        var padVoice = genreVoice(palette, "padVoice");
         for (var pd = 0; pd < padDegrees.length; pd += 1) {
           playTone(getHarmonyToneFreq(step, padDegrees[pd], 0), time + pd * 0.02, stepSeconds * 12, palette.padWave, AUDIO_TUNING.bridgePadGain, -0.3 + pd * 0.22, 900 + pd * 220, null, padVoice);
         }
@@ -14964,7 +15219,7 @@
         if (step % leadSlot === 0) {
           var figIndex = Math.floor(step / leadSlot);
           if (figIndex < figure.length) {
-            playTone(getHarmonyToneFreq(step, figure[figIndex], 1), time, stepSeconds * leadSlot * AUDIO_TUNING.motifNoteDurScale, palette.leadWave, AUDIO_TUNING.bridgeLeadGain, -0.2 + (figIndex / Math.max(1, figure.length - 1)) * 0.4, 2600, null, paletteVoice(palette, "leadVoice"));
+            playTone(getHarmonyToneFreq(step, figure[figIndex], 1), time, stepSeconds * leadSlot * AUDIO_TUNING.motifNoteDurScale, palette.leadWave, AUDIO_TUNING.bridgeLeadGain, -0.2 + (figIndex / Math.max(1, figure.length - 1)) * 0.4, 2600, null, genreVoice(palette, "leadVoice"));
           }
         }
       }
@@ -15016,12 +15271,12 @@
     }
     if (step % 32 === 0) playPadChord(time);
     if (!suppressDrums && gateSnare && g.snare.indexOf(bar) !== -1 && (!grooveHalf || bar === 8)) {
-      playSnare(swung, 0.16 + effectiveEnergy * 0.16);
+      playSnare(snareTime, 0.16 + effectiveEnergy * 0.16);
     }
     if (arrange && bar >= 13 && !grooveHalf) {
       var fillEvery = audio.climaxStep >= 0 ? 2 : arrange.tier === 2 && arrange.progress > 0.5 ? 4 : 0;
       if (fillEvery > 0 && Math.floor(step / 16) % fillEvery === fillEvery - 1) {
-        playSnare(swung, bar === 13 ? 0.1 : bar === 14 ? 0.12 : 0.16);
+        playSnare(snareTime, bar === 13 ? 0.1 : bar === 14 ? 0.12 : 0.16);
       }
     }
     // Habituation may rotate the hats on a private copy; GROOVES itself never mutates.
@@ -15033,11 +15288,19 @@
       playHat(swung, 0.025 + effectiveEnergy * 0.035);
     }
     if (gateBass) {
-      g.bass.forEach(function (entry) {
-        if (entry[0] !== bar) return;
-        if (grooveHalf && entry[0] % 4 !== 0) return;
-        playTone(getHarmonyToneFreq(step, entry[1], 0) * palette.bassRatio * entry[2], swung, 0.2, palette.bassWave, 0.05 + effectiveEnergy * 0.07, -0.1, 560, null, paletteVoice(palette, "bassVoice"));
-      });
+      if (getGenre().bassMode === "walking") {
+        // Jazz walking bass (music genres seq 2): ignore the palette syncopation; fire one
+        // quarter-note walk step per beat (bar 0/4/8/12) approaching the next chord root.
+        if (bar % 4 === 0) {
+          playTone(getHarmonyToneFreq(step, getWalkingBassDegree(step) - getHarmonyRootIndex(step), 0) * palette.bassRatio, swung, stepSeconds * 4, palette.bassWave, AUDIO_TUNING.walkingBassGain, -0.1, 560, null, genreVoice(palette, "bassVoice"));
+        }
+      } else {
+        g.bass.forEach(function (entry) {
+          if (entry[0] !== bar) return;
+          if (grooveHalf && entry[0] % 4 !== 0) return;
+          playTone(getHarmonyToneFreq(step, entry[1], 0) * palette.bassRatio * entry[2], swung, 0.2, palette.bassWave, 0.05 + effectiveEnergy * 0.07, -0.1, 560, null, genreVoice(palette, "bassVoice"));
+        });
+      }
     }
     if ((effectiveEnergy > 0.72 || audio.climaxStep >= 0) && (step % 16 === 6 || step % 16 === 14)) {
       playTone(getHarmonyToneFreq(step, 4, 2), time, 0.075, palette.layerWave, 0.026 + energy * 0.018, step % 16 === 6 ? -0.42 : 0.42, 4400);
@@ -15047,7 +15310,7 @@
       playTone(leadFreq, time, 0.055, palette.leadWave, 0.024 + drive * 0.016, step % 4 === 0 ? -0.5 : 0.5, 5200);
     }
     if (drive >= 0.9 && step % 8 === 4) {
-      playTone(getHarmonyToneFreq(step, -2, 0) * palette.bassRatio, time, 0.18, palette.bassWave, 0.068, 0, 520, null, paletteVoice(palette, "bassVoice"));
+      playTone(getHarmonyToneFreq(step, -2, 0) * palette.bassRatio, time, 0.18, palette.bassWave, 0.068, 0, 520, null, genreVoice(palette, "bassVoice"));
     }
     if (pulseDanger > 0 && step % (pulse <= 0.14 ? 4 : 8) === 0) {
       playPulseHeartbeat(time, pulseDanger);
@@ -15067,7 +15330,7 @@
         if (motifNote !== -1) {
           var motifDeg = Math.max(AUDIO_TUNING.motifDegreeMin, Math.min(AUDIO_TUNING.motifDegreeMax, layerMotif.deg[motifNote] + audio.phrase.callShift));
           var motifReg = layerMotif.register == null ? 1 : layerMotif.register; // register 0 is real (ghost polyloop)
-          playTone(getHarmonyToneFreq(step, motifDeg, motifReg), time, stepSeconds * layerMotif.dur[motifNote] * AUDIO_TUNING.motifNoteDurScale, layer.wave, layer.gain * motifDuck * layerSessionFade(layer), layer.pan, layer.filter, null, layer.voice || paletteVoice(palette, "leadVoice"));
+          playTone(getHarmonyToneFreq(step, motifDeg, motifReg), time, stepSeconds * layerMotif.dur[motifNote] * AUDIO_TUNING.motifNoteDurScale, layer.wave, layer.gain * motifDuck * layerSessionFade(layer), layer.pan, layer.filter, null, layer.voice || genreVoice(palette, "leadVoice"));
         }
         return;
       }
@@ -15100,21 +15363,54 @@
     gainParam.setTargetAtTime(1, atTime + AUDIO_TUNING.duckAttack + AUDIO_TUNING.duckHold, AUDIO_TUNING.duckRelease);
   }
 
+  function addChordColorTones(rootSemitone, chordSemitones, time, palette) {
+    // Jazz color tones (music genres seq 2): the pentatonic cannot reach a real maj7 or a
+    // natural 9, so add them as extra semitones on the chord root, ONLY on the sustained
+    // rhodes comp voice (never bass, kick-hits, or fast/random-timed leads). A color a min2
+    // from any chord tone is skipped, so no event timing can expose a clash. Electronic, pop,
+    // and trip-hop have no chordColor, so this is a no-op for them. Reuses the one-shot
+    // playTone contract (each note stops()/GCs), so no persistent nodes and no leak.
+    // SINGLE CALL SITE: playPadChord only, at step % 32 === 0 (once per two bars) on a 1.4s
+    // sustained rhodes note. The walking bass (bassVoice=sub), the fast drive lead (voice=null),
+    // the match-burst arpeggio (in-scale degrees), and the rhodes comp layer ([0,2,4] triad, no
+    // color) never call this, so a color tone can never land on a bass or fast/random-timed
+    // voice. That structural guarantee, plus the min2 skip below, makes a random-timed clash
+    // impossible by construction, not just by tuning.
+    var g = getGenre();
+    if (!g.chordColor) return;
+    for (var i = 0; i < g.chordColor.length; i += 1) {
+      var color = rootSemitone + g.chordColor[i]; // +10 = b7, +14 = 9, +21 = 13
+      var clash = false;
+      for (var j = 0; j < chordSemitones.length; j += 1) {
+        var iv = ((color - chordSemitones[j]) % 12 + 12) % 12;
+        if (iv === 1 || iv === 11) { clash = true; break; }
+      }
+      if (clash) continue;
+      var freq = getBaseFreq() * Math.pow(2, color / 12);
+      playTone(freq, time + 0.02, 1.4, palette.padWave, AUDIO_TUNING.jazzColorGain, 0.1, 900, null, VOICE_CHARACTERS.rhodes);
+    }
+  }
+
   function playPadChord(time) {
     if (!audio.started) return;
     var palette = getMusicPalette();
     var rootIndex = getHarmonyRootIndex(audio.step);
     // Staged surprises land here and clear after a single chord: addSixthPad
     // widens the voicing once; borrowedPad borrows the parallel pentatonic.
-    var chord = audio.surprise.padDegrees || getPadChordDegrees();
+    var chord = audio.surprise.padDegrees || getChordDegrees();
     var borrowed = audio.surprise.scaleOverride;
     audio.surprise.padDegrees = null;
     audio.surprise.scaleOverride = null;
+    var chordSemitones = [];
     chord.forEach(function (degree, index) {
       var semitone = borrowed ? scaleDegreeSemitoneIn(borrowed, rootIndex + degree) : getScaleDegreeSemitone(rootIndex + degree);
+      chordSemitones.push(semitone);
       var freq = getBaseFreq() * Math.pow(2, semitone / 12);
-      playTone(freq, time + index * 0.018, 1.65, palette.padWave, 0.012 + energy * 0.008, -0.35 + index * 0.23, 760 + energy * 720, null, paletteVoice(palette, "padVoice"));
+      playTone(freq, time + index * 0.018, 1.65, palette.padWave, 0.012 + energy * 0.008, -0.35 + index * 0.23, 760 + energy * 720, null, genreVoice(palette, "padVoice"));
     });
+    // Jazz-only: add guarded b7/9 color tones on the chord root over the comp voice.
+    var chordRootSemitone = borrowed ? scaleDegreeSemitoneIn(borrowed, rootIndex) : getScaleDegreeSemitone(rootIndex);
+    addChordColorTones(chordRootSemitone, chordSemitones, time, palette);
   }
 
   function playTap(cell) {
@@ -15500,7 +15796,7 @@
       var stepSeconds = (60 / getActiveBpm()) / 4;
       var chordPans = [-0.3, 0, 0.3];
       [0, 2, 4].forEach(function (degree, i) {
-        playTone(getHarmonyToneFreq(audio.step, degree, 1), start + i * 0.012, 0.22, palette.padWave, 0.03, chordPans[i], 1600, null, paletteVoice(palette, "leadVoice"));
+        playTone(getHarmonyToneFreq(audio.step, degree, 1), start + i * 0.012, 0.22, palette.padWave, 0.03, chordPans[i], 1600, null, genreVoice(palette, "leadVoice"));
       });
       if (chain >= 4) {
         for (var hit = 0; hit < 4; hit += 1) {
@@ -15509,7 +15805,7 @@
       }
       if (chain >= 5) {
         [0, 2, 4, 5, 7, 9].forEach(function (degree, i) {
-          playTone(getHarmonyToneFreq(audio.step, degree, 1), start + i * stepSeconds, 0.09, palette.leadWave, 0.042, i % 2 === 0 ? -0.35 : 0.35, 1600, null, paletteVoice(palette, "leadVoice"));
+          playTone(getHarmonyToneFreq(audio.step, degree, 1), start + i * stepSeconds, 0.09, palette.leadWave, 0.042, i % 2 === 0 ? -0.35 : 0.35, 1600, null, genreVoice(palette, "leadVoice"));
         });
       }
     }
@@ -15517,7 +15813,7 @@
     if (count >= 4) playNoiseSweep(start, chain);
     if (chain >= 2) {
       var burstBassPal = getMusicPalette();
-      playTone(getHarmonyToneFreq(audio.step, 0, 0) * burstBassPal.bassRatio, start, 0.42, burstBassPal.bassWave, 0.08, 0, 360 + chain * 90, null, paletteVoice(burstBassPal, "bassVoice"));
+      playTone(getHarmonyToneFreq(audio.step, 0, 0) * burstBassPal.bassRatio, start, 0.42, burstBassPal.bassWave, 0.08, 0, 360 + chain * 90, null, genreVoice(burstBassPal, "bassVoice"));
     }
     // Consonant surprises on hot moments: a very deep chain landing on a phrase
     // start borrows the parallel pentatonic across the whole harmony for one
@@ -15892,6 +16188,60 @@
     return (palette && VOICE_CHARACTERS[palette[field]]) || null;
   }
 
+  function genreVoice(palette, field) {
+    // Genre voice override (music genres seq 4): a non-electronic genre may swap the whole
+    // band's instrument for a given field (leadVoice / padVoice / bassVoice). An unset field,
+    // or the electronic identity element (whose voices are all null), falls through to the
+    // per-sector paletteVoice, so the 16 palettes keep their variety. Read-only shared preset,
+    // same safe-reference contract as paletteVoice (never mutated here).
+    var g = getGenre();
+    var name = g[field];
+    if (name && VOICE_CHARACTERS[name]) return VOICE_CHARACTERS[name];
+    return paletteVoice(palette, field);
+  }
+
+  // Push the current genre's one extra persistent layer (music genres seq 5/9). Called from
+  // startLevel and from applyAudioGenre on a live genre swap, so it recomputes its own
+  // loopStepSeconds from getActiveBpm() to stay self-contained. Tagged genreLayer:true so a
+  // later swap can strip exactly this layer. Every degree resolves through getHarmonyToneFreq,
+  // so the layer stays in-scale on the 124 BPM grid. Electronic/trip-hop add nothing.
+  function pushGenreExtraLayer() {
+    if (!audio.layers) return;
+    var genreExtra = getGenre().extraLayer;
+    if (genreExtra === "topline") {
+      audio.layers.push({ motif: motifOctave(getTrackMotif(), 1), wave: getMusicPalette().leadWave, gain: AUDIO_TUNING.popToplineGain, pan: 0, filter: 3800, voice: VOICE_CHARACTERS.warm, expiresAt: 1e9, persistent: true, polyloop: true, genreLayer: true });
+    } else if (genreExtra === "comp") {
+      var loopStepSeconds = (60 / getActiveBpm()) / 4;
+      audio.layers.push({ degrees: [0, 2, 4], division: 4, phase: 2, duration: loopStepSeconds * 3, wave: getMusicPalette().padWave, gain: AUDIO_TUNING.jazzCompGain, pan: 0.12, filter: 1400, octave: 1, voice: VOICE_CHARACTERS.rhodes, expiresAt: 1e9, persistent: true, polyloop: true, genreLayer: true });
+    }
+  }
+
+  function refreshGenreExtraLayer() {
+    // Live genre swap: strip whatever genre layer is playing and re-push the new genre's, so
+    // the topline/comp swaps mid-level without waiting for the next level start. A no-op at
+    // graph init (no layers yet) and in Rush/Daily (no genre layer is ever pushed there, per
+    // startLevel's campaign-only mix locks). Re-push only when the base band is actually
+    // running (a persistent non-genre layer present) so we never leave a lone genre layer
+    // ringing between levels.
+    if (!audio.layers) return;
+    var bandRunning = audio.layers.some(function (layer) { return layer.persistent && !layer.genreLayer; });
+    audio.layers = audio.layers.filter(function (layer) { return !layer.genreLayer; });
+    if (bandRunning && gameMode === MODE_CAMPAIGN && currentLevel) pushGenreExtraLayer();
+  }
+
+  function applyAudioGenre() {
+    // Apply the genre's persistent-node state (music genres seq 4/9). Groove, swing, chords,
+    // voices, and the global filter scale all read getGenre() live per step, so the only
+    // persistent nodes a genre change must retune are the vinyl crackle bed and the one genre
+    // extra layer. Vinyl gain is min()-clamped so a genre can never exceed the bed ceiling;
+    // only trip-hop lifts it off zero. Safe to call mid-level (setTargetAtTime glides, no
+    // click); the next step already reads the new genre for everything else.
+    if (!audio.ctx || !audio.vinylGain) return;
+    var target = Math.min(getGenre().vinylNoiseGain || 0, AUDIO_TUNING.vinylNoiseGainMax);
+    audio.vinylGain.gain.setTargetAtTime(target, audio.ctx.currentTime, 0.08);
+    refreshGenreExtraLayer();
+  }
+
   function playTone(freq, start, duration, wave, gainValue, panValue, filterFreq, bus, voice) {
     if (!audio.ctx || !audio.master) return;
     var gain = audio.ctx.createGain();
@@ -15921,14 +16271,19 @@
       srcOut = osc;
     }
 
+    // Global genre filter scale (music genres seq 4): darken (trip-hop 0.68) or brighten
+    // (pop 1.12) the whole mix by scaling every voice's cutoff once, here, so it reaches both
+    // the static path and the filter-envelope base. Clamped at genreFilterScaleMin so a genre
+    // can never fully close the filter. Electronic (1) is a byte-for-byte no-op.
+    var fScale = Math.max(AUDIO_TUNING.genreFilterScaleMin, getGenre().filterScale || 1);
     filter.type = "lowpass";
     if (voice && voice.filtEnv) {
       // Per-note subtractive filter envelope on the same lowpass node: turns a flat tone
       // into a pluck/swell/stab. No new nodes. base folds in the per-level cutoff drift
-      // (identical nudge to the static path). exponentialRamp needs a non-zero target,
-      // hence the Math.max(60, ...) clamp. octaves is biased by the per-level filtEnv drift.
+      // (identical nudge to the static path) and the genre filter scale. exponentialRamp needs
+      // a non-zero target, hence the Math.max(60, ...) clamp. octaves is biased by drift.
       var fe = voice.filtEnv;
-      var feBase = (filterFreq || 1600) * (1 + (drift ? drift.cutoffMul : 0));
+      var feBase = (filterFreq || 1600) * fScale * (1 + (drift ? drift.cutoffMul : 0));
       var feAttack = typeof fe.attack === "number" ? fe.attack : AUDIO_TUNING.voiceFiltEnvAttack;
       var feDecay = typeof fe.decay === "number" ? fe.decay : AUDIO_TUNING.voiceFiltEnvDecay;
       var feFloor = typeof fe.floor === "number" ? fe.floor : AUDIO_TUNING.voiceFiltEnvFloor;
@@ -15939,7 +16294,7 @@
       filter.frequency.exponentialRampToValueAtTime(Math.max(60, fePeak), start + feAttack);
       filter.frequency.exponentialRampToValueAtTime(Math.max(60, feBase * feFloor), start + feAttack + feDecay);
     } else {
-      filter.frequency.setValueAtTime((filterFreq || 1600) * (1 + (drift ? drift.cutoffMul : 0)), start);
+      filter.frequency.setValueAtTime((filterFreq || 1600) * fScale * (1 + (drift ? drift.cutoffMul : 0)), start);
     }
     filter.Q.setValueAtTime(0.7 + energy * 2.4, start);
 
@@ -15999,11 +16354,51 @@
   }
 
   function playSnare(time, amount) {
+    // Genre drum kit (music genres seq 4): the procedural snare reroutes per genre. Electronic
+    // (kit null) keeps the shipped backbeat crack byte-for-byte. Every branch is a parameter
+    // swap on the same playNoise/playTone one-shot primitives (no new node type, same stop()/GC
+    // contract), and any pitched body reads getHarmonyToneFreq so it stays in-key on any step.
+    var kit = getGenre().drumKit;
+    if (kit === "brush") {
+      // Jazz: a longer, softer swept brush instead of the short crack, plus a quiet ride ping.
+      playNoise(time, 0.16, amount * 0.6, 1200, 0.5);
+      playTone(getHarmonyToneFreq(audio.step, 4, 3), time, 0.09, "sine", amount * 0.05, 0.12, 5200, null, VOICE_CHARACTERS.bell);
+      return;
+    }
+    if (kit === "dusty") {
+      // Trip-hop: a lower, rounder boom-bap body through a darker noise = a break under a lowpass.
+      playNoise(time, 0.13, amount, 1100, 0.7);
+      playTone(150, time, 0.1, "triangle", amount * 0.1, 0.05, 700);
+      return;
+    }
+    if (kit === "clean") {
+      // Pop: a tightened, clap-layered backbeat: a short 200 Hz body + a doubled clap 12 ms apart.
+      playNoise(time, 0.06, amount, 1900, 1.1);
+      playNoise(time + 0.012, 0.07, amount * 0.7, 1800, 1.0);
+      playTone(200, time, 0.05, "triangle", amount * 0.09, 0.05, 1000);
+      return;
+    }
+    // Electronic (default): the shipped snare.
     playNoise(time, 0.11, amount, 1600, 0.9);
     playTone(196, time, 0.08, "triangle", amount * 0.09, 0.05, 900);
   }
 
   function playHat(time, amount) {
+    // Genre drum kit (music genres seq 4): jazz turns the tick into a swept ride, trip-hop
+    // darkens it, pop/electronic keep the shipped bright hat. Same one-shot primitives.
+    var kit = getGenre().drumKit;
+    if (kit === "brush") {
+      // Jazz ride: a longer, softer noise plus a faint sustained partial (kept in-key).
+      playNoise(time, 0.09, amount * 0.7, 5200, 0.4);
+      playTone(getHarmonyToneFreq(audio.step, 4, 4), time, 0.06, "sine", amount * 0.015, 0, 6000);
+      return;
+    }
+    if (kit === "dusty") {
+      // Trip-hop: a darker, dustier hat pulled down under the lowpass character.
+      playNoise(time, 0.035, amount, 4800, 0.2);
+      return;
+    }
+    // clean/electronic: the shipped bright hat.
     playNoise(time, 0.035, amount, 7200, 0.2);
   }
 
@@ -16545,6 +16940,15 @@
         populateMusicPaletteSelect();
         syncSettingsUi();
         return MUSIC_PALETTES[paletteIndex].id;
+      },
+      // Genre test hook (music genres seq 9): routes through the same player path as the
+      // selector (updateMusicGenre persists + applyAudioGenre + callout/hud), then syncs the
+      // select so the settings UI reflects a debug-driven change. Returns the diagnostic
+      // triple so a test harness can assert the live vinyl gain and chord vocabulary.
+      setMusicGenre: function (id) {
+        updateMusicGenre(normalizeMusicGenre(id));
+        syncSettingsUi();
+        return { genre: settings.musicGenre, vinylGain: audio.vinylGain ? audio.vinylGain.gain.value : null, chordDegrees: getChordDegrees() };
       },
       spawnAt: function (row, col, kind) {
         var r = Math.floor(Number(row));
@@ -17101,6 +17505,9 @@
   musicPaletteSelect.addEventListener("change", function (event) {
     updateMusicPalette(event.target.value);
   });
+  musicGenreSelect.addEventListener("change", function (event) {
+    updateMusicGenre(event.target.value);
+  });
   musicAutoToggle.addEventListener("change", function (event) {
     updateMusicAuto(event.target.checked);
   });
@@ -17192,6 +17599,7 @@
   });
 
   populateMusicPaletteSelect();
+  populateMusicGenreSelect();
   syncSettingsUi();
   updateSplashStartLabel();
   resize();

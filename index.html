@@ -17,6 +17,41 @@
     <link rel="stylesheet" href="styles.css?v=20260703-mobile33">
   </head>
   <body>
+<script id="__string_gate__">
+/* Private-playtest gate for the PUBLIC GitHub Pages build only. Static hosting has
+   no server auth, so this is a soft client-side cover: it blocks the page until the
+   password is entered, remembered per-device. Casual/accidental access is stopped;
+   a determined viewer can bypass via view-source/devtools. Injected by sync-public.sh
+   into the public copy only — local :5176 and the phone build stay ungated. */
+(function () {
+  var KEY = "string-play-unlock-astor";
+  try { if (localStorage.getItem(KEY) === "1") return; } catch (e) {}
+  var PW = String.fromCharCode(65, 83, 84, 79, 82); // password, kept out of plain text
+  function build() {
+    var ov = document.createElement("div");
+    ov.setAttribute("style", "position:fixed;inset:0;z-index:2147483647;background:#0a0b14;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,-apple-system,sans-serif;color:#e8ecff");
+    ov.innerHTML = "<div style=\"font-size:22px;letter-spacing:.35em;font-weight:600\">STRING</div><div style=\"font-size:13px;opacity:.55;margin-bottom:4px\">Private playtest</div><input id=\"__gpw\" type=\"password\" autocomplete=\"off\" placeholder=\"Password\" style=\"padding:12px 16px;border-radius:12px;border:1px solid #2a2f45;background:#121424;color:#fff;font-size:16px;text-align:center;letter-spacing:.2em;outline:none;width:210px\"><button id=\"__gbtn\" style=\"padding:11px 26px;border-radius:12px;border:0;background:#5a4bff;color:#fff;font-size:15px;font-weight:600;cursor:pointer\">Enter</button><div id=\"__gerr\" style=\"font-size:12px;color:#ff6b8b;height:15px\"></div>";
+    document.body.appendChild(ov);
+    var inp = ov.querySelector("#__gpw");
+    if (inp) inp.focus();
+    function unlock() {
+      var v = (inp.value || "").trim().toUpperCase();
+      if (v === PW) {
+        try { localStorage.setItem(KEY, "1"); } catch (e) {}
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+      } else {
+        ov.querySelector("#__gerr").textContent = "Wrong password";
+        inp.value = "";
+        inp.focus();
+      }
+    }
+    ov.querySelector("#__gbtn").addEventListener("click", unlock);
+    ov.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); unlock(); } });
+  }
+  if (document.body) build(); else document.addEventListener("DOMContentLoaded", build);
+})();
+</script>
+
     <main class="game-shell">
       <canvas id="game" aria-label="STRING match board"></canvas>
 
@@ -332,6 +367,10 @@
           <label class="settings-row">
             <span>Full FX</span>
             <input id="fullFxToggle" type="checkbox">
+          </label>
+          <label class="settings-row">
+            <span>Sound</span>
+            <select id="musicGenreSelect"></select>
           </label>
           <label class="settings-row">
             <span>Music DNA</span>
