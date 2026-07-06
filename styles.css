@@ -2525,6 +2525,17 @@ button:active {
   text-transform: uppercase;
 }
 
+.settings-unlock {
+  border-color: rgba(140, 255, 107, 0.4);
+  background: rgba(140, 255, 107, 0.08);
+  color: #d8ffcf;
+}
+
+.settings-unlock:hover {
+  border-color: rgba(140, 255, 107, 0.78);
+  box-shadow: 0 0 22px rgba(140, 255, 107, 0.2);
+}
+
 .settings-danger {
   border-color: rgba(255, 94, 122, 0.42);
   background: rgba(255, 94, 122, 0.09);

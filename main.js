@@ -152,6 +152,7 @@
   var musicGenreSelect = document.getElementById("musicGenreSelect");
   var musicAutoToggle = document.getElementById("musicAutoToggle");
   var qualityStatusEl = document.getElementById("qualityStatus");
+  var unlockAllButton = document.getElementById("unlockAllButton");
   var resetProgressButton = document.getElementById("resetProgressButton");
   var closeSettingsButton = document.getElementById("closeSettingsButton");
 
@@ -535,7 +536,7 @@
       drums: "drag", swing: 0.2, swingMax: 0.28, forceHalfTime: true, snareDragMs: 14, // forced half-time is the spine; the drag pattern itself only surfaces in Rush/Daily since campaign's GROOVES.half override owns kick/snare placement, while the dusty timbre + 14ms drag + 0.2 swing still apply over it
       chordDegrees: { low: [0, 2], high: [0, 2, 4] }, // sparse root+4th dyad / quartal root-4-b7 triad on a minor-pentatonic sector; space IS the genre, so no fill and no bright lift
       chordColor: null, preferBrightScale: false, bassMode: "root", drumKit: "dusty",
-      filterScale: 0.68, vinylNoiseGain: 0.014, leadVoice: "hollow", padVoice: "sub", bassVoice: "sub", // hollow lead over sub pad + sub bass, all pulled dark by the 0.68 global filter (clamped at genreFilterScaleMin 0.6)
+      filterScale: 0.68, vinylNoiseGain: 0.005, leadVoice: "hollow", padVoice: "sub", bassVoice: "sub", // hollow lead over sub pad + sub bass, all pulled dark by the 0.68 global filter. vinylNoiseGain cut 0.014 -> 0.005 (now a lowpassed dark bed, not bright static) per Jung's "static noise not pleasant" 2026-07-06
       pieceTrim: 0.9, gateShift: 0.12, floorBonus: -0.04, energyCap: 0.72, extraLayer: null
     }
   };
@@ -1175,8 +1176,8 @@
     // Genre voice/timbre extension (music genres seq 4). The global filter-scale clamp and
     // the trip-hop vinyl crackle bed. All no-ops unless a non-electronic genre opts in.
     genreFilterScaleMin: 0.6, // clamp on how dark a genre may pull the global filter scale (0.5-1)
-    vinylNoiseCutoff: 3000, // bandpass center of the trip-hop vinyl crackle bed; warmed from 3600 so the un-scaled bed (it bypasses the 0.68 global filter) tucks under the dark trip-hop mix as dust rather than hissing on top. Only trip-hop lifts vinylNoiseGain off zero, so this is effectively its knob (Hz, 2000-6000)
-    vinylNoiseGainMax: 0.02, // hard cap on the vinyl crackle bed gain (0-0.04)
+    vinylNoiseCutoff: 1100, // LOWPASS cutoff of the trip-hop vinyl bed (was a 3000Hz bandpass that read as unpleasant static/hiss — Jung 2026-07-06). Lowpass at 1100 makes it a dark, felt warmth under the mix, not a high-mid hiss on top (Hz, 700-2500)
+    vinylNoiseGainMax: 0.012, // hard cap on the vinyl bed gain, lowered from 0.02 so the bed can never get hissy again (0-0.02)
     // Genre arrangement/density extension (music genres seq 5). Per-note gains for the two
     // genre-conditional persistent layers; both stay silent unless pop/jazz is the live genre.
     // The gate shift, floor bonus, and energy cap are per-genre fields on GENRES, not scalars.
@@ -10829,6 +10830,11 @@
     }
     musicGenreSelect.value = normalizeMusicGenre(settings.musicGenre);
     musicAutoToggle.checked = settings.musicAuto !== false;
+    if (unlockAllButton) {
+      unlockAllButton.textContent = campaignSave.unlocked >= campaign.length
+        ? "All " + campaign.length + " Levels Unlocked ✓"
+        : "Unlock All Levels";
+    }
     updateQualityStatus();
   }
 
@@ -10850,6 +10856,18 @@
     clearResetProgressArm();
     settingsPanel.classList.remove("is-open");
     settingsPanel.setAttribute("aria-hidden", "true");
+  }
+
+  function unlockAllLevels() {
+    // Playtest access (Jung 2026-07-06): unlock every campaign level so the Map becomes a full
+    // level browser — each map node is tappable once its number <= campaignSave.unlocked. No
+    // debug URL needed. Progress-only: never touches scoring, seeds, or Daily determinism.
+    campaignSave.unlocked = campaign.length;
+    writeCampaignSave();
+    updateCampaignMap();
+    updateHud();
+    if (unlockAllButton) unlockAllButton.textContent = "All " + campaign.length + " Levels Unlocked ✓";
+    addCallout("ALL LEVELS UNLOCKED", "#8cff6b", 18);
   }
 
   function resetLocalProgress() {
@@ -14953,7 +14971,7 @@
     audio.vinyl.buffer = getNoiseBuffer();
     audio.vinyl.loop = true;
     audio.vinylFilter = audio.ctx.createBiquadFilter();
-    audio.vinylFilter.type = "bandpass";
+    audio.vinylFilter.type = "lowpass";
     audio.vinylFilter.frequency.value = AUDIO_TUNING.vinylNoiseCutoff;
     audio.vinylGain = audio.ctx.createGain();
     audio.vinylGain.gain.value = 0;
@@ -17692,6 +17710,7 @@
   musicAutoToggle.addEventListener("change", function (event) {
     updateMusicAuto(event.target.checked);
   });
+  unlockAllButton.addEventListener("click", unlockAllLevels);
   resetProgressButton.addEventListener("click", resetLocalProgress);
   settingsPanel.addEventListener("click", function (event) {
     if (event.target === settingsPanel) closeSettings();

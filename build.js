@@ -1,2 +1,2 @@
-window.__STRING_BUILD__ = {"n":180,"hash":"8bededb","date":"2026-07-06 15:51"};
+window.__STRING_BUILD__ = {"n":181,"hash":"91d2874","date":"2026-07-06 16:59"};
 (function(){function w(){var b=window.__STRING_BUILD__||{},t="Build "+(b.n||"?")+" · "+(b.hash||"local")+(b.date?" · "+b.date:"");var ids=["splashBuild","menuBuild"];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el)el.textContent=t;}}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",w);}else{w();}})();
