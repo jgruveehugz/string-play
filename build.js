@@ -1,2 +1,2 @@
-window.__STRING_BUILD__ = {"n":178,"hash":"ef70115","date":"2026-07-06 14:06"};
+window.__STRING_BUILD__ = {"n":179,"hash":"11f995b","date":"2026-07-06 15:15"};
 (function(){function w(){var b=window.__STRING_BUILD__||{},t="Build "+(b.n||"?")+" · "+(b.hash||"local")+(b.date?" · "+b.date:"");var ids=["splashBuild","menuBuild"];for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el)el.textContent=t;}}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",w);}else{w();}})();
