@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">STRING icon</title>
+  <desc id="desc">A cyan and magenta vector string mark on a dark arcade grid.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0%" stop-color="#132335"/>
+      <stop offset="54%" stop-color="#070b14"/>
+      <stop offset="100%" stop-color="#030409"/>
+    </radialGradient>
+    <linearGradient id="cyan" x1="8%" y1="10%" x2="92%" y2="90%">
+      <stop offset="0%" stop-color="#46f4ff"/>
+      <stop offset="100%" stop-color="#8cff6b"/>
+    </linearGradient>
+    <linearGradient id="pink" x1="92%" y1="8%" x2="8%" y2="92%">
+      <stop offset="0%" stop-color="#ff4fd8"/>
+      <stop offset="100%" stop-color="#ffd166"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="92" fill="url(#bg)"/>
+  <g opacity="0.44" stroke="#46f4ff" stroke-width="2">
+    <path d="M58 142h396M58 256h396M58 370h396"/>
+    <path d="M142 58v396M256 58v396M370 58v396"/>
+    <path d="M86 426 426 86M86 86l340 340"/>
+  </g>
+  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 328 256 102l128 226H128Z" stroke="url(#cyan)" stroke-width="20"/>
+    <path d="M168 292h176L256 140l-88 152Z" stroke="url(#pink)" stroke-width="14"/>
+    <circle cx="256" cy="256" r="56" stroke="#ffffff" stroke-width="14"/>
+    <path d="M112 256h288M256 112v288" stroke="#46f4ff" stroke-width="10" opacity="0.82"/>
+  </g>
+  <g fill="#030409" stroke="#ffd166" stroke-width="10">
+    <circle cx="128" cy="328" r="21"/>
+    <circle cx="256" cy="102" r="21"/>
+    <circle cx="384" cy="328" r="21"/>
+  </g>
+</svg>

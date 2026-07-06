@@ -1,0 +1,71 @@
+{
+  "name": "STRING",
+  "short_name": "STRING",
+  "description": "String-theory inspired vector match-3 with reactive electronic audio.",
+  "id": "./index.html",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#05060a",
+  "theme_color": "#05060a",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "./neon-lattice-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./neon-lattice-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./neon-lattice-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Pulse Rush",
+      "short_name": "Rush",
+      "description": "Start the survival score mode.",
+      "url": "./index.html?mode=rush",
+      "icons": [
+        {
+            "src": "./neon-lattice-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+          "src": "./neon-lattice-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Daily Pulse",
+      "short_name": "Daily",
+      "description": "Play today's seeded challenge.",
+      "url": "./index.html?mode=daily",
+      "icons": [
+        {
+            "src": "./neon-lattice-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+          "src": "./neon-lattice-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

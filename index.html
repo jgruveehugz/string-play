@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#05060a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="STRING">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>STRING</title>
+    <link rel="manifest" href="manifest.webmanifest?v=20260703-mobile33">
+    <link rel="icon" href="neon-lattice-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" sizes="180x180" href="neon-lattice-icon-180.png">
+    <link rel="mask-icon" href="neon-lattice-icon.svg" color="#46f4ff">
+    <link rel="stylesheet" href="styles.css?v=20260703-mobile33">
+  </head>
+  <body>
+    <main class="game-shell">
+      <canvas id="game" aria-label="STRING match board"></canvas>
+
+      <section id="splashPanel" class="splash-panel is-open" aria-label="Start screen" aria-hidden="false">
+        <div class="splash-stage" aria-hidden="true">
+          <span class="splash-ring splash-ring--one"></span>
+          <span class="splash-ring splash-ring--two"></span>
+          <span class="splash-ray splash-ray--one"></span>
+          <span class="splash-ray splash-ray--two"></span>
+        </div>
+        <div class="splash-copy">
+          <strong>STRING</strong>
+          <em>Every swap plays the track.</em>
+          <small id="splashBuild" style="margin-top:10px;font-family:monospace;font-size:9px;letter-spacing:2px;color:rgba(150,180,210,0.5);">Build —</small>
+        </div>
+        <div class="splash-actions">
+          <button id="splashDailyButton" class="splash-daily" type="button" aria-label="Play today's Daily">
+            <span id="splashDailyTitle">Daily Setlist</span>
+            <strong id="splashDailyMeta">Take 1/3 · Streak 0d</strong>
+            <em>Tap to play today's track</em>
+          </button>
+          <button id="splashStartButton" type="button">Play</button>
+          <button id="splashMenuButton" type="button">Options</button>
+        </div>
+      </section>
+
+      <section id="hudPanel" class="hud" aria-label="Game status">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span>STRING</span>
+        </div>
+        <div class="stat stat--level">
+          <span id="levelLabel">Level</span>
+          <strong id="level">1</strong>
+        </div>
+        <div class="stat stat--moves">
+          <span id="movesLabel">Moves</span>
+          <strong id="moves">0</strong>
+        </div>
+        <div class="stat stat--score">
+          <span>Score</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="stat stat--best">
+          <span>Best</span>
+          <strong id="best">0</strong>
+        </div>
+        <div class="stat stat--chain">
+          <span>Chain</span>
+          <strong id="chain">0</strong>
+        </div>
+        <div class="stat stat--voices">
+          <span>Voices</span>
+          <strong id="layers">0</strong>
+        </div>
+        <div class="controls">
+          <button id="audioButton" type="button" data-audio-state="on" aria-label="Sound On">Sound On</button>
+          <button id="modeButton" type="button" aria-pressed="false">Pulse Rush</button>
+          <button id="dailyButton" type="button" aria-pressed="false">Daily</button>
+          <button id="resetButton" type="button">New Board</button>
+          <button id="settingsButton" type="button" aria-label="Settings">Settings</button>
+          <button id="menuButton" type="button" aria-label="Menu">Menu</button>
+          <label class="volume">
+            <span>Vol</span>
+            <input id="volume" type="range" min="0" max="100" value="55">
+          </label>
+        </div>
+        <button id="hudToggle" class="hud-toggle" type="button" aria-controls="hudSheet" aria-expanded="false" aria-label="More stats and controls"></button>
+        <div id="hudSheet" class="hud-sheet" aria-hidden="true"></div>
+      </section>
+
+      <section id="missionPanel" class="mission" aria-label="Level objective">
+        <div class="mission-copy">
+          <strong id="levelTitle">Level 1</strong>
+          <span id="objective">Score points</span>
+          <div id="goalRail" class="goal-rail" aria-label="Goal cards"></div>
+          <div class="goal-stack" aria-label="Progression goals">
+            <span id="goalNow">Now: make a match</span>
+            <span id="goalLevel">Level: clear objectives</span>
+            <span id="goalMacro">Track: earn stars</span>
+          </div>
+          <span id="goalHint" class="goal-hint">How: match three pieces.</span>
+          <div class="challenge-strip" aria-label="Social challenge">
+            <span>
+              <b>Rival</b>
+              <strong id="challengeRival">Beat 0</strong>
+            </span>
+            <span>
+              <b>Hook</b>
+              <strong id="challengeHook">Save moves</strong>
+            </span>
+            <span>
+              <b>Code</b>
+              <strong id="challengeCode">STR-001</strong>
+            </span>
+          </div>
+          <em id="coach">Build the beat.</em>
+          <small id="dailyMission">Daily mission loading.</small>
+        </div>
+        <div class="mission-progress">
+          <span id="progress">0%</span>
+          <span id="stars">&#9734;&#9734;&#9734;</span>
+        </div>
+        <div class="boosters" aria-label="Boosters">
+          <button id="hammerButton" type="button" aria-label="Hammer booster">
+            <span>Hammer</span>
+            <strong id="hammerCount">0</strong>
+          </button>
+          <button id="shuffleButton" type="button" aria-label="Shuffle booster">
+            <span>Shuffle</span>
+            <strong id="shuffleCount">0</strong>
+          </button>
+          <button id="chargeButton" type="button" aria-label="Charge booster">
+            <span>Charge</span>
+            <strong id="chargeCount">0</strong>
+          </button>
+        </div>
+        <div class="mission-actions">
+          <button id="mapButton" type="button" aria-label="Campaign map">Map</button>
+          <button id="storeButton" type="button" aria-label="Store">Store</button>
+          <button id="shareButton" type="button" aria-label="Share run">Share</button>
+          <button id="prevLevelButton" type="button" aria-label="Previous level">&lsaquo;</button>
+          <button id="nextLevelButton" type="button" aria-label="Next level">&rsaquo;</button>
+        </div>
+      </section>
+
+      <section id="menuPanel" class="menu-panel" aria-label="Menu" aria-hidden="true">
+        <div class="menu-drawer">
+          <div class="menu-header">
+            <div class="menu-copy">
+              <span>Menu</span>
+              <strong>Backstage</strong>
+              <em id="menuSummary">Pick your stage.</em>
+            </div>
+            <button id="closeMenuButton" type="button" aria-label="Close menu">Close</button>
+          </div>
+          <div class="menu-challenge" aria-label="Challenge status">
+            <div>
+              <b>Rival</b>
+              <strong id="menuRival">Beat 0</strong>
+            </div>
+            <div>
+              <b>Hook</b>
+              <strong id="menuHook">Save moves</strong>
+            </div>
+            <div>
+              <b>Code</b>
+              <strong id="menuCode">STR-001</strong>
+            </div>
+            <small id="menuDailyMission">Daily mission loading.</small>
+          </div>
+          <div class="menu-actions">
+            <button id="menuResumeButton" class="menu-action menu-action--resume" type="button">Resume</button>
+            <button id="menuAudioButton" class="menu-action menu-action--audio" type="button">Audio</button>
+            <button id="menuMapButton" class="menu-action menu-action--map" type="button">Map</button>
+            <button id="menuStoreButton" class="menu-action menu-action--store" type="button">Store</button>
+            <button id="menuShareButton" class="menu-action menu-action--share" type="button">Share</button>
+            <button id="menuRushButton" class="menu-action menu-action--rush" type="button">Pulse Rush</button>
+            <button id="menuDailyButton" class="menu-action menu-action--daily" type="button">Daily Pulse</button>
+            <button id="menuSetlistButton" class="menu-action menu-action--setlist" type="button">Setlist</button>
+            <button id="menuGreenroomButton" class="menu-action menu-action--greenroom" type="button">Greenroom</button>
+            <button id="menuRestartButton" class="menu-action menu-action--restart" type="button">Restart</button>
+            <button id="menuSettingsButton" class="menu-action menu-action--settings" type="button">Settings</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="mapPanel" class="map-panel" aria-label="Campaign map" aria-hidden="true">
+        <div class="map-shell">
+          <div class="map-header">
+            <div class="map-copy">
+              <span>The Album</span>
+              <strong id="mapTitle">Tracklist</strong>
+              <em id="mapSummary">Pick a track.</em>
+            </div>
+            <button id="closeMapButton" type="button">Close</button>
+          </div>
+          <div class="map-progress" aria-label="Campaign progress">
+            <div>
+              <span>Open</span>
+              <strong id="mapUnlocked">1/240</strong>
+            </div>
+            <div>
+              <span>Stars</span>
+              <strong id="mapStars">0/720</strong>
+            </div>
+            <div>
+              <span>Current</span>
+              <strong id="mapCurrent">1</strong>
+            </div>
+            <div>
+              <span>Next Reward</span>
+              <strong id="mapReward">6 stars</strong>
+            </div>
+            <div>
+              <span>Daily</span>
+              <strong id="mapMission">0/0</strong>
+            </div>
+            <div>
+              <span>Streak</span>
+              <strong id="mapStreak">0 days</strong>
+            </div>
+            <div>
+              <span>Event</span>
+              <strong id="mapEvent">0/80</strong>
+            </div>
+          </div>
+          <div id="mapGrid" class="map-grid"></div>
+        </div>
+      </section>
+
+      <section id="setlistPanel" class="setlist-panel" aria-label="Daily setlist" aria-hidden="true">
+        <div class="setlist-card">
+          <div class="setlist-header">
+            <div class="setlist-copy">
+              <span>Daily Setlist</span>
+              <strong id="setlistTitle">Daily #1</strong>
+              <em id="setlistSummary">One seed a day. Three takes.</em>
+            </div>
+            <button id="closeSetlistButton" type="button">Close</button>
+          </div>
+          <div class="setlist-meta" aria-label="Setlist status">
+            <div>
+              <span>Streak</span>
+              <strong id="setlistStreak">0d</strong>
+            </div>
+            <div>
+              <span>Passes</span>
+              <strong id="setlistPasses">0/2</strong>
+            </div>
+            <div>
+              <span>Best Today</span>
+              <strong id="setlistBest">0</strong>
+            </div>
+          </div>
+          <strong id="setlistMonth" class="setlist-month">This Month</strong>
+          <div id="setlistGrid" class="setlist-grid" aria-label="Setlist calendar"></div>
+          <em id="setlistStreakLine" class="setlist-streak-line">Day one of the discography starts with today's take.</em>
+          <button id="setlistPlayButton" type="button">Play Take 1/3</button>
+        </div>
+      </section>
+
+      <section id="greenroomPanel" class="greenroom-panel" aria-label="Greenroom" aria-hidden="true">
+        <div class="greenroom-card">
+          <div class="greenroom-header">
+            <div class="greenroom-copy">
+              <span>Backstage</span>
+              <strong>Greenroom</strong>
+              <em id="greenroomLedger">0/16 awake</em>
+            </div>
+            <button id="closeGreenroomButton" type="button">Close</button>
+          </div>
+          <canvas id="greenroomCanvas" class="greenroom-canvas" aria-label="The band"></canvas>
+          <em class="greenroom-hint">Tap a Hum to hear its part.</em>
+        </div>
+      </section>
+
+      <section id="storePanel" class="store-panel" aria-label="Store" aria-hidden="true">
+        <div class="store-card">
+          <div class="store-header">
+            <div class="store-copy">
+              <span>Store</span>
+              <strong>Neon Bank</strong>
+              <em id="storeSummary">Mock economy. No real payments.</em>
+            </div>
+            <button id="closeStoreButton" type="button">Back to Level</button>
+          </div>
+          <div class="store-wallet" aria-label="Wallet">
+            <span>Credits</span>
+            <strong id="creditCount">0</strong>
+          </div>
+          <div id="storeOffers" class="store-offers"></div>
+          <span id="storeStatus" class="store-status" aria-live="polite"></span>
+        </div>
+      </section>
+
+      <section id="sharePanel" class="share-panel" aria-label="Share card" aria-hidden="true">
+        <div class="share-card">
+          <div class="share-copy">
+            <span id="shareEyebrow">STRING</span>
+            <strong id="shareTitle">Proof Ready</strong>
+            <em id="shareSubtitle">Post the run.</em>
+          </div>
+          <div id="shareStats" class="share-stats"></div>
+          <textarea id="shareText" rows="5" readonly></textarea>
+          <div class="share-actions">
+            <button id="shareCopyButton" type="button">Copy</button>
+            <button id="nativeShareButton" type="button">Native Share</button>
+            <button id="shareImageButton" type="button">Save PNG</button>
+            <button id="closeShareButton" type="button">Close</button>
+          </div>
+          <span id="shareStatus" class="share-status" aria-live="polite"></span>
+        </div>
+      </section>
+
+      <section id="coachPanel" class="coach-panel" aria-label="Coach prompt" aria-hidden="true">
+        <p id="coachBody" class="coach-card">Build the beat.</p>
+      </section>
+
+      <section id="settingsPanel" class="settings-panel" aria-label="Settings panel" aria-hidden="true">
+        <div class="settings-card">
+          <div class="settings-copy">
+            <span>Settings</span>
+            <strong>Phone Feel</strong>
+          </div>
+          <label class="settings-row">
+            <span>Haptics <em id="hapticsStatus">Ready</em></span>
+            <div class="settings-control settings-control--haptics">
+              <input id="hapticsToggle" type="checkbox">
+              <button id="hapticsTestButton" type="button">Test</button>
+            </div>
+          </label>
+          <label class="settings-row">
+            <span>Full FX</span>
+            <input id="fullFxToggle" type="checkbox">
+          </label>
+          <label class="settings-row">
+            <span>Music DNA</span>
+            <select id="musicPaletteSelect"></select>
+          </label>
+          <label class="settings-row">
+            <span>Track Music</span>
+            <input id="musicAutoToggle" type="checkbox">
+          </label>
+          <div class="settings-row settings-readout">
+            <span>Auto FX</span>
+            <strong id="qualityStatus">Full</strong>
+          </div>
+          <button id="resetProgressButton" class="settings-danger" type="button">Reset Progress</button>
+          <button id="closeSettingsButton" type="button">Close</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="build.js"></script>
+    <script src="main.js?v=20260703-mobile33"></script>
+  </body>
+</html>
