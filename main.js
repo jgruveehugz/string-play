@@ -130,6 +130,7 @@
   var storeOffersEl = document.getElementById("storeOffers");
   var storeStatusEl = document.getElementById("storeStatus");
   var sharePanel = document.getElementById("sharePanel");
+  var shareCoverImg = document.getElementById("shareCoverImg");
   var shareEyebrowEl = document.getElementById("shareEyebrow");
   var shareTitleEl = document.getElementById("shareTitle");
   var shareSubtitleEl = document.getElementById("shareSubtitle");
@@ -9833,6 +9834,18 @@
       shareStatsEl.appendChild(item);
     });
 
+    // Album cover (share feature #2): render the run's generative cover art and show it at
+    // the top of the card, so the share reads as art first, not a wall of text. Best-effort;
+    // if the canvas export throws, hide it and keep the rest of the card intact.
+    if (shareCoverImg) {
+      try {
+        shareCoverImg.src = drawAlbumCover(lastSharePayload).toDataURL("image/png");
+        shareCoverImg.classList.add("is-shown");
+      } catch (coverError) {
+        shareCoverImg.classList.remove("is-shown");
+      }
+    }
+
     stopShareScoreCount();
     removeShareStars();
     if (isCampaignClearResult() && lastSharePayload.hero) {
@@ -10048,15 +10061,183 @@
   function saveShareImage() {
     if (!lastSharePayload) lastSharePayload = buildCurrentSharePayload();
     if (!lastSharePayload) return;
-    shareStatusEl.textContent = "Rendering PNG card.";
+    shareStatusEl.textContent = "Rendering cover.";
 
     try {
-      var imageCanvas = drawShareImage(lastSharePayload);
+      var imageCanvas = drawAlbumCover(lastSharePayload);
       var fileName = createShareImageName(lastSharePayload);
       shareOrDownloadImage(imageCanvas, fileName, lastSharePayload);
     } catch (error) {
       shareStatusEl.textContent = "PNG export failed.";
     }
+  }
+
+  function albumRgba(hex, alpha) {
+    var h = hex.replace("#", "");
+    return "rgba(" + parseInt(h.substring(0, 2), 16) + "," + parseInt(h.substring(2, 4), 16) + "," + parseInt(h.substring(4, 6), 16) + "," + alpha + ")";
+  }
+
+  function albumCoverColors(rng) {
+    // Seeded pick of three distinct neon accents from the six piece colors, so each run's
+    // cover leans into its own scheme (the seed folds in score + best chain + code + track).
+    var idx = [0, 1, 2, 3, 4, 5];
+    for (var i = idx.length - 1; i > 0; i -= 1) {
+      var j = Math.floor(rng() * (i + 1));
+      var tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
+    }
+    return [TYPES[idx[0]].color, TYPES[idx[1]].color, TYPES[idx[2]].color];
+  }
+
+  function drawAlbumCover(payload) {
+    // Share feature #2: a square, art-forward "album cover" for a run. A neon mandala seeded
+    // by the run (score + best chain + challenge code + track name) over three seeded accent
+    // colors, with the track name + score + stars. Distinct from drawShareImage (the 9:16
+    // stats proof) — this is cover art, the shareable/postable hero. 1080 square = post-native.
+    var size = 1080;
+    var canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext("2d");
+
+    var score = (payload.hero && payload.hero.score) ||
+      parseInt(String(findPayloadStat(payload, "Score") || "0").replace(/[^0-9]/g, ""), 10) || 0;
+    var stars = (payload.hero && payload.hero.stars) || 0;
+    var chain = parseInt(String(findPayloadStat(payload, "Best chain") || "0").replace(/[^0-9]/g, ""), 10) || 0;
+    var track = String(payload.title || GAME_TITLE).replace(/\s+(Run|Clear)$/i, "").toUpperCase();
+    var rng = createSeededRandom(hashString((payload.code || "") + ":" + track + ":" + score + ":" + chain));
+    var colors = albumCoverColors(rng);
+    var cx = size / 2;
+    var cy = size * 0.44;
+
+    // Background: a radial bloom in the lead accent over near-black, plus a faint skew grid.
+    var bg = ctx.createRadialGradient(cx, cy, 40, cx, cy, size * 0.82);
+    bg.addColorStop(0, albumRgba(colors[0], 0.12));
+    bg.addColorStop(0.5, "#070b14");
+    bg.addColorStop(1, "#04050a");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, size, size);
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = colors[0];
+    ctx.lineWidth = 1;
+    for (var gx = -size; gx <= size; gx += 62) {
+      ctx.beginPath();
+      ctx.moveTo(gx, 0);
+      ctx.lineTo(gx + size * 0.3, size);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Radial rays fanning out of the center bloom.
+    var rays = 12 + Math.floor(rng() * 5) * 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rng() * Math.PI);
+    for (var r = 0; r < rays; r += 1) {
+      ctx.save();
+      ctx.rotate((r / rays) * Math.PI * 2);
+      ctx.globalAlpha = 0.08 + rng() * 0.12;
+      ctx.strokeStyle = colors[r % colors.length];
+      ctx.lineWidth = 2 + rng() * 3;
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = colors[r % colors.length];
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.05);
+      ctx.lineTo(0, size * (0.3 + rng() * 0.18));
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Concentric rings, each carrying rotating piece glyphs — more rings with more stars/chain.
+    var ringCount = 3 + Math.max(0, Math.min(3, stars)) + (chain > 6 ? 1 : 0);
+    ctx.save();
+    ctx.translate(cx, cy);
+    var baseRot = rng() * Math.PI * 2;
+    for (var ring = 0; ring < ringCount; ring += 1) {
+      var radius = size * (0.075 + ring * 0.06);
+      var col = colors[ring % colors.length];
+      ctx.save();
+      ctx.globalAlpha = Math.max(0.12, 0.5 - ring * 0.05);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 28;
+      ctx.shadowColor = col;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      var count = 3 + ring * 2;
+      var rot = baseRot + ring * 0.5;
+      for (var k = 0; k < count; k += 1) {
+        var ga = rot + (k / count) * Math.PI * 2;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.3, 0.9 - ring * 0.08);
+        drawShareGlyph(ctx, Math.cos(ga) * radius, Math.sin(ga) * radius, 14 + ring * 2 + rng() * 8, (ring + k) % TYPES.length);
+        ctx.restore();
+      }
+    }
+    ctx.save();
+    ctx.globalAlpha = 0.96;
+    drawShareGlyph(ctx, 0, 0, 44 + Math.min(28, chain * 3), 0);
+    ctx.restore();
+    ctx.restore();
+
+    // Bottom scrim so the type stays legible over the art.
+    var scrim = ctx.createLinearGradient(0, size * 0.6, 0, size);
+    scrim.addColorStop(0, "rgba(4,5,10,0)");
+    scrim.addColorStop(0.55, "rgba(4,5,10,0.85)");
+    scrim.addColorStop(1, "rgba(4,5,10,0.98)");
+    ctx.fillStyle = scrim;
+    ctx.fillRect(0, size * 0.6, size, size * 0.4);
+
+    // Wordmark + side label.
+    ctx.save();
+    ctx.textBaseline = "alphabetic";
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = "#eff9ff";
+    ctx.font = "900 30px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("S T R I N G", 64, 80);
+    ctx.textAlign = "right";
+    ctx.fillStyle = albumRgba(colors[0], 0.92);
+    ctx.fillText((payload.eyebrow || "SIDE A").toUpperCase(), size - 64, 80);
+    ctx.restore();
+
+    // Track name (big).
+    ctx.save();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowBlur = 26;
+    ctx.shadowColor = albumRgba(colors[0], 0.85);
+    var titleFont = track.length > 13 ? 62 : (track.length > 9 ? 80 : 98);
+    ctx.font = "950 " + titleFont + "px Inter, system-ui, sans-serif";
+    fillWrappedText(ctx, track, 64, size - 150, size - 128, titleFont, 2);
+    ctx.restore();
+
+    // Score + stars.
+    ctx.save();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = albumRgba(colors[1], 1);
+    ctx.font = "900 42px Inter, system-ui, sans-serif";
+    var starStr = "";
+    for (var s = 0; s < 3; s += 1) starStr += s < stars ? "★" : "☆";
+    ctx.fillText(formatNumber(score) + "   " + starStr, 64, size - 64);
+    ctx.restore();
+
+    // Challenge code.
+    ctx.save();
+    ctx.textAlign = "right";
+    ctx.textBaseline = "alphabetic";
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = "#90a4af";
+    ctx.font = "800 26px Inter, system-ui, sans-serif";
+    ctx.fillText(payload.code || findPayloadStat(payload, "Code") || GAME_CODE_PREFIX, size - 64, size - 64);
+    ctx.restore();
+
+    return canvas;
   }
 
   function drawShareImage(payload) {

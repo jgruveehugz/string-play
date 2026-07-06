@@ -2109,6 +2109,22 @@ button:active {
     inset 0 0 28px rgba(70, 244, 255, 0.05);
 }
 
+.share-cover {
+  display: none;
+  width: min(300px, calc(100vw - 88px));
+  aspect-ratio: 1 / 1;
+  justify-self: center;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow:
+    0 12px 44px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(70, 244, 255, 0.2);
+}
+
+.share-cover.is-shown {
+  display: block;
+}
+
 .share-copy {
   display: grid;
   gap: 4px;
