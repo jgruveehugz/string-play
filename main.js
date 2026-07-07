@@ -1369,9 +1369,9 @@
         { kind: "collect", type: 5, target: 10 },
         { kind: "chain", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
-      coach: "Atom pieces are violet. Stack one clean chain.",
-      pressure: "Cascades echo. Let the board work for you."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", producers: [{ row: 4, col: 4 }] },
+      coach: "The center Producer feeds you a violet Atom every move. Chain them.",
+      pressure: "The Producer keeps making Atoms. Cascade them into chains."
     },
     {
       number: 10,
@@ -1555,6 +1555,13 @@
   var signalNodeList = [];
   var signalNodeMap = {};
   var signalPacketCount = 0;
+  // Producers (Sector-1 slice, increment 2): a fixed spawner node that occupies
+  // a masked cell (holds no piece, like a Signal Node) and, once per player
+  // move, "emits" a goal-colored piece by converting one safe orthogonal
+  // neighbor to the goal color. Keeps the board changing while you play (RM #7).
+  var producerList = [];
+  var producerMap = {};
+  var producerEmitPending = false;
   // Spectrum Shields: shield cells that need adjacent matches of specific
   // colors. The bracket silhouette stays; a colored arc ring names the
   // colors and extinguishes segment by segment.
@@ -2041,6 +2048,9 @@
       gateClosedMoves: layout.gateClosedMoves || 2,
       gateOffset: layout.gateOffset || 0,
       signals: (layout.signals || []).map(function (cell) {
+        return { row: cell.row, col: cell.col };
+      }),
+      producers: (layout.producers || []).map(function (cell) {
         return { row: cell.row, col: cell.col };
       }),
       spectrum: (layout.spectrum || []).map(function (entry) {
@@ -2587,6 +2597,7 @@
   }
 
   function createPressureCopy(number, difficulty, layout) {
+    if (layout && layout.producers && layout.producers.length > 0) return "The Producer feeds the goal color every move. Keep clearing beside it.";
     if (layout && layout.gates && layout.gates.length > 0) return "Gates toggle per move. Sequence matches for the open phase.";
     if (layout && layout.signals && layout.signals.length > 0) return "Nodes only hear adjacent matches. Plan color flow into their pockets.";
     if (layout && layout.wires && layout.wires.length > 0) return "Pick the right entry special. The wire spends the rest on the beat.";
@@ -2719,6 +2730,7 @@
     applySignalNodes(level && level.layout ? level.layout : null);
     applyBeatGates(level && level.layout ? level.layout : null);
     applySpectrumShields(level && level.layout ? level.layout : null);
+    applyProducers(level && level.layout ? level.layout : null);
     resetPhaseAndFuseState();
   }
 
@@ -2747,6 +2759,89 @@
       // hole like any other mask cut, so columns below never starve.
       boardMask[cell.row][cell.col] = false;
     });
+  }
+
+  function applyProducers(layout) {
+    producerMap = {};
+    producerList = [];
+    (layout && layout.producers ? layout.producers : []).forEach(function (cell) {
+      // Feel lock: producers never occupy the top two rows (same as gates/nodes).
+      if (cell.row < 2 || cell.row >= GRID || cell.col < 0 || cell.col >= GRID) return;
+      if (!isCellActive(cell.row, cell.col)) return;
+      var key = cell.row + ":" + cell.col;
+      if (producerMap[key]) return;
+      producerMap[key] = true;
+      producerList.push({ row: cell.row, col: cell.col, emitIndex: 0, flashAt: 0, beamTo: null });
+      // Static masked cell: it never holds a piece; it emits into its neighbors.
+      boardMask[cell.row][cell.col] = false;
+    });
+  }
+
+  function producerEmitType() {
+    var goals = currentLevel && currentLevel.goals ? currentLevel.goals : [];
+    for (var i = 0; i < goals.length; i += 1) {
+      if (goals[i].kind === "collect" && typeof goals[i].type === "number") return goals[i].type;
+    }
+    return currentLevel && currentLevel.modifiers ? currentLevel.modifiers.colorBias : 0;
+  }
+
+  function producerWouldRun(row, col, type) {
+    // Would setting (row,col) to `type` complete a 3+ run at that cell?
+    var count = 1;
+    for (var c = col - 1; c >= 0 && board[row] && board[row][c] && board[row][c].type === type; c -= 1) count += 1;
+    for (var c2 = col + 1; c2 < GRID && board[row] && board[row][c2] && board[row][c2].type === type; c2 += 1) count += 1;
+    if (count >= 3) return true;
+    count = 1;
+    for (var r = row - 1; r >= 0 && board[r] && board[r][col] && board[r][col].type === type; r -= 1) count += 1;
+    for (var r2 = row + 1; r2 < GRID && board[r2] && board[r2][col] && board[r2][col].type === type; r2 += 1) count += 1;
+    return count >= 3;
+  }
+
+  function pickProducerTarget(producer, type) {
+    // Rotate through the 4 neighbors; pick the first that holds a plain gem of
+    // another color whose conversion won't hand the player a free match.
+    var offsets = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (var step = 0; step < 4; step += 1) {
+      var idx = (producer.emitIndex + step) % 4;
+      var row = producer.row + offsets[idx][0];
+      var col = producer.col + offsets[idx][1];
+      if (row < 0 || row >= GRID || col < 0 || col >= GRID) continue;
+      if (!isCellActive(row, col)) continue;
+      var gem = board[row] && board[row][col];
+      if (!gem || gem.special || gem.locked) continue;
+      if (gem.type === type) continue;
+      if (producerWouldRun(row, col, type)) continue;
+      producer.emitIndex = (idx + 1) % 4;
+      return { row: row, col: col };
+    }
+    return null;
+  }
+
+  function emitProducers() {
+    if (producerList.length === 0) return;
+    var type = producerEmitType();
+    var now = performance.now();
+    var emitted = false;
+    producerList.forEach(function (producer) {
+      var target = pickProducerTarget(producer, type);
+      if (!target) return;
+      var gem = board[target.row][target.col];
+      if (!gem) return;
+      gem.type = type;
+      gem.pop = Math.max(gem.pop, 0.55);
+      gem.birth = Math.max(gem.birth || 0, 0.4);
+      gem.spin = (gem.spin || 0) + 0.4;
+      producer.flashAt = now;
+      producer.beamTo = { row: target.row, col: target.col, at: now };
+      var tx = view.boardX + target.col * view.cell + view.cell / 2;
+      var ty = view.boardY + target.row * view.cell + view.cell / 2;
+      addShockwave(tx, ty, TYPES[type].color, view.cell * 0.08, view.cell * 0.5, 0.2, 5);
+      emitted = true;
+    });
+    if (emitted) {
+      setTargets();
+      if (typeof playSpectrumSegment === "function") playSpectrumSegment(type);
+    }
   }
 
   function applySpectrumShields(layout) {
@@ -5152,6 +5247,7 @@
         // any combo piece sitting in a closing gate cell and eat the fusion.
         triggerSpecialCombo(specialCombo);
         advanceBeatGates();
+        producerEmitPending = true;
         updateHud();
         return;
       }
@@ -5175,6 +5271,7 @@
       // longer sees the run and the move is burned with nothing cleared.
       processMatches(1, [a, b]);
       advanceBeatGates();
+      producerEmitPending = true;
       updateHud();
     });
   }
@@ -5942,6 +6039,12 @@
   function resolveLevelOutcome() {
     if (levelState !== "playing") return;
     if (isPulseMode()) return;
+
+    // Producers emit once per resolved player move, on the now-stable board.
+    if (producerEmitPending) {
+      producerEmitPending = false;
+      emitProducers();
+    }
 
     if (areGoalsComplete()) {
       completeLevel();
@@ -12045,6 +12148,7 @@
     drawFusePulses(time);
     drawBeatGates(time);
     drawSignalNodes(time);
+    drawProducers(time);
     drawSwapHint(time);
     drawPendingSwap(time);
     drawGuidedMove(time);
@@ -12617,6 +12721,88 @@
       ctx.beginPath();
       ctx.arc(cx, cy - view.cell * 0.14, ringRadius, 0, Math.PI * 2);
       ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawProducers(time) {
+    if (producerList.length === 0) return;
+    var intensity = Math.max(0.4, fxScale());
+    var now = performance.now();
+    var type = producerEmitType();
+    var color = TYPES[type] ? TYPES[type].color : "#46f4ff";
+    ctx.save();
+    for (var i = 0; i < producerList.length; i += 1) {
+      var p = producerList[i];
+      var x = view.boardX + p.col * view.cell;
+      var y = view.boardY + p.row * view.cell;
+      var cx = x + view.cell / 2;
+      var cy = y + view.cell / 2;
+      var flash = p.flashAt ? Math.max(0, 1 - (now - p.flashAt) / 360) : 0;
+      var pulse = 0.5 + Math.sin(time * 3 + p.row * 0.7 + p.col * 0.5) * 0.25;
+
+      // Emit beam to the neighbor it just fed (fades fast).
+      if (p.beamTo) {
+        var beam = Math.max(0, 1 - (now - p.beamTo.at) / 300);
+        if (beam > 0) {
+          var bx = view.boardX + p.beamTo.col * view.cell + view.cell / 2;
+          var by = view.boardY + p.beamTo.row * view.cell + view.cell / 2;
+          ctx.globalAlpha = beam * 0.85;
+          ctx.shadowBlur = glowBlur(10);
+          ctx.shadowColor = color;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = Math.max(2, view.cell * 0.05) * beam;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+        } else {
+          p.beamTo = null;
+        }
+      }
+
+      // Dark hex housing.
+      var r = view.cell * 0.3 * (1 + flash * 0.14);
+      ctx.beginPath();
+      for (var h = 0; h < 6; h += 1) {
+        var ha = -Math.PI / 2 + (Math.PI * 2 * h) / 6;
+        var hx = cx + Math.cos(ha) * r;
+        var hy = cy + Math.sin(ha) * r;
+        if (h === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+      }
+      ctx.closePath();
+      ctx.globalAlpha = 0.85;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(8, 14, 26, 0.82)";
+      ctx.fill();
+
+      // Glowing hex frame in the goal color (strokes the same path).
+      ctx.globalAlpha = Math.min(1, 0.55 + pulse * 0.3 + flash * 0.4) * intensity;
+      ctx.shadowBlur = glowBlur(12 + pulse * 8 + flash * 16);
+      ctx.shadowColor = color;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, view.cell * 0.05);
+      ctx.stroke();
+
+      // Rotating emitter ticks.
+      ctx.globalAlpha = (0.5 + pulse * 0.4) * intensity;
+      ctx.lineWidth = Math.max(1.5, view.cell * 0.03);
+      var spin = time * 1.2;
+      for (var t = 0; t < 3; t += 1) {
+        var ta = spin + (Math.PI * 2 * t) / 3;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ta) * r * 0.5, cy + Math.sin(ta) * r * 0.5);
+        ctx.lineTo(cx + Math.cos(ta) * r * 0.92, cy + Math.sin(ta) * r * 0.92);
+        ctx.stroke();
+      }
+
+      // Core dot: the goal piece it emits.
+      ctx.globalAlpha = Math.min(1, 0.7 + flash * 0.3) * intensity;
+      ctx.shadowBlur = glowBlur(8 + flash * 12);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cx, cy, view.cell * (0.1 + flash * 0.05), 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
