@@ -5220,7 +5220,7 @@
     });
     var chainedHits = collectSpecialHitsFromCells(cellsFromMap(clearMap), exclude);
     specialHits = specialHits.concat(chainedHits);
-    expandSpecialClears(chainedHits, clearMap, 2);
+    expandSpecialClears(chainedHits, clearMap, 3);
 
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
@@ -5237,7 +5237,7 @@
     levelStats.fusions += 1;
     recordMatchProgress(clearCells, 2, specialHits, null);
     score += comboScore;
-    flash = Math.min(1, flash + 0.58);
+    flash = Math.min(1, flash + 0.72);
     energy = Math.min(1, energy + 0.36 + clearCells.length * 0.012);
     drive = Math.min(1, drive + 0.22 + clearCells.length * 0.012 + specialHits.length * 0.055);
     refillRushPulse(clearCells, 2, specialHits, wasOverdrive);
@@ -5253,7 +5253,7 @@
     burstMatches(clearCells, 2);
     addMatchFloaters(clearCells, 2, comboScore, multiplier, specialHits.length + 2, null);
     playSpecialCombo(comboData, clearCells.length);
-    bumpShake(0.34);
+    bumpShake(0.48);
     vibrate("special");
 
     clearCells.forEach(function (cell) {
@@ -5415,7 +5415,7 @@
     if (chain >= 3) recordDailyMissionProgress("chain", 1);
     if (!wasOverdrive && drive >= 0.72 && !rushTriggeredOverdrive) triggerOverdrive();
     announceCompletedGoals();
-    bumpShake(0.07 + chain * 0.03 + specialHits.length * 0.08);
+    bumpShake(0.1 + chain * 0.04 + specialHits.length * 0.14);
     vibrate(specialHits.length > 0 || specialSpawn ? "special" : "match");
 
     burstMatches(burstCells, chain);
@@ -7319,8 +7319,8 @@
     addSpecialBeam(hit.special, cell.row, cell.col, TYPES[gem.type].color);
     addSpecialDetonation(hit.special, cell.row, cell.col, TYPES[gem.type].color, chain);
     playSpecialActivate(hit.special, gem.type, chain);
-    flash = Math.min(1, flash + (hit.special === "nova" ? 0.42 : 0.16));
-    bumpShake(hit.special === "nova" ? 0.3 : 0.14);
+    flash = Math.min(1, flash + (hit.special === "nova" ? 0.56 : 0.24));
+    bumpShake(hit.special === "nova" ? 0.44 : 0.22);
     if (hit.special === "nova") {
       // Solo nova is the biggest non-fusion beat: longer stop than the old
       // 3x3 pop (TIMING.hitStopNova), still under hitStopFusion.
@@ -7462,7 +7462,7 @@
     var clearMap = {};
     markCell(clearMap, gem.row, gem.col);
     var hit = { cell: { row: gem.row, col: gem.col }, special: gem.special, type: gem.type };
-    expandSpecialClears([hit], clearMap, 2);
+    expandSpecialClears([hit], clearMap, 3);
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
     var multiplier = wasOverdrive ? 2 : 1;
@@ -7536,7 +7536,7 @@
     var clearMap = {};
     markCell(clearMap, arm.row, arm.col);
     var hit = { cell: { row: arm.row, col: arm.col }, special: gem.special, type: gem.type };
-    expandSpecialClears([hit], clearMap, 2);
+    expandSpecialClears([hit], clearMap, 3);
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
     var multiplier = wasOverdrive ? 2 : 1;
@@ -11809,7 +11809,7 @@
       overdrivePulse = Math.max(0, overdrivePulse - dt * 2.6);
       overdriveExitPulse = Math.max(0, overdriveExitPulse - dt * 2.4);
       flash = Math.max(0, flash - dt * 1.8);
-      screenShake = Math.max(0, screenShake - dt * 2.7);
+      screenShake = Math.max(0, screenShake - dt * 2.35);
       return;
     }
 
@@ -11828,7 +11828,7 @@
     overdrivePulse = Math.max(0, overdrivePulse - dt * 2.6);
     flash = Math.max(0, flash - dt * 1.8);
     novaWarpPulse = Math.max(0, novaWarpPulse - dt * 2.2);
-    screenShake = Math.max(0, screenShake - dt * 2.7);
+    screenShake = Math.max(0, screenShake - dt * 2.35);
     updateArmedSpecial();
     updateSwapHint(dt);
     updateInputWatchdog(dt);
