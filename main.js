@@ -1433,17 +1433,16 @@
     },
     {
       number: 14,
-      title: "Relay Weave",
+      title: "Creep Debut",
       moves: 25,
-      scoreTarget: 5800,
+      scoreTarget: 5000,
       goals: [
-        { kind: "score", target: 5800 },
-        { kind: "collect", type: 2, target: 12 },
-        { kind: "chain", target: 2 }
+        { kind: "score", target: 5000 },
+        { kind: "spread", target: 5 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
-      coach: "Clear goals early and protect your move bank.",
-      pressure: "Saved moves become finale blasts."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", spreaders: [{ row: 3, col: 2 }, { row: 5, col: 5 }] },
+      coach: "The green Creep spreads to a new cell every few moves. Match an infected cell to clear it.",
+      pressure: "Clear next to the Creep to contain it. Match it to remove it."
     },
     {
       number: 15,
@@ -1562,6 +1561,16 @@
   var producerList = [];
   var producerMap = {};
   var producerEmitPending = false;
+  // Spreaders (Sector-1 slice, increment 3): a creeping infection that overlays
+  // a gem cell and spreads to an orthogonal neighbor every few moves UNLESS you
+  // cleared a match next to it (containment). Match an infected cell to clear it.
+  // Real pressure (RM); capped so it can never fill the board / softlock.
+  var spreaderList = [];
+  var spreaderMap = {};
+  var spreaderMoveCount = 0;
+  var SPREAD_EVERY = 3; // moves between spread ticks
+  var SPREAD_CAP = 9; // hard ceiling on live infections (softlock guard)
+  var SPREAD_COLOR = "#c8ff2e"; // acid lime, distinct from Quark green #8cff6b
   // Spectrum Shields: shield cells that need adjacent matches of specific
   // colors. The bracket silhouette stays; a colored arc ring names the
   // colors and extinguishes segment by segment.
@@ -2051,6 +2060,9 @@
         return { row: cell.row, col: cell.col };
       }),
       producers: (layout.producers || []).map(function (cell) {
+        return { row: cell.row, col: cell.col };
+      }),
+      spreaders: (layout.spreaders || []).map(function (cell) {
         return { row: cell.row, col: cell.col };
       }),
       spectrum: (layout.spectrum || []).map(function (entry) {
@@ -2598,6 +2610,7 @@
 
   function createPressureCopy(number, difficulty, layout) {
     if (layout && layout.producers && layout.producers.length > 0) return "The Producer feeds the goal color every move. Keep clearing beside it.";
+    if (layout && layout.spreaders && layout.spreaders.length > 0) return "The Creep spreads every few moves. Match it to clear it; clear beside it to contain it.";
     if (layout && layout.gates && layout.gates.length > 0) return "Gates toggle per move. Sequence matches for the open phase.";
     if (layout && layout.signals && layout.signals.length > 0) return "Nodes only hear adjacent matches. Plan color flow into their pockets.";
     if (layout && layout.wires && layout.wires.length > 0) return "Pick the right entry special. The wire spends the rest on the beat.";
@@ -2731,6 +2744,7 @@
     applyBeatGates(level && level.layout ? level.layout : null);
     applySpectrumShields(level && level.layout ? level.layout : null);
     applyProducers(level && level.layout ? level.layout : null);
+    applySpreaders(level && level.layout ? level.layout : null);
     resetPhaseAndFuseState();
   }
 
@@ -2842,6 +2856,120 @@
       setTargets();
       if (typeof playSpectrumSegment === "function") playSpectrumSegment(type);
     }
+  }
+
+  function applySpreaders(layout) {
+    spreaderMap = {};
+    spreaderList = [];
+    spreaderMoveCount = 0;
+    (layout && layout.spreaders ? layout.spreaders : []).forEach(function (cell) {
+      // Feel lock: infections never seed in the top two rows.
+      if (cell.row < 2 || cell.row >= GRID || cell.col < 0 || cell.col >= GRID) return;
+      if (!isCellActive(cell.row, cell.col)) return;
+      var key = cell.row + ":" + cell.col;
+      if (spreaderMap[key]) return;
+      spreaderMap[key] = true;
+      // Infected cells keep their gem (you clear the infection by matching it).
+      spreaderList.push({ row: cell.row, col: cell.col, born: 0, spawnAt: 0, contained: false });
+    });
+  }
+
+  function pickSpreadTarget(sp) {
+    // First eligible orthogonal neighbor that holds a plain gem and isn't
+    // already infected; start offset rotates so the creep isn't always downward.
+    var offsets = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+    var start = spreaderMoveCount % 4;
+    for (var i = 0; i < 4; i += 1) {
+      var o = offsets[(start + i) % 4];
+      var r = sp.row + o[0];
+      var c = sp.col + o[1];
+      if (r < 0 || r >= GRID || c < 0 || c >= GRID) continue;
+      if (!isCellActive(r, c)) continue;
+      if (spreaderMap[r + ":" + c]) continue;
+      var gem = board[r] && board[r][c];
+      if (!gem || gem.special || gem.locked) continue;
+      return { row: r, col: c };
+    }
+    return null;
+  }
+
+  function pickReseedCell() {
+    // A plain gem cell (not the top two rows, not already infected/special).
+    var start = spreaderMoveCount * 7 + 3;
+    for (var k = 0; k < GRID * GRID; k += 1) {
+      var idx = (start + k) % (GRID * GRID);
+      var r = Math.floor(idx / GRID);
+      var c = idx % GRID;
+      if (r < 2) continue;
+      if (!isCellActive(r, c)) continue;
+      if (spreaderMap[r + ":" + c]) continue;
+      var gem = board[r] && board[r][c];
+      if (!gem || gem.special || gem.locked) continue;
+      return { row: r, col: c };
+    }
+    return null;
+  }
+
+  function stepSpreaders() {
+    if (spreaderList.length === 0) {
+      // Keep the creep alive while its clear-goal is still open, so the level
+      // is always completable even if the player clears every infection early.
+      var openGoal = (currentLevel && currentLevel.goals ? currentLevel.goals : []).find(function (g) {
+        return g.kind === "spread";
+      });
+      if (openGoal && levelStats.spreadCleared < openGoal.target) {
+        var seed = pickReseedCell();
+        if (seed) {
+          spreaderMap[seed.row + ":" + seed.col] = true;
+          spreaderList.push({ row: seed.row, col: seed.col, born: performance.now(), spawnAt: performance.now(), contained: false });
+        }
+      }
+      return;
+    }
+    spreaderMoveCount += 1;
+    if (spreaderMoveCount % SPREAD_EVERY === 0 && spreaderList.length < SPREAD_CAP) {
+      var newborns = [];
+      spreaderList.forEach(function (sp) {
+        if (sp.contained) return; // a clear next to it held it back this cycle
+        if (spreaderList.length + newborns.length >= SPREAD_CAP) return;
+        var target = pickSpreadTarget(sp);
+        if (!target) return;
+        spreaderMap[target.row + ":" + target.col] = true;
+        newborns.push(target);
+        var x = view.boardX + target.col * view.cell + view.cell / 2;
+        var y = view.boardY + target.row * view.cell + view.cell / 2;
+        addShockwave(x, y, SPREAD_COLOR, view.cell * 0.06, view.cell * 0.42, 0.18, 4);
+      });
+      newborns.forEach(function (t) {
+        spreaderList.push({ row: t.row, col: t.col, born: performance.now(), spawnAt: performance.now(), contained: false });
+      });
+    }
+    // Reset containment for the next cycle.
+    spreaderList.forEach(function (sp) { sp.contained = false; });
+  }
+
+  function clearSpreaders(cells) {
+    if (spreaderList.length === 0 || cells.length === 0) return;
+    cells.forEach(function (cell) {
+      var key = cell.row + ":" + cell.col;
+      if (!spreaderMap[key]) return;
+      delete spreaderMap[key];
+      spreaderList = spreaderList.filter(function (s) {
+        return !(s.row === cell.row && s.col === cell.col);
+      });
+      levelStats.spreadCleared += 1;
+      var x = view.boardX + cell.col * view.cell + view.cell / 2;
+      var y = view.boardY + cell.row * view.cell + view.cell / 2;
+      addShockwave(x, y, SPREAD_COLOR, view.cell * 0.12, view.cell * 0.72, 0.24, 6);
+    });
+    // Containment: any infection orthogonally next to a cleared cell is held
+    // back on the next spread tick (clearing beside it keeps it in check).
+    spreaderList.forEach(function (sp) {
+      var adjacent = cells.some(function (cell) {
+        return Math.abs(cell.row - sp.row) + Math.abs(cell.col - sp.col) === 1;
+      });
+      if (adjacent) sp.contained = true;
+    });
   }
 
   function applySpectrumShields(layout) {
@@ -2956,6 +3084,7 @@
       pulseReleases: 0,
       fluxCleared: 0,
       signalCollected: 0,
+      spreadCleared: 0,
       movesMade: 0,
       biggestClear: 0,
       bestMatchScore: 0,
@@ -5766,6 +5895,7 @@
     emitSignalPackets(cells);
     hitSpectrumShields(cells);
     damageFluxTiles(cells, specialHits.length > 0 ? 2 : 1);
+    clearSpreaders(cells);
   }
 
   function emitSignalPackets(cells) {
@@ -6016,6 +6146,7 @@
     if (goal.kind === "score") return "#ffd166";
     if (goal.kind === "flux") return "#ff4fd8";
     if (goal.kind === "signal") return "#46f4ff";
+    if (goal.kind === "spread") return SPREAD_COLOR;
     if (goal.kind === "chain") return "#8cff6b";
     if (goal.kind === "overdrive") return "#ffd166";
     return "#46f4ff";
@@ -6040,10 +6171,12 @@
     if (levelState !== "playing") return;
     if (isPulseMode()) return;
 
-    // Producers emit once per resolved player move, on the now-stable board.
+    // Producers emit and Spreaders creep once per resolved player move, on the
+    // now-stable board.
     if (producerEmitPending) {
       producerEmitPending = false;
       emitProducers();
+      stepSpreaders();
     }
 
     if (areGoalsComplete()) {
@@ -6070,6 +6203,7 @@
     if (goal.kind === "collect") return levelStats.collected[goal.type] || 0;
     if (goal.kind === "flux") return levelStats.fluxCleared;
     if (goal.kind === "signal") return levelStats.signalCollected;
+    if (goal.kind === "spread") return levelStats.spreadCleared;
     if (goal.kind === "specials") return levelStats.specialsCreated;
     if (goal.kind === "fusion") return levelStats.fusions;
     if (goal.kind === "chain") return levelStats.maxChain;
@@ -8150,6 +8284,7 @@
       if (goal.kind === "collect") return "Clear " + TYPES[goal.type].name + " " + value + "/" + goal.target;
       if (goal.kind === "flux") return "Break Shields " + value + "/" + goal.target;
       if (goal.kind === "signal") return "Catch Signals " + value + "/" + goal.target;
+      if (goal.kind === "spread") return "Clear Creep " + value + "/" + goal.target;
       if (goal.kind === "specials") return "Make Specials " + value + "/" + goal.target;
       if (goal.kind === "fusion") return "Swap Specials " + value + "/" + goal.target;
       if (goal.kind === "chain") return "Build Cascade " + value + "/" + goal.target;
@@ -8261,6 +8396,7 @@
     if (goal.kind === "collect") return TYPES[goal.type].name;
     if (goal.kind === "flux") return "Shield";
     if (goal.kind === "signal") return "Signal";
+    if (goal.kind === "spread") return "Creep";
     if (goal.kind === "specials") return "Special";
     if (goal.kind === "fusion") return "Swap";
     if (goal.kind === "chain") return "Chain";
@@ -8290,6 +8426,7 @@
     if (goal.kind === "collect") return "Clear " + TYPES[goal.type].name;
     if (goal.kind === "flux") return "Break Shields";
     if (goal.kind === "signal") return "Catch Signals";
+    if (goal.kind === "spread") return "Clear Creep";
     if (goal.kind === "specials") return "Make Specials";
     if (goal.kind === "fusion") return "Swap 2 Specials";
     if (goal.kind === "chain") return "Build Cascade";
@@ -8305,6 +8442,7 @@
     if (!firstOpen) return "Now: cascade";
     if (firstOpen.kind === "flux") return "Now: break";
     if (firstOpen.kind === "signal") return "Now: feed nodes";
+    if (firstOpen.kind === "spread") return "Now: clear creep";
     if (firstOpen.kind === "collect") return "Now: clear " + TYPES[firstOpen.type].name;
     if (firstOpen.kind === "specials") return "Now: make 4+";
     if (firstOpen.kind === "fusion") return "Now: swap 2";
@@ -8362,6 +8500,7 @@
     if (firstOpen.kind === "collect") return "How: match " + getPieceGuidePhrase(firstOpen.type) + ".";
     if (firstOpen.kind === "flux") return "How: match the pieces on Shield walls to smash them.";
     if (firstOpen.kind === "signal") return "How: match beside the antenna nodes.";
+    if (firstOpen.kind === "spread") return "How: match the infected cells to clear the creep.";
     if (firstOpen.kind === "specials") return "How: match 4+ for beams or novas.";
     if (firstOpen.kind === "fusion") return "How: swap two specials together.";
     if (firstOpen.kind === "chain") return "How: one swap triggers cascades.";
@@ -8387,6 +8526,7 @@
     if (goal.kind === "collect") return 2;
     if (goal.kind === "flux") return 3;
     if (goal.kind === "signal") return 3;
+    if (goal.kind === "spread") return 3;
     if (goal.kind === "specials") return 4;
     if (goal.kind === "chain") return 5;
     if (goal.kind === "overdrive") return 6;
@@ -8432,6 +8572,15 @@
         detail: "Match beside the antenna nodes. Every packet rides the beat.",
         color: "#46f4ff",
         fill: "rgba(70,244,255,0.08)"
+      };
+    }
+    if (goal.kind === "spread") {
+      return {
+        kind: "spread",
+        title: "Clear " + goal.target + " Creep",
+        detail: "Match the infected cells. Clear beside the creep to keep it from spreading.",
+        color: SPREAD_COLOR,
+        fill: "rgba(200,255,46,0.08)"
       };
     }
     if (goal.kind === "specials") {
@@ -8736,6 +8885,7 @@
     var firstOpen = getPrimaryOpenGoal();
     if (!firstOpen) return "Finish cascade";
     if (firstOpen.kind === "flux") return "Break shields";
+    if (firstOpen.kind === "spread") return "Clear creep";
     if (firstOpen.kind === "signal") return "Feed the nodes";
     if (firstOpen.kind === "collect") return "Clear " + TYPES[firstOpen.type].name;
     if (firstOpen.kind === "specials") return "Make specials";
@@ -12149,6 +12299,7 @@
     drawBeatGates(time);
     drawSignalNodes(time);
     drawProducers(time);
+    drawSpreaders(time);
     drawSwapHint(time);
     drawPendingSwap(time);
     drawGuidedMove(time);
@@ -12803,6 +12954,59 @@
       ctx.beginPath();
       ctx.arc(cx, cy, view.cell * (0.1 + flash * 0.05), 0, Math.PI * 2);
       ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawSpreaders(time) {
+    if (spreaderList.length === 0) return;
+    var intensity = Math.max(0.4, fxScale());
+    var now = performance.now();
+    ctx.save();
+    for (var i = 0; i < spreaderList.length; i += 1) {
+      var sp = spreaderList[i];
+      var x = view.boardX + sp.col * view.cell;
+      var y = view.boardY + sp.row * view.cell;
+      var cx = x + view.cell / 2;
+      var cy = y + view.cell / 2;
+      var spawn = sp.spawnAt ? Math.max(0, 1 - (now - sp.spawnAt) / 420) : 0;
+      var pulse = 0.5 + Math.sin(time * 4 + sp.row * 0.9 + sp.col * 0.7) * 0.25;
+      var pad = view.cell * 0.08;
+
+      // Toxic veil over the gem (the gem still reads through it, stays matchable).
+      ctx.globalAlpha = (0.2 + pulse * 0.14 + spawn * 0.25) * intensity;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(200, 255, 46, 0.16)";
+      ctx.fillRect(x + pad, y + pad, view.cell - pad * 2, view.cell - pad * 2);
+
+      // Creep border.
+      ctx.globalAlpha = Math.min(0.9, 0.4 + pulse * 0.3 + spawn * 0.4) * intensity;
+      ctx.shadowBlur = glowBlur(8 + pulse * 6 + spawn * 12);
+      ctx.shadowColor = SPREAD_COLOR;
+      ctx.strokeStyle = SPREAD_COLOR;
+      ctx.lineWidth = Math.max(1.5, view.cell * 0.03);
+      ctx.strokeRect(x + pad, y + pad, view.cell - pad * 2, view.cell - pad * 2);
+
+      // Tendrils reaching toward the edges (the creep toward neighbors).
+      ctx.globalAlpha = (0.4 + pulse * 0.35) * intensity;
+      ctx.lineWidth = Math.max(1, view.cell * 0.02);
+      var reach = view.cell * (0.34 + pulse * 0.06);
+      ctx.beginPath();
+      for (var t = 0; t < 4; t += 1) {
+        var a = (Math.PI / 2) * t + Math.sin(time * 2 + t + sp.row) * 0.2;
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * reach, cy + Math.sin(a) * reach);
+      }
+      ctx.stroke();
+
+      // Contained: a small inner ring when a clear held it back this cycle.
+      if (sp.contained) {
+        ctx.globalAlpha = 0.6 * intensity;
+        ctx.shadowBlur = glowBlur(6);
+        ctx.beginPath();
+        ctx.arc(cx, cy, view.cell * 0.12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
     ctx.restore();
   }
@@ -17412,6 +17616,7 @@
         if (goal.kind === "collect") levelStats.collected[goal.type] = amount;
         if (goal.kind === "flux") levelStats.fluxCleared = amount;
         if (goal.kind === "signal") levelStats.signalCollected = amount;
+        if (goal.kind === "spread") levelStats.spreadCleared = amount;
         if (goal.kind === "specials") {
           levelStats.specialsCreated = amount;
           levelStats.specialsActivated = 0;
