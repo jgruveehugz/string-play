@@ -1389,15 +1389,15 @@
     {
       number: 11,
       title: "Shield Debut",
-      moves: 26,
+      moves: 28,
       scoreTarget: 5000,
       goals: [
         { kind: "score", target: 5000 },
-        { kind: "flux", target: 8 }
+        { kind: "flux", target: 4 }
       ],
-      layout: { pattern: "center", strength: 1, fluxTarget: 8, boardShape: "corner-bites" },
-      coach: "Shields are neon walls. Match the pieces on them to smash through.",
-      pressure: "Shields are the only obstacle. Smash every wall to clear it."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", blockers: [{ row: 3, col: 2 }, { row: 3, col: 5 }, { row: 4, col: 3 }, { row: 5, col: 2 }, { row: 5, col: 5 }] },
+      coach: "Shields are solid walls. Pieces fall through them. Match right beside a wall to break it open.",
+      pressure: "You can't match a wall. Clear next to it to break it, then the cell opens up."
     },
     {
       number: 12,
@@ -1406,12 +1406,12 @@
       scoreTarget: 5400,
       goals: [
         { kind: "score", target: 5400 },
-        { kind: "flux", target: 6 },
+        { kind: "flux", target: 5 },
         { kind: "chain", target: 2 }
       ],
-      layout: { pattern: "corners", strength: 1, fluxTarget: 6, boardShape: "full" },
-      coach: "Drop chains onto the corner Shields.",
-      pressure: "Shields plus chains. One swap can do both."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2 }, { row: 2, col: 5 }, { row: 3, col: 4 }, { row: 4, col: 2 }, { row: 5, col: 5 }, { row: 5, col: 3 }] },
+      coach: "Break the walls by matching beside them. Chains break more at once.",
+      pressure: "Walls plus chains. Pieces fall through until you break them."
     },
     {
       number: 13,
@@ -1420,16 +1420,16 @@
       scoreTarget: 5600,
       goals: [
         { kind: "score", target: 5600 },
-        { kind: "flux", target: 9 },
+        { kind: "flux", target: 6 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "ring", strength: 1, fluxTarget: 9, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 3 }, { row: 2, col: 4 }, { row: 3, col: 1 }, { row: 3, col: 6 }, { row: 5, col: 1 }, { row: 5, col: 6 }, { row: 6, col: 3 }] },
       starterSpecials: [
         { row: 4, col: 3, special: "lineH" },
         { row: 4, col: 4, special: "lineV" }
       ],
-      coach: "Specials crack Shields fast. Two wait on the board.",
-      pressure: "Two charged pieces sit side by side. Experiment."
+      coach: "Fire a beam beside a wall to smash it. Two beams wait on the board.",
+      pressure: "Specials break walls fast. Pieces fall through until then."
     },
     {
       number: 14,
@@ -1451,12 +1451,12 @@
       scoreTarget: 6200,
       goals: [
         { kind: "score", target: 6200 },
-        { kind: "flux", target: 10 },
+        { kind: "flux", target: 8 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "cross", strength: 1, fluxTarget: 10, boardShape: "full" },
-      coach: "Use specials to crack the gate Shields.",
-      pressure: "Gate level. Break Shields and bank a big finish."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2 }, { row: 2, col: 5 }, { row: 3, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 5, col: 3 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }] },
+      coach: "The finale wall. Break beside the shields. Gold ones take two hits.",
+      pressure: "Break the walls and bank a big finish. Some are reinforced."
     },
     {
       number: 16,
@@ -1465,11 +1465,11 @@
       scoreTarget: 6400,
       goals: [
         { kind: "score", target: 6400 },
-        { kind: "collect", type: 3, target: 12 },
-        { kind: "specials", target: 2 }
+        { kind: "collect", type: 3, target: 10 },
+        { kind: "flux", target: 2 }
       ],
-      layout: { pattern: "diagonal", strength: 1, fluxTarget: 10, boardShape: "diamond" },
-      coach: "Mix it all. Shields, specials, and gold squares.",
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "diamond", blockers: [{ row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4 }] },
+      coach: "Mix it all. Break the walls, then collect the gold squares.",
       pressure: "Clean take here earns the full booster kit."
     }
   ];
@@ -2064,6 +2064,9 @@
       }),
       spreaders: (layout.spreaders || []).map(function (cell) {
         return { row: cell.row, col: cell.col };
+      }),
+      blockers: (layout.blockers || []).map(function (cell) {
+        return { row: cell.row, col: cell.col, strength: cell.strength };
       }),
       spectrum: (layout.spectrum || []).map(function (entry) {
         return { row: entry.row, col: entry.col, colors: (entry.colors || []).slice() };
@@ -2745,7 +2748,45 @@
     applySpectrumShields(level && level.layout ? level.layout : null);
     applyProducers(level && level.layout ? level.layout : null);
     applySpreaders(level && level.layout ? level.layout : null);
+    applyFluxBlockers(level);
     resetPhaseAndFuseState();
+  }
+
+  function applyFluxBlockers(level) {
+    // Shields are BLOCKERS: a shield cell is masked (gems fall through it, no
+    // matching through it) and drawn as the neon wall; tileCharges holds its hit
+    // count. You break it by clearing a match orthogonally adjacent; on break it
+    // un-masks and the collapse fills it. Runs after the other mask-carvers so a
+    // shield never lands on a node/producer cell.
+    var layout = level && level.layout ? level.layout : null;
+    var strength = layout && layout.strength ? layout.strength : 0;
+    tileCharges = [];
+    for (var row = 0; row < GRID; row += 1) {
+      tileCharges[row] = [];
+      for (var col = 0; col < GRID; col += 1) tileCharges[row][col] = 0;
+    }
+    // Pattern-based shields, capped so procedural boards stay sparse (checker-
+    // board-thinned via isFluxCell, then hard-capped) — no dense hole masses.
+    if (strength > 0 && layout && layout.pattern && layout.pattern !== "none") {
+      var placed = 0;
+      var MAX_PATTERN_BLOCKERS = 7;
+      for (var r = 0; r < GRID && placed < MAX_PATTERN_BLOCKERS; r += 1) {
+        for (var c = 0; c < GRID && placed < MAX_PATTERN_BLOCKERS; c += 1) {
+          if (isCellActive(r, c) && !isBeatGateCell(r, c) && isFluxCell(layout.pattern, r, c)) {
+            tileCharges[r][c] = strength;
+            boardMask[r][c] = false; // blocker hole until broken
+            placed += 1;
+          }
+        }
+      }
+    }
+    // Explicit hand-placed shields (sparse; each is individually breakable).
+    (layout && layout.blockers ? layout.blockers : []).forEach(function (b) {
+      if (b.row < 0 || b.row >= GRID || b.col < 0 || b.col >= GRID) return;
+      if (!isCellActive(b.row, b.col)) return;
+      tileCharges[b.row][b.col] = b.strength || strength || 1;
+      boardMask[b.row][b.col] = false;
+    });
   }
 
   function resetPhaseAndFuseState() {
@@ -3064,6 +3105,12 @@
   }
 
   function isFluxCell(pattern, row, col) {
+    // Shields are blockers now: thin every pattern to a checkerboard so no two
+    // shields sit orthogonally adjacent. That keeps each one individually
+    // breakable (never a solid unbreakable mass) and leaves the board with
+    // enough active cells to always have a move. countFluxCells reuses this, so
+    // procedural flux goals stay reachable.
+    if ((row + col) % 2 !== 0) return false;
     if (pattern === "corners") return (row < 2 || row > 5) && (col < 2 || col > 5);
     if (pattern === "cross") return row === 3 || row === 4 || col === 3 || col === 4;
     if (pattern === "ring") return row === 1 || row === 6 || col === 1 || col === 6;
@@ -4231,13 +4278,20 @@
   }
 
   function applyLevelLayout(level) {
+    // applyBoardShape now masks the shield blockers and seeds tileCharges
+    // (via applyFluxBlockers).
     applyBoardShape(level);
-    tileCharges = [];
-    for (var row = 0; row < GRID; row += 1) {
-      tileCharges[row] = [];
-      for (var col = 0; col < GRID; col += 1) {
-        tileCharges[row][col] = isCellActive(row, col) && !isBeatGateCell(row, col) && isFluxCell(level.layout.pattern, row, col) ? level.layout.strength : 0;
+    // Reachability guard: never ask for more shield-breaks than the board holds
+    // (blockers no longer regenerate, and the checkerboard thinning can leave a
+    // pattern with fewer hits than the old matchable-gem count).
+    if (level && level.goals) {
+      var totalHits = 0;
+      for (var r = 0; r < GRID; r += 1) {
+        for (var c = 0; c < GRID; c += 1) totalHits += (tileCharges[r] && tileCharges[r][c]) || 0;
       }
+      level.goals.forEach(function (g) {
+        if (g.kind === "flux" && g.target > totalHits) g.target = totalHits;
+      });
     }
   }
 
@@ -6153,16 +6207,35 @@
   }
 
   function damageFluxTiles(cells, amount) {
+    if (cells.length === 0) return;
+    // Shields are blockers now: a clear damages every shield orthogonally
+    // ADJACENT to a cleared cell (the masked blocker itself is never matched).
+    var hit = {};
     cells.forEach(function (cell) {
-      var current = tileCharges[cell.row] && tileCharges[cell.row][cell.col];
-      if (!current) return;
+      var neighbors = [[cell.row - 1, cell.col], [cell.row + 1, cell.col], [cell.row, cell.col - 1], [cell.row, cell.col + 1]];
+      for (var i = 0; i < 4; i += 1) {
+        var r = neighbors[i][0];
+        var c = neighbors[i][1];
+        if (r < 0 || r >= GRID || c < 0 || c >= GRID) continue;
+        if (tileCharges[r] && tileCharges[r][c] > 0) hit[r + ":" + c] = true;
+      }
+    });
+    Object.keys(hit).forEach(function (key) {
+      var parts = key.split(":");
+      var r = Number(parts[0]);
+      var c = Number(parts[1]);
+      var current = tileCharges[r][c];
       var next = Math.max(0, current - amount);
       levelStats.fluxCleared += current - next;
-      tileCharges[cell.row][cell.col] = next;
+      tileCharges[r][c] = next;
+      var x = view.boardX + c * view.cell + view.cell / 2;
+      var y = view.boardY + r * view.cell + view.cell / 2;
       if (next === 0) {
-        var x = view.boardX + cell.col * view.cell + view.cell / 2;
-        var y = view.boardY + cell.row * view.cell + view.cell / 2;
-        addShockwave(x, y, "#ff4fd8", view.cell * 0.12, view.cell * 0.72, 0.22, 6);
+        // Broken: the wall opens. Un-mask the cell so the next collapse fills it.
+        boardMask[r][c] = isCellActiveForShape(currentBoardShape || "full", r, c);
+        addShockwave(x, y, "#ff4fd8", view.cell * 0.14, view.cell * 0.85, 0.26, 8);
+      } else {
+        addShockwave(x, y, "#ff4fd8", view.cell * 0.09, view.cell * 0.55, 0.2, 5);
       }
     });
   }
@@ -12725,7 +12798,8 @@
     ctx.save();
     for (var row = 0; row < GRID; row += 1) {
       for (var col = 0; col < GRID; col += 1) {
-        if (!isCellActive(row, col)) continue;
+        // Shield blockers live on masked (inactive) cells, so don't gate on
+        // isCellActive — render wherever there is a live charge.
         var charge = tileCharges[row] && tileCharges[row][col];
         if (!charge) continue;
         var x = view.boardX + col * view.cell;
