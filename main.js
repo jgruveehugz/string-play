@@ -6852,7 +6852,10 @@
     flash = Math.min(1, flash + 0.2);
     bumpShake(0.14);
     vibrate("fail");
-    addCallout("OUT OF MOVES", "#ff5e7a", 26);
+    var nm = getNearMissFraming();
+    // A near-miss lands warm ("SO CLOSE" gold) instead of the defeat-red "OUT OF
+    // MOVES", so the emotion hits on the board where the retry decision is made.
+    addCallout(nm.near ? nm.callout : "OUT OF MOVES", nm.near ? (nm.strong ? "#ffd166" : "#ff9f4f") : "#ff5e7a", nm.strong ? 30 : 26);
     addCallout(canAffordContinue() ? "CONTINUE +5" : "NEW TAKE", "#ffd166", 18);
     playLevelFail();
     updateHud();
@@ -9915,19 +9918,39 @@
     };
   }
 
+  function getNearMissFraming() {
+    // Frame a loss by how close it was (RM principle 3: losses feel "almost had
+    // it", not "cheated"). Shared by the board callout and the fail card so both
+    // agree. strong = a true 1-short / 95%+, the retry-bait beat.
+    var goal = getPrimaryOpenGoal();
+    var scoreTarget = currentLevel.starTargets[0];
+    var out = { near: false, strong: false, title: "Out of Moves", subtitle: "One more take.", callout: "OUT OF MOVES" };
+    if (!goal) return out;
+    if (goal.kind !== "score") {
+      var remaining = Math.max(0, goal.target - getGoalValue(goal));
+      if (remaining > 0 && remaining <= 3) {
+        out.near = true;
+        out.strong = remaining <= 1;
+        out.title = "So Close";
+        out.subtitle = "Only " + remaining + " " + getGoalShortName(goal) + " left.";
+        out.callout = out.strong ? "SO CLOSE" : "ALMOST";
+      }
+    } else if (scoreTarget > 0 && score >= 0.85 * scoreTarget) {
+      var pct = score / scoreTarget;
+      out.near = true;
+      out.strong = pct >= 0.95;
+      out.title = Math.floor(100 * pct) + "% There";
+      out.subtitle = formatNumber(scoreTarget - score) + " points from the clear.";
+      out.callout = out.strong ? "SO CLOSE" : "ALMOST";
+    }
+    return out;
+  }
+
   function buildFailPayload() {
     var goal = getPrimaryOpenGoal();
-    var remaining = goal ? Math.max(0, goal.target - getGoalValue(goal)) : 0;
-    var scoreTarget = currentLevel.starTargets[0];
-    var title = "Out of Moves";
-    var subtitle = "One more take.";
-    if (goal && goal.kind !== "score" && remaining <= 3) {
-      title = "So Close";
-      subtitle = "Only " + remaining + " " + getGoalShortName(goal) + " left.";
-    } else if (goal && goal.kind === "score" && score >= 0.85 * scoreTarget) {
-      title = Math.floor((100 * score) / scoreTarget) + "% There";
-      subtitle = formatNumber(scoreTarget - score) + " points from the clear.";
-    }
+    var nm = getNearMissFraming();
+    var title = nm.title;
+    var subtitle = nm.subtitle;
     var challenge = buildChallengeState();
     var waveform = buildWaveformModel(0);
     var strip = renderWaveformStrip(waveform);
