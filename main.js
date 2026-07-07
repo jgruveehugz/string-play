@@ -1396,8 +1396,8 @@
         { kind: "flux", target: 8 }
       ],
       layout: { pattern: "center", strength: 1, fluxTarget: 8, boardShape: "corner-bites" },
-      coach: "Match on outlined cells to break Shields.",
-      pressure: "Shields are the only obstacle. Aim at outlines."
+      coach: "Shields are neon walls. Match the pieces on them to smash through.",
+      pressure: "Shields are the only obstacle. Smash every wall to clear it."
     },
     {
       number: 12,
@@ -2565,14 +2565,14 @@
   }
 
   function createCoachCopy(number) {
-    if (number === 21) return "Double Shields take two clears each. Break the core.";
+    if (number === 21) return "Double Shields are reinforced walls. Two hits each: crack, then smash.";
     if (number === 31) return "New board cut. Watch the drop lanes.";
     if (number === 41) return "Beat Gates ride the song. Closed gates block swaps and falls.";
     if (isBeatGateLevel(number)) return "Count the gate pips. Land key swaps on open bars.";
     if (number === 51) return "Signal Nodes hear nearby matches. Each one fires a packet.";
     if (isSignalLevel(number)) return "Feed the antennas. Matches beside a node send packets.";
-    if (number === 61) return "Spectrum Shields want the colors shown. Match them alongside.";
-    if (isSpectrumLevel(number) && getAuthoredDominoKind(number) === null) return "Read each shield's ring. Clear its colors next to it.";
+    if (number === 61) return "Spectrum walls show the colors that crack them. Match those colors beside each wall.";
+    if (isSpectrumLevel(number) && getAuthoredDominoKind(number) === null) return "Each wall shows the colors that crack it. Match them right beside it.";
     if (number === 71) return "Phase cages freeze pieces. Match the caged color beside them.";
     if (number === 81) return "Fuse wires link charged pieces. Fire one, the wire fires the rest.";
     if (getAuthoredDominoKind(number) === "locks") return "Caged pieces can't move. Free them with their own color.";
@@ -2592,10 +2592,10 @@
     if (layout && layout.wires && layout.wires.length > 0) return "Pick the right entry special. The wire spends the rest on the beat.";
     if (layout && layout.locks && layout.locks.length > 0) return "Cages block swaps and falls. The freeing match is the puzzle.";
     if (getAuthoredDominoKind(number) === "locked-special") return "One caged special. The freeing match detonates the region.";
-    if (layout && layout.spectrum && layout.spectrum.length > 0) return "Each shield names its colors. Spend scarce colors where they count.";
+    if (layout && layout.spectrum && layout.spectrum.length > 0) return "Each wall shows the colors that crack it. Spend scarce colors where they count.";
     if (number % 15 === 0) return "Gate level. Saved moves become the share blast.";
     if (number > 100 && number % 12 === 8) return "Swap special into special. Bigger blast, clearer goal.";
-    if (layout && layout.pattern !== "none") return "Shields add pressure. Aim clears onto outlines.";
+    if (layout && layout.pattern !== "none") return "Shields add pressure. Smash the walls to clear them.";
     if (number % 6 === 2) return "Specials save moves and create bigger music hits.";
     if (number % 6 === 3) return "Cascades beat the move limit.";
     if (number % 6 === 4) return "Build drive early. Overdrive raises score fast.";
@@ -8257,7 +8257,7 @@
     var firstOpen = getPrimaryOpenGoal();
     if (!firstOpen || firstOpen.kind === "score") return "How: every clear scores.";
     if (firstOpen.kind === "collect") return "How: match " + getPieceGuidePhrase(firstOpen.type) + ".";
-    if (firstOpen.kind === "flux") return "How: clear pieces on Shield cells.";
+    if (firstOpen.kind === "flux") return "How: match the pieces on Shield walls to smash them.";
     if (firstOpen.kind === "signal") return "How: match beside the antenna nodes.";
     if (firstOpen.kind === "specials") return "How: match 4+ for beams or novas.";
     if (firstOpen.kind === "fusion") return "How: swap two specials together.";
@@ -8317,7 +8317,7 @@
       return {
         kind: "flux",
         title: "Break " + goal.target + " Shields",
-        detail: "Clear pieces on outlined cells.",
+        detail: "Match the pieces on Shield walls to smash them.",
         color: "#ff4fd8",
         fill: "rgba(255,79,216,0.08)"
       };
@@ -8710,7 +8710,7 @@
     var tips = {
       swap: "Ion pieces are cyan circles. Match 3+ to collect goals.",
       special: "Match four in a line to make a beam piece.",
-      flux: "Clear pieces on outlined cells to break shields.",
+      flux: "Match the pieces on Shield walls to crack and break them.",
       chain: "One swap can cascade. Chains thicken the music.",
       overdrive: "Fill the string frame. High drive doubles score.",
       movePressure: "Clear goals early. Saved moves become finale blasts.",
@@ -9251,7 +9251,7 @@
     if (canUseContinueOffer()) return "Retry is free. Earn more credits from clears.";
     if (isPulseMode()) return "Pulse modes earn Release. Store boosters stay campaign-focused.";
     var firstOpen = getPrimaryOpenGoal();
-    if (firstOpen && firstOpen.kind === "flux") return "Hammer helps break stubborn Shield cells.";
+    if (firstOpen && firstOpen.kind === "flux") return "Hammer helps break stubborn Shield walls.";
     if (firstOpen && firstOpen.kind === "chain") return "Shuffle can reset a board with no cascade setup.";
     if (firstOpen && firstOpen.kind === "overdrive") return "Charge can force overdrive for this goal.";
     if (firstOpen && firstOpen.kind === "specials") return "Hammer and Shuffle help set up special pieces.";
@@ -12442,6 +12442,8 @@
   }
 
   function drawFluxTiles(time) {
+    var maxCharge = Math.max(1, (currentLevel && currentLevel.layout && currentLevel.layout.strength) || 1);
+    var intensity = Math.max(0.4, fxScale());
     ctx.save();
     for (var row = 0; row < GRID; row += 1) {
       for (var col = 0; col < GRID; col += 1) {
@@ -12451,23 +12453,14 @@
         var x = view.boardX + col * view.cell;
         var y = view.boardY + row * view.cell;
         var pulse = 0.55 + Math.sin(time * 5 + row * 0.7 + col * 0.4) * 0.18;
-        ctx.globalAlpha = Math.min(0.58, 0.22 + charge * 0.14 + pulse * 0.12);
-        ctx.fillStyle = "rgba(255, 79, 216, 0.18)";
-        ctx.fillRect(x + 5, y + 5, view.cell - 10, view.cell - 10);
-        ctx.globalAlpha = Math.min(0.8, 0.32 + charge * 0.16);
-        ctx.shadowBlur = glowBlur(12 + charge * 8);
-        ctx.shadowColor = "#ff4fd8";
-        ctx.strokeStyle = charge > 1 ? "#ffd166" : "#ff4fd8";
-        ctx.lineWidth = Math.max(2, view.cell * 0.026);
-        drawShieldBrackets(x + 8, y + 8, view.cell - 16, view.cell - 16, view.cell * 0.18);
-        ctx.globalAlpha = Math.min(0.72, 0.28 + pulse * 0.16);
-        ctx.beginPath();
-        ctx.moveTo(x + view.cell * 0.5, y + view.cell * 0.32);
-        ctx.lineTo(x + view.cell * 0.62, y + view.cell * 0.5);
-        ctx.lineTo(x + view.cell * 0.5, y + view.cell * 0.68);
-        ctx.lineTo(x + view.cell * 0.38, y + view.cell * 0.5);
-        ctx.closePath();
-        ctx.stroke();
+        drawShieldWall(x, y, view.cell, {
+          pulse: pulse,
+          intensity: intensity,
+          alpha: 1,
+          reinforced: charge > 1,
+          cracks: Math.max(0, maxCharge - charge),
+          seed: row * 131 + col * 17 + 1
+        });
       }
     }
     ctx.restore();
@@ -12560,51 +12553,21 @@
       if (broken && breakFade <= 0) continue;
       var x = view.boardX + shield.col * view.cell;
       var y = view.boardY + shield.row * view.cell;
-      var cx = x + view.cell / 2;
-      var cy = y + view.cell / 2;
       var pulse = 0.55 + Math.sin(time * 5 + shield.row * 0.7 + shield.col * 0.4) * 0.18;
 
-      // Outlined-bracket silhouette: same family as every other shield (feel lock).
-      ctx.globalAlpha = Math.min(0.8, 0.32 + pulse * 0.16) * breakFade;
-      ctx.shadowBlur = glowBlur(12);
-      ctx.shadowColor = "#ff4fd8";
-      ctx.strokeStyle = "#ff4fd8";
-      ctx.lineWidth = Math.max(2, view.cell * 0.026);
-      drawShieldBrackets(x + 8, y + 8, view.cell - 16, view.cell - 16, view.cell * 0.18);
-
-      // Colored arc segments name the required colors. Uncollected colors
-      // burn dim; a collected segment flashes once, then extinguishes.
-      var segCount = shield.colors.length;
-      var radius = view.cell * 0.3;
-      var gap = 0.24;
-      for (var s = 0; s < segCount; s += 1) {
-        var typeIndex = shield.colors[s];
-        var needed = shield.remaining.indexOf(typeIndex) !== -1;
-        var flashAt = shield.segmentFlash[typeIndex] || 0;
-        var segFlash = flashAt ? Math.max(0, 1 - (now - flashAt) / 420) : 0;
-        var from = -Math.PI / 2 + (Math.PI * 2 * s) / segCount + gap / 2;
-        var to = -Math.PI / 2 + (Math.PI * 2 * (s + 1)) / segCount - gap / 2;
-        var color = TYPES[typeIndex].color;
-        ctx.strokeStyle = color;
-        ctx.shadowColor = color;
-        if (needed) {
-          ctx.globalAlpha = Math.min(0.72, 0.34 + pulse * 0.16) * intensity * breakFade;
-          ctx.shadowBlur = glowBlur(8);
-          ctx.lineWidth = Math.max(2, view.cell * 0.05);
-        } else if (segFlash > 0) {
-          ctx.globalAlpha = Math.min(1, 0.5 + segFlash * 0.5) * breakFade;
-          ctx.shadowBlur = glowBlur(9 + segFlash * 12);
-          ctx.lineWidth = Math.max(2, view.cell * 0.05) * (1 + segFlash * 0.4);
-        } else {
-          // Extinguished: a faint ember stub.
-          ctx.globalAlpha = 0.1 * breakFade;
-          ctx.shadowBlur = 0;
-          ctx.lineWidth = Math.max(1.5, view.cell * 0.03);
-        }
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, from, to);
-        ctx.stroke();
-      }
+      // Solid neon wall that cracks per hit (same look as flux Shields), with
+      // the required colors named as pips beneath so multi-color walls stay
+      // legible. Purely visual; the color-match/break mechanic is unchanged.
+      var hits = shield.colors.length - shield.remaining.length;
+      drawShieldWall(x, y, view.cell, {
+        pulse: pulse,
+        intensity: intensity,
+        alpha: breakFade,
+        reinforced: false,
+        cracks: broken ? shield.colors.length : hits,
+        seed: shield.row * 131 + shield.col * 17 + 1
+      });
+      drawShieldColorPips(shield, x, y, view.cell, now, breakFade, intensity, pulse);
     }
     ctx.restore();
   }
@@ -12815,6 +12778,152 @@
     ctx.lineTo(x, y + height);
     ctx.lineTo(x, y + height - corner);
     ctx.stroke();
+  }
+
+  // Shield retheme (Sector-1 slice, increment 1): render a Shield as a solid
+  // neon "wall that cracks" instead of an abstract outlined bracket. The cell
+  // still holds a matchable gem underneath, so the pane is a translucent
+  // frosted wash + a chunky glowing frame (reads as a reinforced pane you can
+  // still see through), and cracks accumulate per hit. Purely visual; the
+  // hit/break mechanic is unchanged (feel-first, reversible).
+  function crackRng(seed) {
+    var s = (seed | 0) || 1;
+    return function () {
+      s = (s * 1664525 + 1013904223) | 0;
+      return ((s >>> 0) % 100000) / 100000;
+    };
+  }
+
+  function drawWallCracks(x, y, size, count, seed, alpha) {
+    if (count <= 0) return;
+    var cx = x + size / 2;
+    var cy = y + size / 2;
+    var rand = crackRng(seed);
+    ctx.save();
+    ctx.globalAlpha = 0.85 * (alpha == null ? 1 : alpha);
+    ctx.strokeStyle = "rgba(255, 240, 252, 0.92)";
+    ctx.shadowBlur = glowBlur(6);
+    ctx.shadowColor = "#ffffff";
+    ctx.lineCap = "round";
+    for (var i = 0; i < count; i += 1) {
+      var ang = rand() * Math.PI * 2;
+      var reach = size * (0.32 + rand() * 0.14);
+      var perpX = Math.cos(ang + Math.PI / 2);
+      var perpY = Math.sin(ang + Math.PI / 2);
+      ctx.lineWidth = Math.max(1.5, size * 0.026);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      var steps = 3;
+      for (var st = 1; st <= steps; st += 1) {
+        var t = st / steps;
+        var jit = (rand() - 0.5) * size * 0.16;
+        ctx.lineTo(cx + Math.cos(ang) * reach * t + perpX * jit,
+          cy + Math.sin(ang) * reach * t + perpY * jit);
+      }
+      ctx.stroke();
+      if (rand() > 0.45) {
+        var bx = cx + Math.cos(ang) * reach * 0.55;
+        var by = cy + Math.sin(ang) * reach * 0.55;
+        var bang = ang + (rand() - 0.5) * 1.7;
+        ctx.lineWidth = Math.max(1, size * 0.018);
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx + Math.cos(bang) * reach * 0.32, by + Math.sin(bang) * reach * 0.32);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawShieldWall(x, y, size, opts) {
+    var pulse = opts.pulse != null ? opts.pulse : 0.5;
+    var alpha = opts.alpha != null ? opts.alpha : 1;
+    if (alpha <= 0) return;
+    var reinforced = Boolean(opts.reinforced);
+    var frameCol = reinforced ? "#ffd166" : "#ff4fd8";
+    var pad = Math.max(3, size * 0.07);
+    var px = x + pad;
+    var py = y + pad;
+    var pw = size - pad * 2;
+    var ph = size - pad * 2;
+    ctx.save();
+    // Frosted magenta wash: the gem beneath still glows through, tinted.
+    var grad = ctx.createLinearGradient(px, py, px, py + ph);
+    grad.addColorStop(0, "rgba(255, 122, 226, " + (0.32 * alpha).toFixed(3) + ")");
+    grad.addColorStop(1, "rgba(196, 40, 168, " + (0.44 * alpha).toFixed(3) + ")");
+    ctx.fillStyle = grad;
+    ctx.fillRect(px, py, pw, ph);
+    // Recessed inner seam so it reads as a panel/crate face, not flat tint.
+    ctx.globalAlpha = 0.45 * alpha;
+    ctx.strokeStyle = "rgba(52, 6, 46, 0.7)";
+    ctx.lineWidth = Math.max(1, size * 0.02);
+    ctx.strokeRect(px + size * 0.06, py + size * 0.06, pw - size * 0.12, ph - size * 0.12);
+    // Top sheen (glass bevel).
+    ctx.globalAlpha = (0.45 + pulse * 0.3) * alpha;
+    ctx.strokeStyle = "rgba(255, 220, 248, 0.85)";
+    ctx.lineWidth = Math.max(1.5, size * 0.03);
+    ctx.beginPath();
+    ctx.moveTo(px + size * 0.1, py + size * 0.13);
+    ctx.lineTo(px + pw - size * 0.1, py + size * 0.13);
+    ctx.stroke();
+    // Bright neon frame — the wall edge.
+    ctx.globalAlpha = Math.min(1, 0.6 + pulse * 0.3) * alpha;
+    ctx.shadowBlur = glowBlur(12 + pulse * 8);
+    ctx.shadowColor = frameCol;
+    ctx.strokeStyle = frameCol;
+    ctx.lineWidth = Math.max(2, size * 0.055);
+    ctx.strokeRect(px, py, pw, ph);
+    if (reinforced) {
+      // A second inner frame signals a two-hit (reinforced) wall.
+      ctx.globalAlpha = 0.7 * alpha;
+      ctx.lineWidth = Math.max(1.5, size * 0.03);
+      ctx.strokeRect(px + size * 0.1, py + size * 0.1, pw - size * 0.2, ph - size * 0.2);
+    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    if (opts.cracks) drawWallCracks(x, y, size, opts.cracks, opts.seed || 1, alpha);
+  }
+
+  function drawShieldColorPips(shield, x, y, size, now, alpha, intensity, pulse) {
+    // The multi-color (L61+) wall shows which colors crack it as small pips
+    // along the bottom edge; needed colors burn bright, collected ones dim.
+    var n = shield.colors.length;
+    if (n === 0) return;
+    var pipR = size * 0.056;
+    var stride = pipR * 2.5;
+    var startX = x + size / 2 - (stride * (n - 1)) / 2;
+    var pipY = y + size - size * 0.17;
+    ctx.save();
+    for (var s = 0; s < n; s += 1) {
+      var typeIndex = shield.colors[s];
+      var needed = shield.remaining.indexOf(typeIndex) !== -1;
+      var flashAt = shield.segmentFlash[typeIndex] || 0;
+      var segFlash = flashAt ? Math.max(0, 1 - (now - flashAt) / 420) : 0;
+      var color = TYPES[typeIndex].color;
+      var pipX = startX + s * stride;
+      ctx.beginPath();
+      ctx.arc(pipX, pipY, pipR, 0, Math.PI * 2);
+      if (needed) {
+        ctx.globalAlpha = Math.min(0.95, 0.6 + pulse * 0.2) * intensity * alpha;
+        ctx.shadowBlur = glowBlur(8);
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else if (segFlash > 0) {
+        ctx.globalAlpha = Math.min(1, 0.6 + segFlash * 0.4) * alpha;
+        ctx.shadowBlur = glowBlur(10 + segFlash * 12);
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.globalAlpha = 0.3 * alpha;
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(1, size * 0.015);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 
   function drawBoardFrame(time) {
