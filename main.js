@@ -1161,6 +1161,12 @@
     // the through-line never dips. Sector-reveal (new-track) boundaries keep their intro. Flip
     // false to restore the old per-level bridge hand-off for an A/B.
     continuousGroove: true,
+    // Continuous energy carry (increment 3): on a within-track hand-off, open the next level
+    // at the previous level's arrangement energy and ease it down over this many bars, so the
+    // transition MATCHES (no vibrant->sparse drop) and then settles into the new level's own
+    // progress-driven build. 0 disables the carry (hand-off still seamless, energy just resets
+    // to the level's opening floor).
+    continuousCarryBars: 8,
     transitionTailBars: 1.5, // level-clear arrangement-bus tail length before the next level (bars, 0.5-3)
     transitionTailFloor: 0.0, // arrangement-bus gain the level-clear tail settles toward (0-0.3)
     levelFadeInBars: 1, // legacy same-sector fade length; superseded by the bridge hand-off (bars, 0.25-2)
@@ -1760,6 +1766,12 @@
     // Palette id that played on the previous campaign level. resetMusicPhrase compares it to
     // the incoming level's palette to decide a phase-continuous (same-key) hand-off.
     lastPaletteId: null,
+    // Continuous energy carry: carryFloor = the arrangement energy the previous level ended on,
+    // eased in from carryFloorStep so the next level opens matched, not sparse. lastArrangeFloor
+    // tracks the live playing floor so a hand-off knows what to carry.
+    carryFloor: 0,
+    carryFloorStep: 0,
+    lastArrangeFloor: 0,
     gateState: { snare: false, hat: false, hat16: false, bass: false, kickHi: false },
     failRamp: null,
     // Iso-principle director: meets the player where they are (arousal),
@@ -11820,6 +11832,15 @@
       && audio.lastPaletteId != null
       && audio.lastPaletteId === getActiveMusicPaletteId();
     audio.lastPaletteId = gameMode === MODE_CAMPAIGN ? getActiveMusicPaletteId() : null;
+    // Energy carry (increment 3): a continuous hand-off opens the next level at the energy this
+    // session was ending on, then eases it down (getCampaignArrangement). A reset clears the
+    // carry so a new track / mode starts from its own opening floor.
+    if (phaseContinuous) {
+      audio.carryFloor = audio.lastArrangeFloor;
+      audio.carryFloorStep = audio.step;
+    } else {
+      audio.carryFloor = 0;
+    }
     if (!phaseContinuous) audio.step = 0;
     audio.climaxStep = -1;
     audio.revealUntilStep = 0;
@@ -11845,7 +11866,9 @@
     audio.mutation = { rng: mutateRng, nextBar: nextMutationBar(mutateRng, phaseContinuous ? Math.floor(audio.step / 16) : 0), hatPattern: null, delayWetOffset: 0, log: [] };
     // Iso principle: open every take at the player's estimated arousal, then
     // tickDirector slews it toward the music state bar by bar.
-    audio.director.currentArousal = audio.director.playerArousal;
+    // Keep the director's arousal slewing across a continuous hand-off (don't snap it back to
+    // the iso-open) so the mix energy carries with the floor instead of re-opening cold.
+    if (!phaseContinuous) audio.director.currentArousal = audio.director.playerArousal;
     audio.director.bias = 0;
     audio.director.recoveryUntilStep = 0;
     audio.director.grooveOverride = null;
@@ -15768,6 +15791,13 @@
     // more space. Electronic/jazz-neutral leave it. The soft fail-ramp fade above
     // is left untouched so a lost song still eases to failFloorBase cleanly.
     floor = Math.max(0, Math.min(1, floor + getGenre().floorBonus));
+    if (AUDIO_TUNING.continuousGroove && audio.carryFloor > 0) {
+      // Carry the level-end energy across a continuous hand-off: open at the previous level's
+      // floor and ease down over continuousCarryBars so the transition matches (no vibrant->
+      // sparse drop) and then settles into this level's own progress-driven build.
+      var carryEase = Math.max(0, 1 - (audio.step - audio.carryFloorStep) / (AUDIO_TUNING.continuousCarryBars * 16));
+      floor = Math.max(floor, audio.carryFloor * carryEase);
+    }
     return { progress: progress, floor: floor, cap: cap, tier: tier };
   }
 
@@ -15974,6 +16004,9 @@
     var audioDrive = getVisualDrive();
     var palette = getMusicPalette();
     var arrange = getCampaignArrangement();
+    // Remember the live playing floor so a continuous hand-off can open the next level at the
+    // energy this one is ending on (see the carry in getCampaignArrangement + resetMusicPhrase).
+    if (arrange && levelState === "playing") audio.lastArrangeFloor = arrange.floor;
     if (step % AUDIO_TUNING.directorTickSteps === 0) tickDirector(step, arrange);
     var dir = audio.director;
     var dirBias = Math.max(-AUDIO_TUNING.directorBiasMax, Math.min(AUDIO_TUNING.directorBiasMax, dir.bias));
