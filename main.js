@@ -6353,15 +6353,12 @@
         alpha: 0
       };
       playHumWakeChord();
-    } else if (celebration) {
-      // Corner-groove cameo on the standard win card: an already-woken Hum idles
-      // to the celebration beat in a board corner and takes an amplified hop on
-      // each encore blast. Prefer this track's Hum; if it is still asleep, cameo
-      // the freshest woken one so the collection stays visible through a new
-      // track. Never over the play board; never on the wake card.
-      var cameoId = hum.awake ? humId : latestAwakeHumId();
-      if (cameoId) celebration.cameo = { humId: cameoId, alpha: 0, hop: 0, hops: 0 };
     }
+    // Hum corner cameo on level clear REMOVED (Jung 2026-07-07: the "random Bip
+    // spawner" that pops on the board every clear). The woken-Hum payoff is now
+    // the track voice layer + the move perk + the Greenroom, not a corner hop.
+    // The Finale wake ritual (above, wakeNow) stays — it's a deterministic,
+    // once-per-track born-from-light moment, not a random per-clear pop.
     if (audio.started && audio.ctx && audio.bed) {
       // Crossfade tail: ease the arrangement bus out under the win sting so the
       // next level fades in on the tonic instead of hard-cutting. The sting rings
