@@ -3949,6 +3949,8 @@
     movesLeft = currentLevel.moves;
     var fails = campaignSave.failStreaks[currentLevel.id] || 0;
     movesLeft += fails >= 5 ? 3 : fails >= 3 ? 2 : 0;
+    // Hum payoff (perk): a woken Hum grants +1 move on its own track's levels.
+    if (isHumAwake(getHumIdForLevel(currentLevel))) movesLeft += 1;
     mercyBias = fails >= 3 ? 0.18 : 0;
     pulse = 1;
     pulseBank = 0;
@@ -4030,6 +4032,17 @@
     // keeps the layer's identity stable against habituation, like the ghost/counter layers, and
     // every degree resolves through getHarmonyToneFreq so the layer stays in-scale on the grid.
     pushGenreExtraLayer();
+    // Hum payoff (music): a woken Hum adds a persistent in-key voice ping to its
+    // own track, so collecting it permanently enriches that track's soundtrack
+    // (music is the identity). Uses the Hum's own voice motif + wave, resolved
+    // through the shared scale like every other layer.
+    var awakeHumId = getHumIdForLevel(currentLevel);
+    if (isHumAwake(awakeHumId)) {
+      var awakeHumSpec = findHumSpec(awakeHumId);
+      if (awakeHumSpec && awakeHumSpec.voice && awakeHumSpec.voice.motif && awakeHumSpec.voice.motif.deg && awakeHumSpec.voice.motif.deg.length) {
+        audio.layers.push({ degrees: [awakeHumSpec.voice.motif.deg[0] || 0], division: 9, phase: 2, duration: 0.11, wave: awakeHumSpec.voice.wave || "triangle", gain: 0.022, pan: 0.22, filter: 3600, octave: 1, expiresAt: 1e9, persistent: true, polyloop: true });
+      }
+    }
     if (!isSplashOpen()) {
       maybeStartSectorReveal();
       maybeQueueFinaleIntro();
@@ -9264,7 +9277,7 @@
 
   function updateGreenroomLedger() {
     if (!greenroomLedgerEl) return;
-    greenroomLedgerEl.textContent = greenroomAwakeCount() + "/" + HUM_IDS.length + " awake · clear a Track's Finale to wake its Hum";
+    greenroomLedgerEl.textContent = greenroomAwakeCount() + "/" + HUM_IDS.length + " awake · each woken Hum adds a voice to its track and gives +1 move there · clear a Track's Finale to wake its Hum";
   }
 
   function getSetlistStreakLine() {
