@@ -1154,6 +1154,13 @@
     bridgeBars: 8, // bridge length before the home progression returns (4-16)
     harmonicRhythmBridge: 16, // steps-per-chord inside a bridge; faster than the 32 norm (8-32)
     halfNightBars: 4, // bars the night governor half-times the groove after a level start (2-8)
+    // CONTINUOUS MUSIC (Jung's top ask): one groove that flows through a whole track without
+    // breaking. When true, same-palette (within-track) level transitions skip the bed-to-silence
+    // tail, the drum duck, and the drum-free bridge entirely: the groove keeps running and the
+    // next level re-anchors on the tonic under it, so the melody morphs (per-level motif) while
+    // the through-line never dips. Sector-reveal (new-track) boundaries keep their intro. Flip
+    // false to restore the old per-level bridge hand-off for an A/B.
+    continuousGroove: true,
     transitionTailBars: 1.5, // level-clear arrangement-bus tail length before the next level (bars, 0.5-3)
     transitionTailFloor: 0.0, // arrangement-bus gain the level-clear tail settles toward (0-0.3)
     levelFadeInBars: 1, // legacy same-sector fade length; superseded by the bridge hand-off (bars, 0.25-2)
@@ -1750,6 +1757,9 @@
     // hand-off. scheduleStep suppresses the groove while step < bridgeUntilStep, plays a
     // per-palette pad+lead cadence to the tonic, then re-enters the groove on the downbeat.
     bridgeUntilStep: 0,
+    // Palette id that played on the previous campaign level. resetMusicPhrase compares it to
+    // the incoming level's palette to decide a phase-continuous (same-key) hand-off.
+    lastPaletteId: null,
     gateState: { snare: false, hat: false, hat16: false, bass: false, kickHi: false },
     failRamp: null,
     // Iso-principle director: meets the player where they are (arousal),
@@ -3994,7 +4004,9 @@
     applyAudioPalette();
     // Two straight fails on this level arm a recovery take: the director caps
     // the mix low, half-times the groove, and rebuilds over recoveryBars.
-    if (fails >= 2) audio.director.recoveryUntilStep = AUDIO_TUNING.recoveryBars * 16;
+    // Step-relative so a recovery take works whether the clock reset to 0 (normal) or kept
+    // running (phase-continuous hand-off after 2 fails on the same level).
+    if (fails >= 2) audio.director.recoveryUntilStep = audio.step + AUDIO_TUNING.recoveryBars * 16;
     // Every tier opens with a signature motif layer that rides the whole level:
     // the track hook's seed-derived variant, louder in later tiers.
     audio.levelMotif = computeLevelMotif(currentLevel);
@@ -6377,7 +6389,7 @@
     // the track voice layer + the move perk + the Greenroom, not a corner hop.
     // The Finale wake ritual (above, wakeNow) stays — it's a deterministic,
     // once-per-track born-from-light moment, not a random per-clear pop.
-    if (audio.started && audio.ctx && audio.bed) {
+    if (!AUDIO_TUNING.continuousGroove && audio.started && audio.ctx && audio.bed) {
       // Crossfade tail: ease the arrangement bus out under the win sting so the
       // next level fades in on the tonic instead of hard-cutting. The sting rings
       // through on the impact bus, which bypasses this bed. Three time constants
@@ -6390,7 +6402,7 @@
     }
     // Play the win sting first, then duck the impact bus *after* it rings out (below).
     var stingEnd = playLevelWin(stars);
-    if (audio.started && audio.ctx && audio.impact) {
+    if (!AUDIO_TUNING.continuousGroove && audio.started && audio.ctx && audio.impact) {
       // Drums bypass the bed on the impact bus, so the bed tail alone leaves the kick
       // thumping straight through the hand-off (the "drums drums drums" gap). Ramp the
       // impact bus down toward silence for the bridge so the groove clears out;
@@ -11794,7 +11806,21 @@
   }
 
   function resetMusicPhrase() {
-    audio.step = 0;
+    // Phase-continuous hand-off (Jung's "remove the seam"): when the groove is already
+    // running and the next level is the SAME track (same palette/key, no sector reveal),
+    // carry the beat clock instead of snapping it to 0. Harmony, polyloop phase, and the bar
+    // grid all read audio.step, so keeping it running flows the groove across the boundary
+    // with no rhythmic/harmonic restart -- only the per-level motif (set in startLevel)
+    // changes. Palette match is the signal: a track boundary or a replay of a track's first
+    // level carries a different palette and correctly falls back to a step-0 reset.
+    var phaseContinuous = AUDIO_TUNING.continuousGroove
+      && gameMode === MODE_CAMPAIGN
+      && audio.started && audio.ctx
+      && !willStartSectorReveal()
+      && audio.lastPaletteId != null
+      && audio.lastPaletteId === getActiveMusicPaletteId();
+    audio.lastPaletteId = gameMode === MODE_CAMPAIGN ? getActiveMusicPaletteId() : null;
+    if (!phaseContinuous) audio.step = 0;
     audio.climaxStep = -1;
     audio.revealUntilStep = 0;
     audio.gateState = { snare: false, hat: false, hat16: false, bass: false, kickHi: false };
@@ -11814,7 +11840,9 @@
     var mutateRng = gameMode === MODE_CAMPAIGN && currentLevel
       ? createSeededRandom(hashString("neon-lattice-mutate:" + currentLevel.id + ":" + currentLevel.seed))
       : Math.random;
-    audio.mutation = { rng: mutateRng, nextBar: nextMutationBar(mutateRng, 0), hatPattern: null, delayWetOffset: 0, log: [] };
+    // In a phase-continuous hand-off the bar clock keeps running, so schedule the next
+    // habituation mutation relative to the current bar (bar 0 on a normal step-0 reset).
+    audio.mutation = { rng: mutateRng, nextBar: nextMutationBar(mutateRng, phaseContinuous ? Math.floor(audio.step / 16) : 0), hatPattern: null, delayWetOffset: 0, log: [] };
     // Iso principle: open every take at the player's estimated arousal, then
     // tickDirector slews it toward the music state bar by bar.
     audio.director.currentArousal = audio.director.playerArousal;
@@ -11833,8 +11861,9 @@
     // section index, so a replayed level plays the identical bridge form.
     audio.sectionCache = null;
     audio.layers = [];
-    // Re-anchor the scheduler so every mode opens at step 0 on the tonic.
-    if (audio.ctx) audio.nextStepTime = audio.ctx.currentTime + 0.05;
+    // Re-anchor the scheduler so every mode opens at step 0 on the tonic -- but NOT on a
+    // phase-continuous hand-off, where the running scheduler already holds the beat grid.
+    if (audio.ctx && !phaseContinuous) audio.nextStepTime = audio.ctx.currentTime + 0.05;
     // Restore the arrangement bus after a level-clear tail. On a new-sector entry the
     // reveal hold is the intro, so snap the bed back to full and let the hold ramp the
     // groove. Otherwise open a musical bridge: hold the groove out for bridgeIntroBars
@@ -11851,8 +11880,10 @@
       }
       // Campaign-only bridge: Rush/Daily never get the level-clear tail this swells up
       // from, so snap the bed to full and start hard. A new-sector reveal (its own intro
-      // hold) also snaps; otherwise run the bridge hand-off (scheduleStep bridge branch).
-      if (gameMode !== MODE_CAMPAIGN || willStartSectorReveal()) {
+      // hold) also snaps; so does continuousGroove (the groove already ran unbroken through
+      // the win, so keep the bed at full and let the next level re-anchor under it — no
+      // drum-free bridge). Otherwise run the bridge hand-off (scheduleStep bridge branch).
+      if (gameMode !== MODE_CAMPAIGN || willStartSectorReveal() || AUDIO_TUNING.continuousGroove) {
         audio.bed.gain.setValueAtTime(1, bedNow);
       } else {
         audio.bridgeUntilStep = AUDIO_TUNING.bridgeIntroBars * 16;
@@ -16084,7 +16115,9 @@
     // Level-clear outro: once the level is won, hold the pad/bass/motif tail but drop the
     // drums so the hand-off gap is a soft harmonic wash, not a bare kick loop. The impact
     // bus is also ducked at win time; this stops new percussion being scheduled at all.
-    var suppressDrums = gameMode === MODE_CAMPAIGN && levelState === "won";
+    // Continuous mode keeps the groove whole through the win (no drum drop-out at the
+    // hand-off); the win sting rings over it. Otherwise drop drums for the harmonic-wash outro.
+    var suppressDrums = !AUDIO_TUNING.continuousGroove && gameMode === MODE_CAMPAIGN && levelState === "won";
     if (!suppressDrums && g.kick.indexOf(bar) !== -1 && (!grooveHalf || bar % 8 === 0)) {
       playKick(time, 0.5 + effectiveEnergy * 0.35);
       if (bar === 0) beatPulse = 1;
