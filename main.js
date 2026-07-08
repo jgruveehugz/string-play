@@ -6233,6 +6233,8 @@
         if (tileCharges[r] && tileCharges[r][c] > 0) hit[r + ":" + c] = true;
       }
     });
+    var brokeCount = 0;
+    var crackedCount = 0;
     Object.keys(hit).forEach(function (key) {
       var parts = key.split(":");
       var r = Number(parts[0]);
@@ -6246,11 +6248,27 @@
       if (next === 0) {
         // Broken: the wall opens. Un-mask the cell so the next collapse fills it.
         boardMask[r][c] = isCellActiveForShape(currentBoardShape || "full", r, c);
-        addShockwave(x, y, "#ff4fd8", view.cell * 0.14, view.cell * 0.85, 0.26, 8);
+        // Bigger, brighter smash: a double shockwave (white flash + magenta ring).
+        addShockwave(x, y, "#ffffff", view.cell * 0.1, view.cell * 0.7, 0.18, 6);
+        addShockwave(x, y, "#ff4fd8", view.cell * 0.16, view.cell * 1.05, 0.3, 10);
+        brokeCount += 1;
       } else {
-        addShockwave(x, y, "#ff4fd8", view.cell * 0.09, view.cell * 0.55, 0.2, 5);
+        addShockwave(x, y, "#ff4fd8", view.cell * 0.1, view.cell * 0.6, 0.22, 6);
+        crackedCount += 1;
       }
     });
+    // Impact: a weighty break sound + shake + haptic (Jung's ask), or a lighter
+    // crack when a reinforced wall only chips.
+    if (brokeCount > 0) {
+      playShieldBreak(brokeCount);
+      flash = Math.min(1, flash + 0.14 + brokeCount * 0.05);
+      bumpShake(0.12 + brokeCount * 0.06);
+      vibrate("special");
+    } else if (crackedCount > 0) {
+      playShieldCrack();
+      bumpShake(0.06);
+      vibrate("match");
+    }
   }
 
   function resolveLevelOutcome() {
@@ -16293,6 +16311,31 @@
     playTone(getHarmonyToneFreq(audio.step, 0, 1), start, 0.1, palette.layerWave, AUDIO_TUNING.spectrumBreakGain, -0.2, 2600);
     playTone(getHarmonyToneFreq(audio.step, 3, 1), start + 0.05, 0.1, palette.layerWave, AUDIO_TUNING.spectrumBreakGain, 0.2, 3200);
     playTone(getHarmonyToneFreq(audio.step, 5, 2), start + 0.1, 0.14, "sine", AUDIO_TUNING.spectrumBreakGain * 0.8, 0, 4200);
+  }
+
+  // Impactful shield-BLOCKER break (Jung: the old break was a letdown). Low-end
+  // weight (sub thump + bass punch) + a bright wide shatter + a magenta ring
+  // resolving upward. Scales with how many walls broke this move.
+  function playShieldBreak(count) {
+    if (!audio.started) return;
+    var t = quantize(audio.ctx.currentTime + 0.012, 1);
+    var palette = getMusicPalette();
+    var w = Math.min(1.6, 1 + (Math.max(1, count) - 1) * 0.25);
+    playTone(getHarmonyToneFreq(audio.step, 0, 0) * palette.subRatio, t, 0.22, "sine", 0.075 * w, 0, 190);
+    playTone(getHarmonyToneFreq(audio.step, 0, 0) * palette.bassRatio, t + 0.012, 0.28, palette.bassWave, 0.055 * w, 0, 520);
+    playNoise(t, 0.09, 0.075 * w, 5200, 0.7);
+    playNoise(t + 0.035, 0.06, 0.045 * w, 3200, 1.0);
+    playTone(getHarmonyToneFreq(audio.step, 0, 1), t + 0.01, 0.14, palette.layerWave, 0.058, -0.22, 2800);
+    playTone(getHarmonyToneFreq(audio.step, 4, 1), t + 0.06, 0.14, palette.layerWave, 0.05, 0.22, 3400);
+    playTone(getHarmonyToneFreq(audio.step, 7, 2), t + 0.12, 0.16, "sine", 0.045, 0, 4400);
+  }
+
+  // Lighter crack for a reinforced wall taking a hit without breaking yet.
+  function playShieldCrack() {
+    if (!audio.started) return;
+    var t = quantize(audio.ctx.currentTime + 0.012, 1);
+    playNoise(t, 0.05, 0.04, 3400, 0.9);
+    playTone(getHarmonyToneFreq(audio.step, 2, 1), t, 0.08, getMusicPalette().layerWave, 0.04, 0, 3000);
   }
 
   function playCageShatter(type) {
