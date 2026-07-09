@@ -1161,12 +1161,14 @@
     // the through-line never dips. Sector-reveal (new-track) boundaries keep their intro. Flip
     // false to restore the old per-level bridge hand-off for an A/B.
     continuousGroove: true,
-    // Continuous energy carry (increment 3): on a within-track hand-off, open the next level
-    // at the previous level's arrangement energy and ease it down over this many bars, so the
-    // transition MATCHES (no vibrant->sparse drop) and then settles into the new level's own
-    // progress-driven build. 0 disables the carry (hand-off still seamless, energy just resets
-    // to the level's opening floor).
-    continuousCarryBars: 8,
+    // Continuous energy carry: on a within-track hand-off, HOLD the previous level's arrangement
+    // energy as the floor so the next level opens AT that energy and continues (rising with its
+    // own progress) instead of dipping vibrant->sparse across the boundary. The carry re-arms
+    // each within-track hand-off, so a world's baseline rides the running energy.
+    continuousCarryBars: 8, // (retained for a future slow-relax option; the carry now holds)
+    // Extra beats of the continuous groove held between levels (before the result card) so the
+    // transition breathes instead of cutting straight to the next board. 0 = off.
+    continuousTransitionBeats: 2,
     transitionTailBars: 1.5, // level-clear arrangement-bus tail length before the next level (bars, 0.5-3)
     transitionTailFloor: 0.0, // arrangement-bus gain the level-clear tail settles toward (0-0.3)
     levelFadeInBars: 1, // legacy same-sector fade length; superseded by the bridge hand-off (bars, 0.25-2)
@@ -4005,6 +4007,10 @@
     animating = false;
     animatingClock = 0;
     flash = 0;
+    // Continuity: remember the ending musical energy so a within-track hand-off keeps it
+    // (restored right after resetMusicPhrase resolves phaseContinuous) instead of resetting the
+    // meter cold. drive (the scoring/overdrive meter) still resets -- energy is musical only.
+    var carryEnergyPrev = energy;
     energy = 0.12;
     drive = 0;
     overdrivePulse = 0;
@@ -4013,6 +4019,7 @@
     screenShake = 0;
     audio.layers = [];
     resetMusicPhrase();
+    if (audio.phaseContinuous) energy = carryEnergyPrev;
     applyAudioPalette();
     // Two straight fails on this level arm a recovery take: the director caps
     // the mix low, half-times the groove, and rebuilds over recoveryBars.
@@ -6486,7 +6493,11 @@
     if (hasFinale && viralClear) base = 2100;
     else if (hasFinale) base = 1900;
     else base = viralClear ? 1000 : 850;
-    return Math.max(base, celebrationMs || 0);
+    // A couple more beats of the continuous groove between levels so the transition breathes.
+    var continuousExtraMs = AUDIO_TUNING.continuousGroove
+      ? (AUDIO_TUNING.continuousTransitionBeats || 0) * (60 / getActiveBpm()) * 1000
+      : 0;
+    return Math.max(base, celebrationMs || 0) + continuousExtraMs;
   }
 
   function getCelebrationBeatMs() {
@@ -11865,6 +11876,7 @@
       && audio.lastPaletteId != null
       && audio.lastPaletteId === getActiveMusicPaletteId();
     audio.lastPaletteId = gameMode === MODE_CAMPAIGN ? getActiveMusicPaletteId() : null;
+    audio.phaseContinuous = phaseContinuous; // exposed so startLevel can carry the live energy meter
     // Energy carry (increment 3): a continuous hand-off opens the next level at the energy this
     // session was ending on, then eases it down (getCampaignArrangement). A reset clears the
     // carry so a new track / mode starts from its own opening floor.
@@ -15825,11 +15837,11 @@
     // is left untouched so a lost song still eases to failFloorBase cleanly.
     floor = Math.max(0, Math.min(1, floor + getGenre().floorBonus));
     if (AUDIO_TUNING.continuousGroove && audio.carryFloor > 0) {
-      // Carry the level-end energy across a continuous hand-off: open at the previous level's
-      // floor and ease down over continuousCarryBars so the transition matches (no vibrant->
-      // sparse drop) and then settles into this level's own progress-driven build.
-      var carryEase = Math.max(0, 1 - (audio.step - audio.carryFloorStep) / (AUDIO_TUNING.continuousCarryBars * 16));
-      floor = Math.max(floor, audio.carryFloor * carryEase);
+      // HOLD the carried level-end energy as the floor for the whole level so the next level opens
+      // AT the previous energy and continues (rising with its own progress), never dips across the
+      // boundary. carryFloor re-arms each within-track hand-off, so a world's baseline rides the
+      // running energy instead of resetting sparse per level.
+      floor = Math.max(floor, audio.carryFloor);
     }
     return { progress: progress, floor: floor, cap: cap, tier: tier };
   }
