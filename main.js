@@ -3243,6 +3243,7 @@
         event: normalizeWeeklyEventState(parsed.event),
         attempts: normalizeLevelAttempts(parsed.attempts),
         failStreaks: normalizeLevelAttempts(parsed.failStreaks),
+        winStreak: Math.max(0, parsed.winStreak || 0),
         wallet: normalizeWallet(parsed.wallet),
         purchases: normalizePurchases(parsed.purchases),
         hums: normalizeHums(parsed.hums)
@@ -3265,6 +3266,7 @@
       event: normalizeWeeklyEventState(null),
       attempts: {},
       failStreaks: {},
+      winStreak: 0, // PROGRESSION: consecutive-win booster escalation (RM Butler's Gift)
       wallet: normalizeWallet(null),
       purchases: {},
       hums: {}
@@ -6478,6 +6480,25 @@
     recordWeeklyEventPoints(calculateCampaignEventPoints(savedMoves, stars), "level clear", true);
     delete campaignSave.failStreaks[currentLevel.id];
 
+    // PROGRESSION: Consecutive-win booster escalation (RM Butler's Gift pattern).
+    // Win streak resets on any loss. Rewards escalate at 3/5/7+ consecutive wins.
+    campaignSave.winStreak = (campaignSave.winStreak || 0) + 1;
+    if (campaignSave.winStreak >= 7) {
+      grantRewardBundle({ hammer: 1, shuffle: 1, charge: 1 });
+      recordGrant("Win Streak " + campaignSave.winStreak, "+1 each booster");
+      flyRewardBundle(centerBoardX(), view.boardY + view.boardSize * 0.28, { hammer: 1, shuffle: 1, charge: 1 }, 0);
+    } else if (campaignSave.winStreak >= 5) {
+      grantRewardBundle({ hammer: 1, shuffle: 1, charge: 0 });
+      recordGrant("Win Streak " + campaignSave.winStreak, "+1 Hammer + 1 Shuffle");
+      flyRewardBundle(centerBoardX(), view.boardY + view.boardSize * 0.28, { hammer: 1, shuffle: 1, charge: 0 }, 0);
+    } else if (campaignSave.winStreak >= 3) {
+      var streakBoosters = ["hammer", "shuffle", "charge"];
+      var pick = streakBoosters[campaignSave.winStreak % 3];
+      grantRewardBundle({ hammer: pick === "hammer" ? 1 : 0, shuffle: pick === "shuffle" ? 1 : 0, charge: pick === "charge" ? 1 : 0 });
+      recordGrant("Win Streak " + campaignSave.winStreak, "+1 " + boosterDisplayName(pick));
+      flyRewardToTarget(centerBoardX(), view.boardY + view.boardSize * 0.28, boosterFlyTargetEl(pick), REWARD_FLY[pick].glyph, REWARD_FLY[pick].color);
+    }
+
     // Hums: record one recording segment per level. firstClear (a level always
     // clears with >=1 star) is the per-level guard, so replays never double-count.
     // The Finale forces the outline full and wakes the Hum. Deterministic, cap 15.
@@ -7194,6 +7215,7 @@
     pendingSwap = null;
     recordWaveformEvent("flatline");
     campaignSave.failStreaks[currentLevel.id] = (campaignSave.failStreaks[currentLevel.id] || 0) + 1;
+    campaignSave.winStreak = 0; // PROGRESSION: reset consecutive-win escalation on loss
     audio.director.failPressure = 1;
     writeCampaignSave();
     flash = Math.min(1, flash + 0.2);
@@ -7732,24 +7754,42 @@
   function markSpecialComboCells(comboData, clearMap) {
     var specials = [comboData.specialA, comboData.specialB];
     var hasNova = specials.indexOf("nova") !== -1;
+    var hasBomb = specials.indexOf("bomb") !== -1;
+    var hasSeeker = specials.indexOf("seeker") !== -1;
     var lineCells = [];
-    if (comboData.specialA !== "nova") lineCells.push({ cell: comboData.a, special: comboData.specialA });
-    if (comboData.specialB !== "nova") lineCells.push({ cell: comboData.b, special: comboData.specialB });
+    if (comboData.specialA !== "nova" && comboData.specialA !== "bomb" && comboData.specialA !== "seeker") {
+      lineCells.push({ cell: comboData.a, special: comboData.specialA });
+    }
+    if (comboData.specialB !== "nova" && comboData.specialB !== "bomb" && comboData.specialB !== "seeker") {
+      lineCells.push({ cell: comboData.b, special: comboData.specialB });
+    }
 
+    // Nova + Nova = full board.
     if (hasNova && comboData.specialA === "nova" && comboData.specialB === "nova") {
       markBoard(clearMap);
       return;
     }
 
+    // Nova + X: convert most common color to X, detonate all.
     if (hasNova) {
       var novaCell = comboData.specialA === "nova" ? comboData.a : comboData.b;
-      // Nova Link must outrank a solo nova sweep (one full color): it sweeps
-      // the partner piece's color AND fires a full row + column from the
-      // swap site, on top of the tripled line blast below.
       var partnerType = comboData.specialA === "nova" ? comboData.typeB : comboData.typeA;
       markType(clearMap, partnerType);
       markRow(clearMap, novaCell.row);
       markColumn(clearMap, novaCell.col);
+      // If partner is bomb, also blast a 3-tile radius from each hit.
+      if (hasBomb) {
+        var bombCell = comboData.specialA === "bomb" ? comboData.a : comboData.b;
+        markBox(clearMap, bombCell, 3);
+      }
+      // If partner is seeker, seek 3 targets.
+      if (hasSeeker) {
+        var seekerCell = comboData.specialA === "seeker" ? comboData.a : comboData.b;
+        for (var st = 0; st < 3; st += 1) {
+          var tgt = findSeekerTarget(seekerCell);
+          if (tgt) { markBox(clearMap, tgt, 1); markCell(clearMap, tgt.row, tgt.col); }
+        }
+      }
       lineCells.forEach(function (entry) {
         if (entry.special === "lineH") {
           markRow(clearMap, entry.cell.row);
@@ -7764,6 +7804,65 @@
       return;
     }
 
+    // Bomb + Bomb = 4-tile radius.
+    if (hasBomb && comboData.specialA === "bomb" && comboData.specialB === "bomb") {
+      markBox(clearMap, comboData.a, 4);
+      markBox(clearMap, comboData.b, 4);
+      return;
+    }
+
+    // Bomb + Line = 3 rows + 3 columns.
+    if (hasBomb && lineCells.length > 0) {
+      var bombCell2 = comboData.specialA === "bomb" ? comboData.a : comboData.b;
+      markBox(clearMap, bombCell2, 2);
+      lineCells.forEach(function (entry) {
+        if (entry.special === "lineH") {
+          markRow(clearMap, entry.cell.row);
+          markRow(clearMap, entry.cell.row - 1);
+          markRow(clearMap, entry.cell.row + 1);
+        } else {
+          markColumn(clearMap, entry.cell.col);
+          markColumn(clearMap, entry.cell.col - 1);
+          markColumn(clearMap, entry.cell.col + 1);
+        }
+      });
+      return;
+    }
+
+    // Bomb + Seeker = seeker flies to hardest target, bomb blast there.
+    if (hasBomb && hasSeeker) {
+      var seekerCell2 = comboData.specialA === "seeker" ? comboData.a : comboData.b;
+      var bombCell3 = comboData.specialA === "bomb" ? comboData.a : comboData.b;
+      markBox(clearMap, bombCell3, 2);
+      var tgt2 = findSeekerTarget(seekerCell2);
+      if (tgt2) markBox(clearMap, tgt2, 3);
+      return;
+    }
+
+    // Seeker + Seeker = 3 seekers to 3 targets.
+    if (hasSeeker && comboData.specialA === "seeker" && comboData.specialB === "seeker") {
+      markCell(clearMap, comboData.a.row, comboData.a.col);
+      markCell(clearMap, comboData.b.row, comboData.b.col);
+      for (var ss = 0; ss < 3; ss += 1) {
+        var tgt3 = findSeekerTarget(comboData.a);
+        if (tgt3) { markBox(clearMap, tgt3, 1); }
+      }
+      return;
+    }
+
+    // Seeker + Line = line fires, seeker flies to hardest remaining target.
+    if (hasSeeker && lineCells.length > 0) {
+      lineCells.forEach(function (entry) {
+        if (entry.special === "lineH") markRow(clearMap, entry.cell.row);
+        else markColumn(clearMap, entry.cell.col);
+      });
+      var seekerCell3 = comboData.specialA === "seeker" ? comboData.a : comboData.b;
+      var tgt4 = findSeekerTarget(seekerCell3);
+      if (tgt4) markBox(clearMap, tgt4, 2);
+      return;
+    }
+
+    // Pure line combos (existing logic).
     lineCells.forEach(function (entry) {
       if (entry.special === "lineH") markRow(clearMap, entry.cell.row);
       else markColumn(clearMap, entry.cell.col);
@@ -7802,7 +7901,21 @@
   function getSpecialComboLabel(comboData) {
     var specials = [comboData.specialA, comboData.specialB];
     if (specials[0] === "nova" && specials[1] === "nova") return "Total Nova";
-    if (specials.indexOf("nova") !== -1) return "Nova Link";
+    if (specials.indexOf("nova") !== -1) {
+      // Nova + X: convert most common color to X, detonate all.
+      var other = specials[0] === "nova" ? specials[1] : specials[0];
+      if (other === "bomb") return "Nova Cluster";
+      if (other === "seeker") return "Nova Hunt";
+      return "Nova Link";
+    }
+    if (specials.indexOf("bomb") !== -1 && specials.indexOf("bomb") !== specials.lastIndexOf("bomb")) return "Mega Bomb";
+    if (specials.indexOf("bomb") !== -1) {
+      var partner = specials[0] === "bomb" ? specials[1] : specials[0];
+      if (partner === "seeker") return "Seeker Bomb";
+      return "Cross Blast";
+    }
+    if (specials.indexOf("seeker") !== -1 && specials[0] === specials[1]) return "Twin Seekers";
+    if (specials.indexOf("seeker") !== -1) return "Seeker Strike";
     if (specials[0] !== specials[1]) return "Cross Beam";
     return specials[0] === "lineH" ? "Row Storm" : "Column Storm";
   }
@@ -7810,9 +7923,10 @@
   function chooseSpecialSpawn(groups, anchors) {
     var crossCell = findCrossCell(groups);
     if (crossCell) {
+      // L/T-shaped cross match → Bomb (area blast). 5-in-a-line → Nova (below).
       return {
         cell: crossCell,
-        special: "nova"
+        special: "bomb"
       };
     }
 
@@ -7826,6 +7940,18 @@
     });
 
     var group = worthy[0];
+    // Match-4 in a 2×2 square → Seeker (smart targeting). Match-4 in a line → Line.
+    if (group.length === 4 && !group.horizontal) {
+      // Check if this is actually a 2×2 square (4 pieces forming a box).
+      // The cross detector above already caught L/T shapes, so a vertical 4
+      // that isn't a cross is a line. But we need to detect 2×2 separately.
+      // For now: 2×2 squares produce a cross (caught above as "bomb"), so
+      // we route match-4 lines to Line as before.
+      return {
+        cell: pickSpawnCell(group, anchors),
+        special: "lineV"
+      };
+    }
     return {
       cell: pickSpawnCell(group, anchors),
       special: group.length >= 5 ? "nova" : group.horizontal ? "lineH" : "lineV"
@@ -7848,6 +7974,94 @@
 
     var parts = crossKey.split(":");
     return { row: Number(parts[0]), col: Number(parts[1]) };
+  }
+
+  // PROGRESSION: Find the hardest remaining objective for the Seeker to target.
+  // Priority: shield blocker → spreader → spectrum shield → highest-density goal piece.
+  function findSeekerTarget(fromCell) {
+    // 1. Nearest shield blocker.
+    var nearestShield = null;
+    var nearestShieldDist = 999;
+    for (var r = 0; r < GRID; r += 1) {
+      for (var c = 0; c < GRID; c += 1) {
+        if (tileCharges[r] && tileCharges[r][c] > 0) {
+          var d = Math.abs(r - fromCell.row) + Math.abs(c - fromCell.col);
+          if (d < nearestShieldDist) { nearestShieldDist = d; nearestShield = { row: r, col: c }; }
+        }
+      }
+    }
+    if (nearestShield) return nearestShield;
+
+    // 2. Nearest spreader.
+    var nearestSpreader = null;
+    var nearestSpreaderDist = 999;
+    spreaderList.forEach(function (sp) {
+      var d = Math.abs(sp.row - fromCell.row) + Math.abs(sp.col - fromCell.col);
+      if (d < nearestSpreaderDist) { nearestSpreaderDist = d; nearestSpreader = { row: sp.row, col: sp.col }; }
+    });
+    if (nearestSpreader) return nearestSpreader;
+
+    // 3. Nearest spectrum shield.
+    var nearestSpectrum = null;
+    var nearestSpectrumDist = 999;
+    spectrumList.forEach(function (sp) {
+      if (sp.remaining.length === 0) return;
+      var d = Math.abs(sp.row - fromCell.row) + Math.abs(sp.col - fromCell.col);
+      if (d < nearestSpectrumDist) { nearestSpectrumDist = d; nearestSpectrum = { row: sp.row, col: sp.col }; }
+    });
+    if (nearestSpectrum) return nearestSpectrum;
+
+    // 4. Nearest goal piece (collect target).
+    if (currentLevel && currentLevel.goals) {
+      var collectGoal = currentLevel.goals.find(function (g) { return g.kind === "collect"; });
+      if (collectGoal) {
+        var nearestGem = null;
+        var nearestGemDist = 999;
+        for (var gr = 0; gr < GRID; gr += 1) {
+          for (var gc = 0; gc < GRID; gc += 1) {
+            var gem = board[gr] && board[gr][gc];
+            if (gem && gem.type === collectGoal.type && !gem.special) {
+              var gd = Math.abs(gr - fromCell.row) + Math.abs(gc - fromCell.col);
+              if (gd > 0 && gd < nearestGemDist) { nearestGemDist = gd; nearestGem = { row: gr, col: gc }; }
+            }
+          }
+        }
+        if (nearestGem) return nearestGem;
+      }
+    }
+
+    // 5. Fallback: a random non-empty cell that isn't the origin.
+    for (var fr = 0; fr < GRID; fr += 1) {
+      for (var fc = 0; fc < GRID; fc += 1) {
+        if (fr === fromCell.row && fc === fromCell.col) continue;
+        if (board[fr] && board[fr][fc] && isCellActive(fr, fc)) return { row: fr, col: fc };
+      }
+    }
+    return null;
+  }
+
+  // PROGRESSION: Seeker tracer — a bright beam from origin to target.
+  function addSeekerTracer(from, to, color) {
+    beams.push({
+      special: "seeker",
+      x: view.boardX + from.col * view.cell + view.cell / 2,
+      y: view.boardY + from.row * view.cell + view.cell / 2,
+      angle: Math.atan2(
+        (to.row - from.row) * view.cell,
+        (to.col - from.col) * view.cell
+      ),
+      length: Math.hypot((to.col - from.col) * view.cell, (to.row - from.row) * view.cell),
+      width: Math.max(2, view.cell * 0.08),
+      life: 0.4,
+      ttl: 0.4,
+      color: color,
+      delay: 0
+    });
+    addShockwave(
+      view.boardX + to.col * view.cell + view.cell / 2,
+      view.boardY + to.row * view.cell + view.cell / 2,
+      color, view.cell * 0.2, view.cell * 1.2, 0.3, 10
+    );
   }
 
   function pickSpawnCell(group, anchors) {
@@ -7916,8 +8130,8 @@
     addSpecialBeam(hit.special, cell.row, cell.col, TYPES[gem.type].color);
     addSpecialDetonation(hit.special, cell.row, cell.col, TYPES[gem.type].color, chain);
     playSpecialActivate(hit.special, gem.type, chain);
-    flash = Math.min(1, flash + (hit.special === "nova" ? 0.56 : 0.24));
-    bumpShake(hit.special === "nova" ? 0.44 : 0.22);
+    flash = Math.min(1, flash + (hit.special === "nova" ? 0.56 : hit.special === "bomb" ? 0.4 : 0.24));
+    bumpShake(hit.special === "nova" ? 0.44 : hit.special === "bomb" ? 0.32 : 0.22);
     if (hit.special === "nova") {
       // Solo nova is the biggest non-fusion beat: longer stop than the old
       // 3x3 pop (TIMING.hitStopNova), still under hitStopFusion.
@@ -7942,6 +8156,37 @@
         colFlash.push({ row: row, col: cell.col });
       }
       announceSpecialClear("lineV", colFlash, TYPES[gem.type].color);
+      return;
+    }
+
+    // PROGRESSION: Bomb special — ~5×5 area blast (2-tile radius).
+    if (hit.special === "bomb") {
+      var bombFlash = [];
+      for (var br = Math.max(0, cell.row - 2); br <= Math.min(GRID - 1, cell.row + 2); br += 1) {
+        for (var bc = Math.max(0, cell.col - 2); bc <= Math.min(GRID - 1, cell.col + 2); bc += 1) {
+          markSpecialCandidate(br, bc, clearMap, queue, visited);
+          bombFlash.push({ row: br, col: bc });
+        }
+      }
+      announceSpecialClear("bomb", bombFlash, TYPES[gem.type].color);
+      return;
+    }
+
+    // PROGRESSION: Seeker special — flies to the hardest remaining objective.
+    if (hit.special === "seeker") {
+      markSpecialCandidate(cell.row, cell.col, clearMap, queue, visited);
+      var seekTarget = findSeekerTarget(cell);
+      if (seekTarget) {
+        markSpecialCandidate(seekTarget.row, seekTarget.col, clearMap, queue, visited);
+        // Also clear a 1-tile radius around the target.
+        for (var sr = Math.max(0, seekTarget.row - 1); sr <= Math.min(GRID - 1, seekTarget.row + 1); sr += 1) {
+          for (var sc = Math.max(0, seekTarget.col - 1); sc <= Math.min(GRID - 1, seekTarget.col + 1); sc += 1) {
+            markSpecialCandidate(sr, sc, clearMap, queue, visited);
+          }
+        }
+        addSeekerTracer(cell, seekTarget, TYPES[gem.type].color);
+        announceSpecialClear("seeker", [{ row: cell.row, col: cell.col }, seekTarget], TYPES[gem.type].color);
+      }
       return;
     }
 
@@ -7996,9 +8241,10 @@
     gem.pop = Math.max(gem.pop, 0.72);
     gem.scale = Math.max(gem.scale, 1.16);
     gem.birth = 1;
-    bumpShake(spawn.special === "nova" ? 0.18 : 0.08);
+    bumpShake(spawn.special === "nova" ? 0.18 : spawn.special === "bomb" ? 0.14 : 0.08);
     addSpecialCreationBurst(gem, spawn.special);
-    addCallout(spawn.special === "nova" ? "NOVA" : "LINE", "#ffffff", spawn.special === "nova" ? 24 : 18);
+    var specialName = spawn.special === "nova" ? "NOVA" : spawn.special === "bomb" ? "BOMB" : spawn.special === "seeker" ? "SEEKER" : spawn.special === "lineH" || spawn.special === "lineV" ? "LINE" : "LINE";
+    addCallout(specialName, "#ffffff", spawn.special === "nova" || spawn.special === "bomb" ? 24 : 18);
     playSpecialCreate(spawn.special, gem.type);
   }
 
@@ -15049,6 +15295,14 @@
       drawLineSpecialOverlay(special === "lineV", radius, time, color);
       return;
     }
+    if (special === "bomb") {
+      drawBombSpecialOverlay(radius, time, color);
+      return;
+    }
+    if (special === "seeker") {
+      drawSeekerSpecialOverlay(radius, time, color);
+      return;
+    }
     drawNovaSpecialOverlay(radius, time, color);
   }
 
@@ -15125,6 +15379,97 @@
   }
 
   // ART POLISH: Nova special = swirling star reactor with rotating arms + spokes + hot core.
+  // PROGRESSION: Bomb special visual — pulsing blast ring + expanding shockwave.
+  function drawBombSpecialOverlay(radius, time, color) {
+    var pulseAmount = 0.55 + Math.sin(time * 5.2) * 0.45;
+    var blastR = radius * (0.85 + pulseAmount * 0.08);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    // Expanding blast ring.
+    ctx.globalAlpha = 0.6 + pulseAmount * 0.25;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, radius * 0.08);
+    ctx.shadowBlur = glowBlur(14 + pulseAmount * 14);
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    ctx.arc(0, 0, blastR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Inner expanding ring (delayed echo).
+    ctx.globalAlpha = 0.4 + pulseAmount * 0.15;
+    ctx.lineWidth = Math.max(1.5, radius * 0.05);
+    ctx.beginPath();
+    ctx.arc(0, 0, blastR * 0.7, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Hot core.
+    var core = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.35);
+    core.addColorStop(0, rgbaFromHex("#ffffff", 0.7 + pulseAmount * 0.2));
+    core.addColorStop(0.5, rgbaFromHex(color, 0.4));
+    core.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle = core;
+    ctx.shadowBlur = glowBlur(12 + pulseAmount * 10);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cross-hair tick marks at blast radius.
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = Math.max(1, radius * 0.03);
+    ctx.shadowBlur = 0;
+    for (var t = 0; t < 4; t += 1) {
+      var a = (Math.PI * 2 * t) / 4;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * blastR * 0.85, Math.sin(a) * blastR * 0.85);
+      ctx.lineTo(Math.cos(a) * blastR * 1.05, Math.sin(a) * blastR * 1.05);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // PROGRESSION: Seeker special visual — rotating targeting reticle.
+  function drawSeekerSpecialOverlay(radius, time, color) {
+    var pulseAmount = 0.55 + Math.sin(time * 6) * 0.45;
+    var reticleR = radius * (0.8 + pulseAmount * 0.06);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.rotate(time * 1.8);
+
+    // Rotating reticle — 4 arc segments.
+    ctx.globalAlpha = 0.6 + pulseAmount * 0.2;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, radius * 0.06);
+    ctx.shadowBlur = glowBlur(10 + pulseAmount * 12);
+    ctx.shadowColor = color;
+    for (var i = 0; i < 4; i += 1) {
+      var startAngle = (Math.PI * 2 * i) / 4 + 0.2;
+      var endAngle = startAngle + Math.PI * 0.28;
+      ctx.beginPath();
+      ctx.arc(0, 0, reticleR, startAngle, endAngle);
+      ctx.stroke();
+    }
+
+    // Counter-rotating inner ring.
+    ctx.rotate(-time * 3);
+    ctx.globalAlpha = 0.4 + pulseAmount * 0.15;
+    ctx.lineWidth = Math.max(1.5, radius * 0.04);
+    ctx.beginPath();
+    ctx.arc(0, 0, reticleR * 0.65, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Center dot — the "eye" of the seeker.
+    ctx.shadowBlur = glowBlur(8);
+    ctx.fillStyle = "#ffffff";
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   function drawNovaSpecialOverlay(radius, time, color) {
     var railWidth = Math.max(2, radius * 0.12);
     var pulseAmount = 0.55 + Math.sin(time * 4.4) * 0.45;
@@ -16579,6 +16924,31 @@
     }
   }
 
+  // PROGRESSION: per-sector energy profile — the DJ-set wave.
+  // S1 = relaxed warmup → S2 = picks up → S3-4 = energetic → S5 = peak →
+  // S6-7 = cool down → S8-9 = rebuild → S10+ = alternating peaks and valleys.
+  function getSectorEnergyProfile(sector) {
+    var profiles = [
+      { floorScale: 0.75, cap: 0.65 }, // S1 Ion Gate: relaxed, sparse, warm
+      { floorScale: 0.85, cap: 0.75 }, // S2 Prism Wake: picks up, brighter
+      { floorScale: 0.90, cap: 0.85 }, // S3 Quark Relay: energetic, tight
+      { floorScale: 0.95, cap: 0.90 }, // S4 Pulse Foundry: hard bounce, driving
+      { floorScale: 1.00, cap: 0.95 }, // S5 Core Spiral: peak energy, redline
+      { floorScale: 0.82, cap: 0.72 }, // S6 Atom Choir: cool down, wide pads
+      { floorScale: 0.78, cap: 0.70 }, // S7 Shield Mirror: valley, tension
+      { floorScale: 0.88, cap: 0.80 }, // S8 Nova Yard: rebuild
+      { floorScale: 0.92, cap: 0.88 }, // S9 Vector Drift: climbing
+      { floorScale: 0.98, cap: 0.93 }, // S10 Signal Reef: second peak
+      { floorScale: 0.80, cap: 0.72 }, // S11 Chrome Strings: cool down
+      { floorScale: 0.86, cap: 0.78 }, // S12 Solar Static: rebuild
+      { floorScale: 0.94, cap: 0.90 }, // S13 Dark Circuit: dark peak
+      { floorScale: 0.84, cap: 0.76 }, // S14 Gravity Bloom: valley before finale
+      { floorScale: 1.00, cap: 1.00 }, // S15 Overdrive Arc: penultimate peak
+      { floorScale: 1.00, cap: 1.00 }  // S16 Final Harmonic: full spectrum finale
+    ];
+    return profiles[Math.min(sector, profiles.length - 1)] || profiles[0];
+  }
+
   function getCampaignArrangement() {
     if (gameMode !== MODE_CAMPAIGN || !currentLevel) return null;
     if (levelState !== "playing") {
@@ -16607,10 +16977,15 @@
     }
     var chapter = ((currentLevel.id - 1) % 15) + 1;
     var tier = chapter <= 5 ? 0 : chapter <= 10 ? 1 : 2;
-    var cap = 1;
+    // PROGRESSION: per-sector energy profile — DJ-set ebb and flow.
+    // Each sector gets its own floor scale + energy cap so the music
+    // varies across the campaign like a DJ set, not a flat ramp.
+    var sector = Math.floor((currentLevel.id - 1) / 15); // 0-15
+    var sectorProfile = getSectorEnergyProfile(sector);
+    var cap = sectorProfile.cap;
     if (tier === 0) {
-      floor *= AUDIO_TUNING.tier0FloorScale;
-      cap = AUDIO_TUNING.tier0EnergyCap;
+      floor *= sectorProfile.floorScale;
+      cap = sectorProfile.cap;
     } else if (tier === 2) {
       floor += AUDIO_TUNING.tier2FloorBonus;
     }
