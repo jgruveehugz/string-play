@@ -4072,6 +4072,7 @@
       maybeQueueFinaleIntro();
     }
 
+    activeColorSet = computeActiveColorSet(currentLevel); // 4-color trick: restrict early-track palette
     applyBoardShape(currentLevel);
     buildFreshBoard(false);
     applyLevelLayout(currentLevel);
@@ -4455,14 +4456,46 @@
     if (row >= 2 && board[row - 1][col] && board[row - 2][col] && board[row - 1][col].type === board[row - 2][col].type) {
       blocked[board[row - 1][col].type] = true;
     }
-    var choices = TYPES.map(function (_, index) { return index; }).filter(function (type) {
+    var choices = activeColorIndices().filter(function (type) {
       return !blocked[type];
     });
     return pickWeightedType(choices);
   }
 
+  // ---- 4-color trick (Royal Match's top "wins feel great" lever) --------------------
+  // STRING shipped every board with all 6 colors from L1. Fewer active colors early =
+  // denser matches, more specials, more juice, and a gentler on-ramp. The active COUNT
+  // scales by track (15-level sector); the active SET always includes every color the
+  // level's goals need. Spectrum shields (the only color-specific breakable) only appear
+  // at L61+, where the count is already the full 6 -- so a shield color is never dropped.
+  // Rush/Daily always use all colors (gated on gameMode in activeColorIndices).
+  var activeColorSet = null; // null = all TYPES; a subset array restricts campaign spawns
+  var ACTIVE_COLORS_BY_TRACK = [4, 4, 5, 5, 6]; // tracks 1,2,3,4,5+; clamped to TYPES.length
+  function activeColorCountForLevel(level) {
+    if (!level || !level.id) return TYPES.length;
+    var track = Math.floor((level.id - 1) / 15);
+    var count = ACTIVE_COLORS_BY_TRACK[Math.min(track, ACTIVE_COLORS_BY_TRACK.length - 1)];
+    return Math.max(3, Math.min(TYPES.length, count)); // never below 3 -- a match-3 needs headroom
+  }
+  function computeActiveColorSet(level) {
+    var count = activeColorCountForLevel(level);
+    if (count >= TYPES.length) return null; // full palette -> no restriction
+    var set = [];
+    function add(c) { c = ((c % TYPES.length) + TYPES.length) % TYPES.length; if (set.indexOf(c) === -1) set.push(c); }
+    var bias = (level.modifiers && typeof level.modifiers.colorBias === "number") ? level.modifiers.colorBias : (level.id % TYPES.length);
+    add(bias); // the "home" color the mix biases toward
+    (level.goals || []).forEach(function (g) { if (g && g.kind === "collect" && typeof g.type === "number") add(g.type); });
+    var k = 1;
+    while (set.length < count && k <= TYPES.length) { add(bias + k); k += 1; } // fill outward from bias
+    return set;
+  }
+  function activeColorIndices() {
+    if (gameMode === MODE_CAMPAIGN && activeColorSet) return activeColorSet.slice();
+    return TYPES.map(function (_, index) { return index; });
+  }
+
   function randomType() {
-    return pickWeightedType(TYPES.map(function (_, index) { return index; }));
+    return pickWeightedType(activeColorIndices());
   }
 
   function forcePlayableMove() {
@@ -4715,7 +4748,7 @@
     if (row <= GRID - 3 && board[row + 1] && board[row + 2] && board[row + 1][col] && board[row + 2][col] && board[row + 1][col].type === board[row + 2][col].type) {
       blocked[board[row + 1][col].type] = true;
     }
-    var choices = TYPES.map(function (_, index) { return index; }).filter(function (type) {
+    var choices = activeColorIndices().filter(function (type) {
       return !blocked[type];
     });
     return pickWeightedType(choices);
