@@ -14696,18 +14696,22 @@
     ctx.scale(scale * breath, scale * breath);
     drawGemBacking(radius, type.color, gem.special, gem.birth);
 
-    if (neonDetail()) {
+    // VIBRANT: bright neon halo stroke — thicker, higher alpha, on all tiers.
+    {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.24 + haloPulse + gem.pop * 0.3;
-      ctx.lineWidth = coreWidth * 3.5;
+      ctx.globalAlpha = 0.38 + haloPulse + gem.pop * 0.3;
+      ctx.lineWidth = coreWidth * 4;
       ctx.strokeStyle = type.color;
+      ctx.shadowBlur = glowBlur(8 + beatPulse * 12);
+      ctx.shadowColor = type.color;
       drawShape(type.shape, radius, time + gem.spin, type.color);
       ctx.restore();
     }
 
-    ctx.globalAlpha = 0.95;
-    ctx.lineWidth = coreWidth;
+    // VIBRANT: thicker core outline for presence.
+    ctx.globalAlpha = 0.98;
+    ctx.lineWidth = coreWidth * 1.2;
     var birthWhite = Math.min(1, (gem.birth || 0) / 0.8);
     ctx.strokeStyle = birthWhite > 0 ? type.birthColors[Math.min(3, Math.round(birthWhite * 3))] : type.coreColor;
     drawShape(type.shape, radius, time + gem.spin, type.color);
@@ -14940,41 +14944,55 @@
     birth = birth || 0;
     var visualDrive = getVisualDrive();
     var beat = Math.min(1, beatPulse * 0.8 + visualDrive * 0.35 + birth * 0.8);
-    var core = radius * (special ? 1.28 : 1.12);
-    var inner = radius * (special ? 0.96 : 0.86);
+    var core = radius * (special ? 1.35 : 1.18);
+    var inner = radius * (special ? 1.0 : 0.9);
+    var s = Math.max(0.5, fxScale());
 
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // Birth/special aura, now also driven by the music/drive meter.
-    ctx.globalAlpha = (birth * 0.26 + beat * 0.08 + (special ? 0.08 : 0)) * Math.max(0.4, fxScale());
+    // VIBRANT: outer glow halo — much bigger, much brighter. This is the bloom.
+    ctx.globalAlpha = (0.12 + birth * 0.2 + beat * 0.1 + (special ? 0.1 : 0)) * s;
     ctx.fillStyle = color;
-    ctx.shadowBlur = glowBlur(18 + birth * 22 + beat * 14);
+    ctx.shadowBlur = glowBlur(24 + birth * 28 + beat * 18);
     ctx.shadowColor = color;
     ctx.beginPath();
     ctx.arc(0, 0, core, 0, Math.PI * 2);
     ctx.fill();
 
-    // ART POLISH: lit-from-within radial core fill.
-    var fill = ctx.createRadialGradient(-inner * 0.24, -inner * 0.28, inner * 0.08, 0, 0, inner);
-    fill.addColorStop(0, rgbaFromHex("#ffffff", 0.42 + beat * 0.16));
-    fill.addColorStop(0.22, rgbaFromHex(color, 0.30 + beat * 0.12));
-    fill.addColorStop(0.62, rgbaFromHex(color, 0.13 + beat * 0.08));
+    // VIBRANT: bright inner radial fill — saturated, hot center, color body.
+    // Alpha pushed way up from the timid 0.12-0.42 range to 0.3-0.75.
+    var fill = ctx.createRadialGradient(-inner * 0.18, -inner * 0.22, inner * 0.04, 0, 0, inner);
+    fill.addColorStop(0, rgbaFromHex("#ffffff", 0.65 + beat * 0.2));
+    fill.addColorStop(0.15, rgbaFromHex(color, 0.55 + beat * 0.15));
+    fill.addColorStop(0.45, rgbaFromHex(color, 0.28 + beat * 0.12));
+    fill.addColorStop(0.82, rgbaFromHex(color, 0.10 + beat * 0.06));
     fill.addColorStop(1, "rgba(2,4,10,0)");
     ctx.shadowBlur = 0;
-    ctx.globalAlpha = special ? 0.9 : 0.78;
+    ctx.globalAlpha = (special ? 0.95 : 0.85) * s;
     ctx.fillStyle = fill;
     ctx.beginPath();
     ctx.arc(0, 0, inner, 0, Math.PI * 2);
     ctx.fill();
 
-    // ART POLISH: subtle dark lower rim for glass depth.
+    // VIBRANT: a second smaller hot core pulse for "lit from within" intensity.
+    ctx.globalAlpha = (0.4 + beat * 0.3) * s;
+    var hotCore = ctx.createRadialGradient(0, 0, 0, 0, 0, inner * 0.4);
+    hotCore.addColorStop(0, rgbaFromHex("#ffffff", 0.35 + beat * 0.25));
+    hotCore.addColorStop(0.6, rgbaFromHex(color, 0.15 + beat * 0.1));
+    hotCore.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = hotCore;
+    ctx.beginPath();
+    ctx.arc(0, 0, inner * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtle dark lower rim for glass depth (source-over, not additive).
     ctx.globalCompositeOperation = "source-over";
     var rim = ctx.createRadialGradient(0, inner * 0.28, inner * 0.12, 0, 0, inner * 1.05);
     rim.addColorStop(0, "rgba(255,255,255,0)");
-    rim.addColorStop(0.58, "rgba(255,255,255,0)");
-    rim.addColorStop(1, "rgba(0,0,0,0.34)");
-    ctx.globalAlpha = 0.65;
+    rim.addColorStop(0.62, "rgba(255,255,255,0)");
+    rim.addColorStop(1, "rgba(0,0,0,0.28)");
+    ctx.globalAlpha = 0.55 * s;
     ctx.fillStyle = rim;
     ctx.beginPath();
     ctx.arc(0, 0, inner, 0, Math.PI * 2);
@@ -14982,11 +15000,13 @@
     ctx.restore();
   }
 
-  // ART POLISH: inner sparkle — a tiny cross + glint that drifts inside the gem.
+  // VIBRANT: inner sparkle — a cross + glint that drifts inside the gem.
+  // Now shows on all quality tiers (was neonDetail-gated, now just fxScale).
   function drawGemInnerSparkle(radius, color, time, seed, special) {
-    if (!neonDetail()) return;
+    var s = Math.max(0.5, fxScale());
+    if (s < 0.5) return;
     var pulseAmount = 0.45 + Math.sin(time * 3.1 + seed * 0.017) * 0.55;
-    var alpha = (0.10 + pulseAmount * 0.16 + beatPulse * 0.08) * Math.max(0.4, fxScale());
+    var alpha = (0.15 + pulseAmount * 0.2 + beatPulse * 0.1) * s;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = special ? alpha * 1.35 : alpha;
