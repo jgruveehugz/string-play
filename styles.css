@@ -3237,6 +3237,30 @@ input[type="range"] {
   will-change: transform, opacity;
 }
 
+/* JUICE PASS: collected piece flying to the goal chip. */
+.fly-gem {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 14px currentColor);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.fly-gem .piece-glyph-svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+.fly-gem .piece-glyph-fill { fill: currentColor; opacity: 0.12; }
+
 /* Signal packet: neon tracer dot riding a bezier to the goal counter. */
 .signal-packet {
   position: fixed;

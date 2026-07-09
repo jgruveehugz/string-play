@@ -1068,15 +1068,15 @@
       { progress: 0.25, floor: 0.3 },
       { progress: 0, floor: 0.18 }
     ],
-    tier0FloorScale: 0.75, // chapters 1-5 scale the arrangement floor down so early sectors stay sparse (0.5-1)
-    tier0EnergyCap: 0.66, // chapters 1-5 cap effective energy; keeps sparkle out of the sector's front half (0.4-1)
+    tier0FloorScale: 0.85, // MUSIC POLISH: raised from 0.75 → 0.85 so early sectors feel less sparse (4-color ease already helps)
+    tier0EnergyCap: 0.75, // MUSIC POLISH: raised from 0.66 → 0.75 so early sectors can build energy higher (first 20 levels should feel exciting)
     tier2FloorBonus: 0.04, // chapters 11-15 add this to the arrangement floor for denser late sectors (0-0.1)
     climaxProgress: 0.9, // goal progress that triggers the climax state (0.7-1)
     climaxSweepSteps: 32, // 16th steps to sweep the macro filter fully open after climax onset (8-64)
     revealSteps: 32, // sector-entry hold length in 16th steps; 32 = 2 bars before the full groove lands (16-64)
     revealDroneGain: 0.02, // root drone gain under the sector-entry hold (0-0.05)
     revealMotifGain: 0.03, // reveal motif note gain during the hold; the hold plays the track hook's prime form (0-0.06)
-    motifOpsMax: 3, // max seed-picked operators composed onto the track hook per level (1-3); higher = more per-level melodic variation (Jung's "less samey" knob)
+    motifOpsMax: 4, // MUSIC POLISH: widened from 3 → 4 so per-level melodic variation is actually audible
     motifDegreeMin: -3, // lowest scale degree a motif variant may reach after operators (-5-0)
     motifDegreeMax: 9, // highest scale degree a motif variant may reach after operators (5-12)
     motifGainByTier: [0.020, 0.025, 0.030], // signature motif layer gain by difficulty tier 0/1/2 (each 0-0.03); louder so the per-level motif shift is actually heard (pairs with motifOpsMax)
@@ -1084,8 +1084,8 @@
     motifTensionUrgentMin: 2, // difficulty tier at/above this picks the urgent operator pool (1.5-2.8)
     motifNoteDurScale: 0.8, // fraction of a motif note's rhythmic slot the tone sustains (0.4-1)
     winMotifSpacing: 0.05, // seconds between win-sting motif arpeggio notes (0.03-0.09)
-    driftDetuneCents: 4, // per-level seed detune half-range in cents; tints every note's pitch (0-10)
-    driftCutoffMul: 0.05, // per-level seed lowpass-cutoff half-range as a fraction; brightens/darkens the mix (0-0.12)
+    driftDetuneCents: 6, // MUSIC POLISH: widened from 4 → 6 (±3 cents) so per-level pitch tint is audible
+    driftCutoffMul: 0.08, // MUSIC POLISH: widened from 0.05 → 0.08 so per-level brightness shift is audible
     driftFeedbackNudge: 0.015, // per-level seed delay-feedback half-range added to the feedback target (0-0.04)
     driftFiltEnvOctaves: 0.25, // per-level seed filter-envelope sweep-depth half-range in octaves; voice engine (seq 4) (0-0.6)
     driftVoiceBias: 0.15, // per-level seed voice-character/stack-brightness half-range bias; voice engine (seq 4) (0-0.4)
@@ -1551,6 +1551,7 @@
   var boardMask = [];
   var currentBoardShape = "full";
   var tileCharges = [];
+  var tileWobble = []; // JUICE PASS: per-cell wobble decay when shields take a hit
   // Beat Gates: masked cells that toggle open/closed per MOVE (never per
   // second — the campaign never races time). Closed = solid wall: holds no
   // piece, blocks falls and matches. Visuals strobe on the beat clock.
@@ -1664,8 +1665,10 @@
   var rewardDropState = { dropped: 0, lastDropMove: -99 };
   var levelGrantLedger = [];
   var flyRewardCount = 0;
+  var flyGemCount = 0;
   var shockwaves = [];
   var vectorField = buildVectorField(92);
+  var atmosphereMotes = buildAtmosphereMotes(120);
   var stageBgGradient = null;
   var vignetteGradient = null;
   var washCyan = null;
@@ -2796,6 +2799,7 @@
     var layout = level && level.layout ? level.layout : null;
     var strength = layout && layout.strength ? layout.strength : 0;
     tileCharges = [];
+      tileWobble = [];
     for (var row = 0; row < GRID; row += 1) {
       tileCharges[row] = [];
       for (var col = 0; col < GRID; col += 1) tileCharges[row][col] = 0;
@@ -3071,6 +3075,11 @@
       var x = view.boardX + cell.col * view.cell + view.cell / 2;
       var y = view.boardY + cell.row * view.cell + view.cell / 2;
       addShockwave(x, y, SPREAD_COLOR, view.cell * 0.12, view.cell * 0.72, 0.24, 6);
+      // JUICE PASS: fly a piece to the spread goal chip on clear.
+      if (gameMode === MODE_CAMPAIGN && levelState === "playing" && currentLevel && currentLevel.goals) {
+        var hasSpreadGoal = currentLevel.goals.some(function (g) { return g.kind === "spread"; });
+        if (hasSpreadGoal) flyGemToGoalChip(x, y, 2, "spread"); // green diamond = creep piece
+      }
     });
     // Containment: any infection orthogonally next to a cleared cell is held
     // back on the next spread tick (clearing beside it keeps it in check).
@@ -4013,6 +4022,7 @@
     boardRng = createSeededRandom(getCampaignRunSeed(currentLevel, currentLevelAttempt));
     board = [];
     tileCharges = [];
+      tileWobble = [];
     score = 0;
     combo = 0;
     movesLeft = currentLevel.moves;
@@ -4158,6 +4168,7 @@
     boardRng = Math.random;
     board = [];
     tileCharges = [];
+      tileWobble = [];
     score = 0;
     combo = 0;
     movesLeft = 0;
@@ -4228,6 +4239,7 @@
     boardRng = createSeededRandom(dailySeed);
     board = [];
     tileCharges = [];
+      tileWobble = [];
     score = 0;
     combo = 0;
     movesLeft = 0;
@@ -4455,6 +4467,7 @@
     var patterns = ["cross", "diagonal", "ring", "checker"];
     var pattern = patterns[Math.floor(boardRandom() * patterns.length)];
     tileCharges = [];
+      tileWobble = [];
     applyBoardShape({ layout: { boardShape: "full" } });
     for (var row = 0; row < GRID; row += 1) {
       tileCharges[row] = [];
@@ -6060,11 +6073,28 @@
     // Collect goals count only cleared gems. The special-spawn cell survives
     // (it becomes a beam/nova), so drop it here — matches burstCells, not clearCells.
     var preserveKey = specialSpawn ? cellKey(specialSpawn.cell) : null;
+    // JUICE PASS: determine if any goal wants this piece type so we can fly it.
+    var collectGoalsByType = {};
+    if (currentLevel && currentLevel.goals) {
+      currentLevel.goals.forEach(function (goal) {
+        if (goal.kind === "collect") collectGoalsByType[goal.type] = true;
+      });
+    }
+    var flyIndex = 0;
     cells.forEach(function (cell) {
       if (preserveKey && cellKey(cell) === preserveKey) return;
       var gem = board[cell.row] && board[cell.row][cell.col];
       if (gem) {
         levelStats.collected[gem.type] = (levelStats.collected[gem.type] || 0) + 1;
+        // JUICE PASS: fly the collected piece to the goal chip.
+        if (collectGoalsByType[gem.type] && gameMode === MODE_CAMPAIGN && levelState === "playing") {
+          var cx = view.boardX + cell.col * view.cell + view.cell / 2;
+          var cy = view.boardY + cell.row * view.cell + view.cell / 2;
+          (function (fx, fy, ft, fi) {
+            runLater(fi * 50, function () { flyGemToGoalChip(fx, fy, ft, "collect"); });
+          })(cx, cy, gem.type, flyIndex);
+          flyIndex += 1;
+        }
       }
     });
 
@@ -6360,9 +6390,17 @@
         // Bigger, brighter smash: a double shockwave (white flash + magenta ring).
         addShockwave(x, y, "#ffffff", view.cell * 0.1, view.cell * 0.7, 0.18, 6);
         addShockwave(x, y, "#ff4fd8", view.cell * 0.16, view.cell * 1.05, 0.3, 10);
+        // JUICE PASS: fly a piece to the flux goal chip on break.
+        if (gameMode === MODE_CAMPAIGN && levelState === "playing" && currentLevel && currentLevel.goals) {
+          var hasFluxGoal = currentLevel.goals.some(function (g) { return g.kind === "flux"; });
+          if (hasFluxGoal) flyGemToGoalChip(x, y, 3, "flux"); // gold square = shield piece
+        }
         brokeCount += 1;
       } else {
         addShockwave(x, y, "#ff4fd8", view.cell * 0.1, view.cell * 0.6, 0.22, 6);
+        // JUICE PASS: wobble the wall — it took a hit but didn't break.
+        if (!tileWobble[r]) tileWobble[r] = [];
+        tileWobble[r][c] = 1;
         crackedCount += 1;
       }
     });
@@ -6878,6 +6916,101 @@
     requestAnimationFrame(step);
   }
 
+  // JUICE PASS: Collected pieces fly to the goal chip on the rail.
+  // Spawns a small neon glyph (the piece shape in its color) that arcs from
+  // the cleared cell's board position to the matching goal-chip DOM element.
+  // Capped by flyGemCount to stay performant. Staggered by 40ms per gem so
+  // a 3-match reads as three distinct notes, not one blur.
+  function flyGemToGoalChip(fromX, fromY, typeIndex, goalKind) {
+    if (flyGemCount >= 8) return;
+    var chipSel = ".goal-chip--" + goalKind;
+    var destEl = goalRailEl ? goalRailEl.querySelector(chipSel) : null;
+    if (!destEl) destEl = resolveFlyTarget(null);
+    if (!destEl) return;
+    var type = TYPES[typeIndex] || TYPES[0];
+    var canvasRect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { left: 0, top: 0 };
+    var startX = canvasRect.left + fromX;
+    var startY = canvasRect.top + fromY;
+    var destRect = destEl.getBoundingClientRect();
+    var endX = destRect.left + destRect.width / 2;
+    var endY = destRect.top + destRect.height / 2;
+
+    var el = document.createElement("span");
+    el.className = "fly-gem";
+    el.style.color = type.color;
+    // Draw the piece shape as an inline SVG so the flying gem IS the gem, not a dot.
+    el.innerHTML = buildPieceGlyphSvg(type.shape);
+    el.style.transform = "translate(" + startX + "px, " + startY + "px) translate(-50%, -50%)";
+    document.body.appendChild(el);
+    flyGemCount += 1;
+
+    var duration = 440 + 120 * fxScale();
+    var arcLift = Math.min(100, Math.abs(endY - startY) * 0.3 + 36);
+    var startTime = 0;
+    function step(now) {
+      if (!startTime) startTime = now;
+      var t = Math.min(1, (now - startTime) / duration);
+      var eased = t * t * (3 - 2 * t);
+      var x = startX + (endX - startX) * eased;
+      var y = startY + (endY - startY) * eased - Math.sin(t * Math.PI) * arcLift;
+      var scale = 1.0 - t * 0.35;
+      el.style.transform = "translate(" + x + "px, " + y + "px) translate(-50%, -50%) scale(" + scale + ")";
+      el.style.opacity = t > 0.82 ? String(1 - (t - 0.82) / 0.18) : "1";
+      if (t < 1) {
+        requestAnimationFrame(step);
+        return;
+      }
+      if (el.parentNode) el.parentNode.removeChild(el);
+      flyGemCount = Math.max(0, flyGemCount - 1);
+      pulseFlyTarget(destEl);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // JUICE PASS: score flies to the total on big clears (chain 3+ or 5+ pieces).
+  // A gold "+N" number arcs from the clear center to the score DOM element.
+  function flyScoreToTotal(fromX, fromY, points) {
+    if (flyRewardCount >= effectLimit("flyRewards")) return;
+    if (!scoreEl) return;
+    var destEl = resolveFlyTarget(scoreEl);
+    if (!destEl) return;
+    var canvasRect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : { left: 0, top: 0 };
+    var startX = canvasRect.left + fromX;
+    var startY = canvasRect.top + fromY;
+    var destRect = destEl.getBoundingClientRect();
+    var endX = destRect.left + destRect.width / 2;
+    var endY = destRect.top + destRect.height / 2;
+
+    var el = document.createElement("span");
+    el.className = "fly-reward fly-score";
+    el.style.color = "#ffd166";
+    el.textContent = "+" + points;
+    el.style.transform = "translate(" + startX + "px, " + startY + "px) translate(-50%, -50%)";
+    document.body.appendChild(el);
+    flyRewardCount += 1;
+
+    var duration = 500 + 100 * fxScale();
+    var arcLift = Math.min(80, Math.abs(endY - startY) * 0.25 + 28);
+    var startTime = 0;
+    function step(now) {
+      if (!startTime) startTime = now;
+      var t = Math.min(1, (now - startTime) / duration);
+      var eased = t * t * (3 - 2 * t);
+      var x = startX + (endX - startX) * eased;
+      var y = startY + (endY - startY) * eased - Math.sin(t * Math.PI) * arcLift;
+      el.style.transform = "translate(" + x + "px, " + y + "px) translate(-50%, -50%) scale(" + (0.9 - t * 0.3) + ")";
+      el.style.opacity = t > 0.85 ? String(1 - (t - 0.85) / 0.15) : "1";
+      if (t < 1) {
+        requestAnimationFrame(step);
+        return;
+      }
+      if (el.parentNode) el.parentNode.removeChild(el);
+      flyRewardCount = Math.max(0, flyRewardCount - 1);
+      pulseFlyTarget(destEl);
+    }
+    requestAnimationFrame(step);
+  }
+
   function pulseFlyTarget(el) {
     if (!el) return;
     el.classList.remove("reward-pulse");
@@ -7306,6 +7439,16 @@
 
     if (chain >= 3) {
       addCallout("CHAIN " + chain, "#46f4ff", 18 + chain);
+    }
+
+    // MUSIC POLISH: cascade bloom on chain 4+
+    if (chain >= 4 && gameMode === MODE_CAMPAIGN) {
+      playCascadeBloom(chain);
+    }
+
+    // JUICE PASS: on big clears, fly the score to the total.
+    if ((chain >= 3 || cells.length >= 5) && points >= 100 && gameMode === MODE_CAMPAIGN) {
+      flyScoreToTotal(center.x, center.y, points);
     }
   }
 
@@ -10076,6 +10219,104 @@
     return "Rival " + formatNumber(getChallengeTargetScore()) + ". Every move you see, you hear. Beat it.";
   }
 
+  // VIRALITY: Build the Hum share moment — determines card state, title, CTA.
+  // This is the emotional core of the share: "Bip woke up" instead of "Score 4300."
+  function buildHumShareMoment(savedMoves, stars, finished, firstClear) {
+    var humId = getHumIdForLevel(currentLevel);
+    var spec = findHumSpec(humId);
+    var name = (spec && spec.name) || "Hum";
+    var awake = isHumAwake(humId);
+    var humState = (campaignSave.hums && campaignSave.hums[humId]) || { segments: 0, awake: false };
+    var seg = awake ? HUM_SEGMENTS : Math.max(0, Math.min(HUM_SEGMENTS, humState.segments || 0));
+    var progress = seg / HUM_SEGMENTS;
+    var accent = (spec && spec.palette && spec.palette.primary) || "#46f4ff";
+
+    var state, title, line, cta, poseTime, eyeOpen;
+
+    if (!finished) {
+      // Near-miss / loss card
+      state = "nearMiss";
+      title = name + " says one more take.";
+      line = "Track " + pad2(currentLevel.episode) + " · Level " + currentLevel.id;
+      cta = "Try the seed.";
+      poseTime = 0.2;
+      eyeOpen = 0.45;
+    } else if (firstClear && currentLevel.id === HUM_FIRST_WAKE_LEVEL && !awake) {
+      // This shouldn't happen (wake happens before payload build), but guard:
+      state = "recording";
+      title = name + " heard another bar.";
+      line = seg + "/" + HUM_SEGMENTS + " notes recorded.";
+      cta = "Clear the Finale to wake " + name + ".";
+      poseTime = 0.3;
+      eyeOpen = 0.3;
+    } else if (awake && currentLevel.id === HUM_FIRST_WAKE_LEVEL) {
+      // First wake moment
+      state = "wake";
+      title = name + " woke up.";
+      line = "Track " + pad2(currentLevel.episode) + " found its voice.";
+      cta = "Can you wake yours?";
+      poseTime = 0.42;
+      eyeOpen = 1;
+    } else if (!awake) {
+      // Recording progress
+      state = "recording";
+      title = name + " heard another bar.";
+      line = seg + "/" + HUM_SEGMENTS + " notes recorded for Track " + pad2(currentLevel.episode) + ".";
+      cta = "Clear the Finale to wake " + name + ".";
+      poseTime = 0.3;
+      eyeOpen = 0.3;
+    } else if (isFinaleLevel(currentLevel)) {
+      state = "encore";
+      title = name + " finished the track.";
+      line = "Track " + pad2(currentLevel.episode) + " complete.";
+      cta = "Beat this take.";
+      poseTime = 0.5;
+      eyeOpen = 1;
+    } else if (savedMoves >= 8) {
+      state = "encore";
+      title = name + " played the encore.";
+      line = savedMoves + " moves became the blast.";
+      cta = "Beat this take.";
+      poseTime = 0.5;
+      eyeOpen = 1;
+    } else if (levelStats.fusions > 0) {
+      state = "awake";
+      title = name + " saw fireworks.";
+      line = levelStats.fusions + " fusion clear" + (levelStats.fusions > 1 ? "s" : "") + ".";
+      cta = "Beat this take.";
+      poseTime = 0.45;
+      eyeOpen = 1;
+    } else if (levelStats.maxChain >= 3) {
+      state = "awake";
+      title = name + " caught a chain reaction.";
+      line = "Chain x" + levelStats.maxChain + ".";
+      cta = "Beat this take.";
+      poseTime = 0.45;
+      eyeOpen = 1;
+    } else {
+      state = "awake";
+      title = name + " cleared the take.";
+      line = "Track " + pad2(currentLevel.episode) + " · Level " + currentLevel.id;
+      cta = "Beat this take.";
+      poseTime = 0.42;
+      eyeOpen = 1;
+    }
+
+    return {
+      humId: humId,
+      name: name,
+      state: state,
+      title: title,
+      line: line,
+      cta: cta,
+      poseTime: poseTime,
+      eyeOpen: eyeOpen,
+      progress: progress,
+      accent: accent,
+      sleeping: !awake
+    };
+  }
+
   function buildCampaignSharePayload(savedMoves, stars, finished, firstClear) {
     var title = finished ? currentLevel.title + " Clear" : currentLevel.title + " Run";
     var theme = getCurrentEpisodeTheme();
@@ -10084,12 +10325,13 @@
     var strip = renderWaveformStrip(waveform);
     var movesText = finished ? String(levelStats.movesMade) : movesLeft + " left";
     var hookLine = buildWaveformHookLine();
+    // VIRALITY: Build the Hum share moment for the postcard.
+    var humMoment = buildHumShareMoment(savedMoves, stars, finished, firstClear);
     var text = [
-      GAME_TITLE + " Campaign: Track " + pad2(currentLevel.episode) + " Level " + currentLevel.id + " · " + theme.name,
-      strip,
-      "Score " + formatNumber(score) + " · Moves " + movesText + " · Best chain " + levelStats.maxChain,
-      hookLine,
-      challenge.code
+      humMoment.title + " in " + GAME_TITLE + ".",
+      "Track " + pad2(currentLevel.episode) + " · Level " + currentLevel.id + " · " + theme.name,
+      humMoment.cta,
+      "Challenge " + challenge.code + " · Rival " + challenge.rival
     ].join("\n");
 
     var stats = [
@@ -10128,6 +10370,8 @@
       stats: stats,
       humId: humId,
       humProgress: { name: humName, segments: humSeg, total: HUM_SEGMENTS, awake: humAwake },
+      humMoment: humMoment,
+      shareKind: "hum-postcard",
       hero: finished ? { score: score, stars: stars, next: getNextLevelGoalTease() } : null
     };
   }
@@ -10579,7 +10823,143 @@
     return [TYPES[idx[0]].color, TYPES[idx[1]].color, TYPES[idx[2]].color];
   }
 
+  // VIRALITY: Hum Postcard — the shareable artifact. The Hum is the hero,
+  // not the score. 1080×1080 PNG, feed-native.
+  function drawHumPostcard(payload) {
+    var size = 1080;
+    var canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    var ictx = canvas.getContext("2d");
+    var moment = payload.humMoment || {};
+    var accent = moment.accent || "#46f4ff";
+    var humSpec = findHumSpec(moment.humId || payload.humId);
+
+    // Background: radial bloom in the Hum's color over near-black.
+    var bg = ictx.createRadialGradient(size / 2, size * 0.42, 40, size / 2, size * 0.42, size * 0.82);
+    bg.addColorStop(0, rgbaFromHex(accent, 0.14));
+    bg.addColorStop(0.5, "#070b14");
+    bg.addColorStop(1, "#04050a");
+    ictx.fillStyle = bg;
+    ictx.fillRect(0, 0, size, size);
+
+    // Faint skew grid for stage texture.
+    ictx.save();
+    ictx.globalAlpha = 0.08;
+    ictx.strokeStyle = accent;
+    ictx.lineWidth = 1;
+    for (var gx = -size; gx <= size; gx += 62) {
+      ictx.beginPath();
+      ictx.moveTo(gx, 0);
+      ictx.lineTo(gx + size * 0.3, size);
+      ictx.stroke();
+    }
+    ictx.restore();
+
+    // Wordmark top-left, card type top-right.
+    ictx.save();
+    ictx.fillStyle = "rgba(239, 249, 255, 0.6)";
+    ictx.font = "900 28px Inter, system-ui, sans-serif";
+    ictx.textAlign = "left";
+    ictx.textBaseline = "top";
+    ictx.fillText(GAME_TITLE.toUpperCase(), 48, 44);
+    ictx.textAlign = "right";
+    ictx.fillStyle = rgbaFromHex(accent, 0.7);
+    ictx.fillText("HUM", size - 48, 44);
+    ictx.restore();
+
+    // Large Hum hero, centered.
+    if (humSpec) {
+      var heroSize = 200;
+      var heroCx = size / 2;
+      var heroCy = size * 0.42;
+      // Born-from-light glow for wake state.
+      if (moment.state === "wake" || moment.state === "encore") {
+        ictx.save();
+        ictx.globalCompositeOperation = "lighter";
+        ictx.globalAlpha = 0.3;
+        ictx.fillStyle = accent;
+        ictx.shadowBlur = 60;
+        ictx.shadowColor = accent;
+        ictx.beginPath();
+        ictx.arc(heroCx, heroCy, heroSize * 1.5, 0, Math.PI * 2);
+        ictx.fill();
+        ictx.restore();
+      }
+      // Render the Hum by swapping ctx (same pattern as drawShareHumFeat).
+      var saved = ctx;
+      ctx = ictx;
+      try {
+        drawHum(ictx, humSpec, heroCx, heroCy, heroSize, moment.poseTime || 0.42, {
+          still: true,
+          noTrail: true,
+          eyeOpen: moment.eyeOpen != null ? moment.eyeOpen : 1,
+          sleeping: moment.sleeping,
+          drawProgress: moment.progress || 0
+        });
+      } finally {
+        ctx = saved;
+      }
+    }
+
+    // Progress ring for sleeping Hums.
+    if (moment.sleeping && moment.progress < 1) {
+      var ringR = 260;
+      ictx.save();
+      ictx.strokeStyle = rgbaFromHex(accent, 0.15);
+      ictx.lineWidth = 6;
+      ictx.beginPath();
+      ictx.arc(size / 2, size * 0.42, ringR, 0, Math.PI * 2);
+      ictx.stroke();
+      ictx.strokeStyle = accent;
+      ictx.lineWidth = 6;
+      ictx.shadowBlur = 20;
+      ictx.shadowColor = accent;
+      ictx.beginPath();
+      ictx.arc(size / 2, size * 0.42, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * moment.progress);
+      ictx.stroke();
+      ictx.restore();
+    }
+
+    // Title block at bottom.
+    ictx.save();
+    ictx.textAlign = "center";
+    ictx.textBaseline = "middle";
+    // Hero title
+    ictx.fillStyle = "#eff9ff";
+    ictx.font = "950 52px Inter, system-ui, sans-serif";
+    ictx.shadowBlur = 20;
+    ictx.shadowColor = accent;
+    ictx.fillText(moment.title || "Hum", size / 2, size * 0.78);
+    ictx.shadowBlur = 0;
+    // Subtitle line
+    ictx.fillStyle = "rgba(239, 249, 255, 0.65)";
+    ictx.font = "900 28px Inter, system-ui, sans-serif";
+    ictx.fillText(moment.line || "", size / 2, size * 0.84);
+    // CTA
+    ictx.fillStyle = rgbaFromHex(accent, 0.85);
+    ictx.font = "900 26px Inter, system-ui, sans-serif";
+    ictx.fillText(moment.cta || "Beat this take.", size / 2, size * 0.89);
+    ictx.restore();
+
+    // Challenge strip at bottom.
+    ictx.save();
+    ictx.textAlign = "center";
+    ictx.textBaseline = "bottom";
+    ictx.fillStyle = "rgba(144, 164, 175, 0.6)";
+    ictx.font = "900 20px Inter, system-ui, sans-serif";
+    ictx.fillText(payload.code || "", size / 2, size - 36);
+    ictx.restore();
+
+    return canvas;
+  }
+
   function drawAlbumCover(payload) {
+    // VIRALITY: Album cover now renders the Hum Postcard by default.
+    if (payload && payload.humMoment) {
+      return drawHumPostcard(payload);
+    }
+    // Fall through to the legacy mandala for payloads without a humMoment.
     // Share feature #2: a square, art-forward "album cover" for a run. A neon mandala seeded
     // by the run (score + best chain + challenge code + track name) over three seeded accent
     // colors, with the track name + score + stars. Distinct from drawShareImage (the 9:16
@@ -12535,6 +12915,14 @@
         && (!celebration.cameo || celebration.cameo.alpha <= 0)) celebration = null;
     }
 
+    // JUICE PASS: decay shield wobble.
+    for (var wr = 0; wr < GRID; wr += 1) {
+      if (!tileWobble[wr]) continue;
+      for (var wc = 0; wc < GRID; wc += 1) {
+        if (tileWobble[wr][wc] > 0) tileWobble[wr][wc] = Math.max(0, tileWobble[wr][wc] - dt * 3.5);
+      }
+    }
+
     trimEffects();
   }
 
@@ -12606,9 +12994,12 @@
     ctx.fillStyle = stageBgGradient || "#04050a";
     ctx.fillRect(0, 0, view.width, view.height);
     if (frameQuality.level < 2) drawNebula(time, visualDrive);
+    drawStageEnergyWash(time, visualDrive, pulse);
+    drawParallaxGeometry(time, pulse);
 
     var gap = Math.max(34, Math.min(54, view.width / 22)) * (1 + frameQuality.level * 0.34);
     var shift = (time * (22 + visualDrive * 34)) % gap;
+    drawAtmosphereMotes(time, pulse);
     drawVectorField(time, pulse);
     drawWarpedLattice(time, gap, shift, pulse);
     drawVectorArena(time, pulse);
@@ -12701,6 +13092,113 @@
       });
     }
     return field;
+  }
+
+  // ART POLISH: atmosphere mote field for background depth.
+  function buildAtmosphereMotes(count) {
+    var random = createSeededRandom(0xa7707e);
+    var colors = ["#46f4ff", "#ff4fd8", "#ffd166", "#8cff6b"];
+    var motes = [];
+    for (var i = 0; i < count; i += 1) {
+      var depth = random();
+      motes.push({
+        x: random(),
+        y: random(),
+        depth: depth,
+        size: 0.7 + random() * 2.2,
+        speed: 5 + random() * 22,
+        phase: random() * Math.PI * 2,
+        color: colors[Math.floor(random() * colors.length)]
+      });
+    }
+    return motes;
+  }
+
+  // ART POLISH: energy-reactive stage wash behind the board.
+  function drawStageEnergyWash(time, visualDrive, pulseAmount) {
+    if (frameQuality.level >= 2 && !settings.fullFx) return;
+    var cx = view.width / 2;
+    var cy = view.boardY + view.boardSize / 2;
+    var radius = Math.max(view.width, view.height) * 0.72;
+    var hot = isMeterHot();
+    var alpha = (0.035 + energy * 0.055 + visualDrive * 0.06 + beatPulse * 0.025) * Math.max(0.4, fxScale());
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    var wash = ctx.createRadialGradient(cx, cy, view.boardSize * 0.25, cx, cy, radius);
+    wash.addColorStop(0, hot ? "rgba(255,209,102,0.13)" : "rgba(70,244,255,0.10)");
+    wash.addColorStop(0.48, hot ? "rgba(255,79,216,0.045)" : "rgba(255,79,216,0.035)");
+    wash.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, 0, view.width, view.height);
+
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.sin(time * 0.05) * 0.28);
+    var band = ctx.createLinearGradient(-view.boardSize, 0, view.boardSize, 0);
+    band.addColorStop(0, "rgba(70,244,255,0)");
+    band.addColorStop(0.48, hot ? "rgba(255,209,102,0.10)" : "rgba(70,244,255,0.08)");
+    band.addColorStop(0.52, "rgba(255,255,255,0.05)");
+    band.addColorStop(1, "rgba(255,79,216,0)");
+    ctx.globalAlpha = (0.18 + pulseAmount * 0.12) * Math.max(0.4, fxScale());
+    ctx.fillStyle = band;
+    ctx.fillRect(-view.boardSize * 1.5, -view.boardSize * 0.72, view.boardSize * 3, view.boardSize * 1.44);
+    ctx.restore();
+  }
+
+  // ART POLISH: parallax geometric rings drifting around the board.
+  function drawParallaxGeometry(time, pulseAmount) {
+    if (frameQuality.level >= 2) return;
+    var cx = view.width / 2;
+    var cy = view.boardY + view.boardSize / 2;
+    var visualDrive = getVisualDrive();
+    var layers = frameQuality.level === 0 ? 3 : 2;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var layer = 0; layer < layers; layer += 1) {
+      var depth = 0.28 + layer * 0.24;
+      var driftX = Math.sin(time * (0.045 + depth * 0.025) + layer) * view.cell * (2.8 - layer * 0.6);
+      var driftY = Math.cos(time * (0.035 + depth * 0.02) + layer * 2.1) * view.cell * (2.2 - layer * 0.5);
+      var radius = view.boardSize * (0.78 + layer * 0.27 + pulseAmount * 0.02);
+      ctx.globalAlpha = (0.035 + visualDrive * 0.035 - layer * 0.006) * Math.max(0.4, fxScale());
+      ctx.strokeStyle = layer === 0 ? "#46f4ff" : layer === 1 ? "#ff4fd8" : "#ffd166";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (var s = 0; s <= 6 + layer * 2; s += 1) {
+        var a = (Math.PI * 2 * s) / (6 + layer * 2) + time * (0.035 + layer * 0.016);
+        var px = cx + driftX + Math.cos(a) * radius;
+        var py = cy + driftY + Math.sin(a) * radius;
+        if (s === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ART POLISH: drifting atmosphere motes for depth.
+  function drawAtmosphereMotes(time, pulseAmount) {
+    var count = frameQuality.level >= 2 ? 28 : frameQuality.level === 1 ? 62 : atmosphereMotes.length;
+    var visualDrive = getVisualDrive();
+    var width = view.width + 60;
+    var height = view.height + 60;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < count; i += 1) {
+      var mote = atmosphereMotes[i];
+      var depth = 0.25 + mote.depth * 0.75;
+      var x = ((mote.x * width + Math.sin(time * 0.11 + mote.phase) * view.cell * depth + time * mote.speed * depth * 0.28) % width + width) % width - 30;
+      var y = ((mote.y * height + time * mote.speed * (0.35 + depth) + Math.cos(time * 0.09 + mote.phase) * view.cell) % height + height) % height - 30;
+      var twinkle = 0.45 + Math.sin(time * 2.4 + mote.phase) * 0.55;
+      var size = mote.size * (0.75 + depth * 0.9 + pulseAmount * 0.35);
+      ctx.globalAlpha = (0.025 + twinkle * 0.055 + visualDrive * 0.045) * depth * Math.max(0.4, fxScale());
+      ctx.fillStyle = mote.color;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   function drawVectorField(time, pulseAmount) {
@@ -12986,7 +13484,8 @@
           alpha: 1,
           reinforced: charge > 1,
           cracks: Math.max(0, maxCharge - charge),
-          seed: row * 131 + col * 17 + 1
+          seed: row * 131 + col * 17 + 1,
+          wobble: (tileWobble[row] && tileWobble[row][col]) || 0
         });
       }
     }
@@ -13570,12 +14069,21 @@
     if (alpha <= 0) return;
     var reinforced = Boolean(opts.reinforced);
     var frameCol = reinforced ? "#ffd166" : "#ff4fd8";
+    // JUICE PASS: wobble when the wall takes a hit but doesn't break.
+    var wobble = opts.wobble || 0;
+    var wobbleX = wobble > 0 ? Math.sin(wobble * 31.4) * wobble * size * 0.08 : 0;
+    var wobbleR = wobble > 0 ? wobble * 0.04 : 0;
     var pad = Math.max(3, size * 0.07);
-    var px = x + pad;
+    var px = x + pad + wobbleX;
     var py = y + pad;
     var pw = size - pad * 2;
     var ph = size - pad * 2;
     ctx.save();
+    if (wobbleR > 0.001) {
+      ctx.translate(x + size / 2, y + size / 2);
+      ctx.rotate(wobbleR);
+      ctx.translate(-(x + size / 2), -(y + size / 2));
+    }
     // Frosted magenta wash: the gem beneath still glows through, tinted.
     var grad = ctx.createLinearGradient(px, py, px, py + ph);
     grad.addColorStop(0, "rgba(255, 122, 226, " + (0.32 * alpha).toFixed(3) + ")");
@@ -14134,6 +14642,12 @@
       Math.round(a[2] + (b[2] - a[2]) * t) + ")";
   }
 
+  // ART POLISH: rgba helper for gradient color stops.
+  function rgbaFromHex(hex, alpha) {
+    var rgb = hexToRgb(hex);
+    return "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + alpha.toFixed(3) + ")";
+  }
+
   function drawGems(time) {
     forEachGem(function (gem) {
       drawSingleGem(gem, time);
@@ -14198,6 +14712,8 @@
     ctx.strokeStyle = birthWhite > 0 ? type.birthColors[Math.min(3, Math.round(birthWhite * 3))] : type.coreColor;
     drawShape(type.shape, radius, time + gem.spin, type.color);
     ctx.globalAlpha = 1;
+    // ART POLISH: inner sparkle for lit-from-within depth.
+    drawGemInnerSparkle(radius, type.color, time + gem.spin, gem.type * 97 + Math.round(gem.tx + gem.ty), gem.special);
     if (gem.special) drawSpecialOverlay(gem.special, radius, time + gem.spin, type.color);
     if (gem.drop) drawDropBadge(gem.drop, radius, time);
     ctx.restore();
@@ -14421,15 +14937,79 @@
   }
 
   function drawGemBacking(radius, color, special, birth) {
+    birth = birth || 0;
+    var visualDrive = getVisualDrive();
+    var beat = Math.min(1, beatPulse * 0.8 + visualDrive * 0.35 + birth * 0.8);
     var core = radius * (special ? 1.28 : 1.12);
+    var inner = radius * (special ? 0.96 : 0.86);
+
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = birth * 0.3;
+
+    // Birth/special aura, now also driven by the music/drive meter.
+    ctx.globalAlpha = (birth * 0.26 + beat * 0.08 + (special ? 0.08 : 0)) * Math.max(0.4, fxScale());
     ctx.fillStyle = color;
-    ctx.shadowBlur = 22 + birth * 26;
+    ctx.shadowBlur = glowBlur(18 + birth * 22 + beat * 14);
     ctx.shadowColor = color;
     ctx.beginPath();
     ctx.arc(0, 0, core, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ART POLISH: lit-from-within radial core fill.
+    var fill = ctx.createRadialGradient(-inner * 0.24, -inner * 0.28, inner * 0.08, 0, 0, inner);
+    fill.addColorStop(0, rgbaFromHex("#ffffff", 0.42 + beat * 0.16));
+    fill.addColorStop(0.22, rgbaFromHex(color, 0.30 + beat * 0.12));
+    fill.addColorStop(0.62, rgbaFromHex(color, 0.13 + beat * 0.08));
+    fill.addColorStop(1, "rgba(2,4,10,0)");
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = special ? 0.9 : 0.78;
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(0, 0, inner, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ART POLISH: subtle dark lower rim for glass depth.
+    ctx.globalCompositeOperation = "source-over";
+    var rim = ctx.createRadialGradient(0, inner * 0.28, inner * 0.12, 0, 0, inner * 1.05);
+    rim.addColorStop(0, "rgba(255,255,255,0)");
+    rim.addColorStop(0.58, "rgba(255,255,255,0)");
+    rim.addColorStop(1, "rgba(0,0,0,0.34)");
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = rim;
+    ctx.beginPath();
+    ctx.arc(0, 0, inner, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ART POLISH: inner sparkle — a tiny cross + glint that drifts inside the gem.
+  function drawGemInnerSparkle(radius, color, time, seed, special) {
+    if (!neonDetail()) return;
+    var pulseAmount = 0.45 + Math.sin(time * 3.1 + seed * 0.017) * 0.55;
+    var alpha = (0.10 + pulseAmount * 0.16 + beatPulse * 0.08) * Math.max(0.4, fxScale());
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = special ? alpha * 1.35 : alpha;
+    ctx.strokeStyle = mixColor(color, "#ffffff", 0.72);
+    ctx.lineWidth = Math.max(0.8, radius * 0.035);
+    ctx.shadowBlur = glowBlur(8 + beatPulse * 8);
+    ctx.shadowColor = color;
+
+    var a = seed * 0.013 + time * 0.7;
+    var sx = Math.cos(a) * radius * 0.34;
+    var sy = Math.sin(a * 1.7) * radius * 0.24;
+    var len = radius * (0.13 + pulseAmount * 0.04);
+    ctx.beginPath();
+    ctx.moveTo(sx - len, sy);
+    ctx.lineTo(sx + len, sy);
+    ctx.moveTo(sx, sy - len);
+    ctx.lineTo(sx, sy + len);
+    ctx.stroke();
+
+    ctx.globalAlpha *= 0.55;
+    ctx.beginPath();
+    ctx.arc(-sx * 0.55, -sy * 0.45, Math.max(1, radius * 0.045), 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
     ctx.fill();
     ctx.restore();
   }
@@ -14492,112 +15072,159 @@
   }
 
   function drawSpecialOverlay(special, radius, time, color) {
-    ctx.save();
-    ctx.fillStyle = color;
-    var railWidth = Math.max(2, radius * 0.12);
-
     if (special === "lineH" || special === "lineV") {
-      var vertical = special === "lineV";
-      ctx.globalAlpha = 0.96;
-      strokeNeon(function () {
-        ctx.beginPath();
-        if (vertical) {
-          ctx.moveTo(0, -radius * 1.18);
-          ctx.lineTo(0, radius * 1.18);
-        } else {
-          ctx.moveTo(-radius * 1.18, 0);
-          ctx.lineTo(radius * 1.18, 0);
-        }
-      }, "#ffffff", railWidth);
-
-      if (neonDetail()) {
-        ctx.save();
-        ctx.globalCompositeOperation = "lighter";
-        ctx.globalAlpha = 0.6;
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = railWidth * 1.7;
-        ctx.setLineDash([radius * 0.22, radius * 0.66]);
-        ctx.lineDashOffset = -time * radius * 2.4;
-        ctx.beginPath();
-        if (vertical) {
-          ctx.moveTo(0, -radius * 1.18);
-          ctx.lineTo(0, radius * 1.18);
-        } else {
-          ctx.moveTo(-radius * 1.18, 0);
-          ctx.lineTo(radius * 1.18, 0);
-        }
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      ctx.globalAlpha = 0.86;
-      ctx.lineWidth = Math.max(1, radius * 0.05);
-      ctx.strokeStyle = color;
-      ctx.beginPath();
-      if (vertical) {
-        ctx.moveTo(-radius * 0.28, -radius * 1.05);
-        ctx.lineTo(-radius * 0.28, radius * 1.05);
-        ctx.moveTo(radius * 0.28, -radius * 1.05);
-        ctx.lineTo(radius * 0.28, radius * 1.05);
-      } else {
-        ctx.moveTo(-radius * 1.05, -radius * 0.28);
-        ctx.lineTo(radius * 1.05, -radius * 0.28);
-        ctx.moveTo(-radius * 1.05, radius * 0.28);
-        ctx.lineTo(radius * 1.05, radius * 0.28);
-      }
-      ctx.stroke();
-
-      ctx.globalAlpha = 0.62;
-      ctx.lineWidth = Math.max(1, radius * 0.05);
-      ctx.strokeStyle = "#ffffff";
-      ctx.beginPath();
-      if (vertical) {
-        ctx.moveTo(-radius * 0.34, -radius * 0.82);
-        ctx.lineTo(radius * 0.34, -radius * 0.82);
-        ctx.moveTo(-radius * 0.34, radius * 0.82);
-        ctx.lineTo(radius * 0.34, radius * 0.82);
-      } else {
-        ctx.moveTo(-radius * 0.82, -radius * 0.34);
-        ctx.lineTo(-radius * 0.82, radius * 0.34);
-        ctx.moveTo(radius * 0.82, -radius * 0.34);
-        ctx.lineTo(radius * 0.82, radius * 0.34);
-      }
-      ctx.stroke();
-      ctx.restore();
+      drawLineSpecialOverlay(special === "lineV", radius, time, color);
       return;
     }
+    drawNovaSpecialOverlay(radius, time, color);
+  }
 
-    ctx.rotate(time * 0.95);
-    ctx.globalAlpha = 0.88;
-    strokeNeon(function () {
-      ctx.beginPath();
-      for (var i = 0; i < 10; i += 1) {
-        var spokeAngle = (Math.PI * 2 * (i + 1)) / 10;
-        var spokeLength = radius * (i % 2 === 0 ? 1.34 : 1.02);
-        ctx.moveTo(Math.cos(spokeAngle) * radius * 0.28, Math.sin(spokeAngle) * radius * 0.28);
-        ctx.lineTo(Math.cos(spokeAngle) * spokeLength, Math.sin(spokeAngle) * spokeLength);
-      }
-    }, "#ffffff", railWidth);
-    ctx.globalAlpha = 0.8;
-    strokeNeon(function () {
-      ctx.beginPath();
-      ctx.arc(0, 0, radius * 0.72, 0, Math.PI * 2);
-    }, "#ffffff", railWidth);
+  // ART POLISH: Line special = energy blade with afterimages + colored rails.
+  function drawLineSpecialOverlay(vertical, radius, time, color) {
+    var railWidth = Math.max(2, radius * 0.12);
+    var bladeLength = radius * 1.42;
+    var bladeHalf = Math.max(1.2, radius * 0.105);
+    var pulseAmount = 0.55 + Math.sin(time * 5.8) * 0.45;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    if (vertical) ctx.rotate(Math.PI / 2);
+
+    // Directional afterimages behind the blade.
     if (neonDetail()) {
-      ctx.globalAlpha = 0.9;
-      ctx.fillStyle = "#ffffff";
-      for (var dot = 0; dot < 2; dot += 1) {
-        var dotAngle = time * 2.3 + dot * Math.PI;
+      ctx.lineCap = "round";
+      for (var i = 2; i >= 0; i -= 1) {
+        var offset = -radius * (0.18 + i * 0.16);
+        ctx.globalAlpha = (0.08 + pulseAmount * 0.05) * (3 - i) * Math.max(0.4, fxScale());
+        ctx.strokeStyle = i % 2 === 0 ? color : "#ffffff";
+        ctx.lineWidth = railWidth * (2.6 - i * 0.42);
         ctx.beginPath();
-        ctx.arc(Math.cos(dotAngle) * radius * 0.72, Math.sin(dotAngle) * radius * 0.72, radius * 0.09, 0, Math.PI * 2);
+        ctx.moveTo(-bladeLength + offset, 0);
+        ctx.lineTo(bladeLength + offset, 0);
+        ctx.stroke();
+      }
+    }
+
+    // Hot white cutting core.
+    var blade = ctx.createLinearGradient(-bladeLength, 0, bladeLength, 0);
+    blade.addColorStop(0, "rgba(255,255,255,0)");
+    blade.addColorStop(0.18, "rgba(255,255,255,0.86)");
+    blade.addColorStop(0.50, "rgba(255,255,255,1)");
+    blade.addColorStop(0.82, "rgba(255,255,255,0.86)");
+    blade.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.globalAlpha = 0.90 + pulseAmount * 0.10;
+    ctx.fillStyle = blade;
+    ctx.shadowBlur = glowBlur(10 + pulseAmount * 12);
+    ctx.shadowColor = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(-bladeLength, -bladeHalf);
+    ctx.lineTo(bladeLength, -bladeHalf * 0.42);
+    ctx.lineTo(bladeLength, bladeHalf * 0.42);
+    ctx.lineTo(-bladeLength, bladeHalf);
+    ctx.closePath();
+    ctx.fill();
+
+    // Colored magnetic rails.
+    ctx.shadowBlur = glowBlur(12 + pulseAmount * 10);
+    ctx.shadowColor = color;
+    ctx.globalAlpha = 0.82;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, radius * 0.055);
+    ctx.beginPath();
+    ctx.moveTo(-radius * 1.18, -radius * 0.30);
+    ctx.lineTo(radius * 1.18, -radius * 0.30);
+    ctx.moveTo(-radius * 1.18, radius * 0.30);
+    ctx.lineTo(radius * 1.18, radius * 0.30);
+    ctx.stroke();
+
+    // Perpendicular brackets communicate row/column footprint.
+    ctx.globalAlpha = 0.58 + pulseAmount * 0.18;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = Math.max(1, radius * 0.045);
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.88, -radius * 0.46);
+    ctx.lineTo(-radius * 0.88, radius * 0.46);
+    ctx.moveTo(radius * 0.88, -radius * 0.46);
+    ctx.lineTo(radius * 0.88, radius * 0.46);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // ART POLISH: Nova special = swirling star reactor with rotating arms + spokes + hot core.
+  function drawNovaSpecialOverlay(radius, time, color) {
+    var railWidth = Math.max(2, radius * 0.12);
+    var pulseAmount = 0.55 + Math.sin(time * 4.4) * 0.45;
+    var arms = 6;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.rotate(time * 0.72);
+
+    // Swirling star arms: curved arcs plus outward spokes.
+    ctx.lineCap = "round";
+    for (var i = 0; i < arms; i += 1) {
+      var a = (Math.PI * 2 * i) / arms;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.globalAlpha = 0.55 + pulseAmount * 0.25;
+      ctx.strokeStyle = i % 2 === 0 ? "#ffffff" : mixColor(color, "#ffffff", 0.55);
+      ctx.lineWidth = railWidth * (i % 2 === 0 ? 0.95 : 0.72);
+      ctx.shadowBlur = glowBlur(10 + pulseAmount * 12);
+      ctx.shadowColor = color;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * (0.45 + pulseAmount * 0.04), -0.18, 0.86);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(radius * 0.18, 0);
+      ctx.lineTo(radius * (1.22 + pulseAmount * 0.14), radius * 0.08);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Radiating star spokes, counter-rotated.
+    ctx.rotate(-time * 1.35);
+    ctx.globalAlpha = 0.64 + pulseAmount * 0.20;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = Math.max(1, radius * 0.045);
+    ctx.shadowBlur = glowBlur(14 + pulseAmount * 14);
+    ctx.shadowColor = "#ffffff";
+    ctx.beginPath();
+    for (var spoke = 0; spoke < 12; spoke += 1) {
+      var angle = (Math.PI * 2 * spoke) / 12;
+      var inner = radius * (spoke % 2 === 0 ? 0.34 : 0.52);
+      var outer = radius * (spoke % 2 === 0 ? 1.38 : 1.02) * (1 + pulseAmount * 0.06);
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+    }
+    ctx.stroke();
+
+    // Hot reactor core.
+    var core = ctx.createRadialGradient(-radius * 0.08, -radius * 0.12, radius * 0.04, 0, 0, radius * 0.48);
+    core.addColorStop(0, "rgba(255,255,255,0.98)");
+    core.addColorStop(0.35, rgbaFromHex(color, 0.75));
+    core.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.globalAlpha = 0.86;
+    ctx.fillStyle = core;
+    ctx.shadowBlur = glowBlur(16 + pulseAmount * 18);
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.48, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Orbiting sparks.
+    if (neonDetail()) {
+      ctx.shadowBlur = glowBlur(8);
+      ctx.fillStyle = "#ffffff";
+      for (var dot = 0; dot < 3; dot += 1) {
+        var dotAngle = time * 2.8 + dot * (Math.PI * 2 / 3);
+        ctx.globalAlpha = 0.7 + pulseAmount * 0.2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(dotAngle) * radius * 0.78, Math.sin(dotAngle) * radius * 0.78, radius * 0.07, 0, Math.PI * 2);
         ctx.fill();
       }
     }
-    ctx.globalAlpha = 0.36;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(0, 0, radius * 0.24, 0, Math.PI * 2);
-    ctx.fill();
+
     ctx.restore();
   }
 
@@ -15832,6 +16459,74 @@
     playTone(getHarmonyToneFreq(audio.step, 3, 1), start + 0.055, 0.1, "triangle", 0.032, 0, 2800);
   }
 
+  var AUDIO_GRAPH_HANDLE_KEYS = [
+    "ctx", "master", "compressor", "delay", "feedback", "wet", "macro", "duck", "bed", "impact",
+    "pulseWaves", "pwmLfo", "pwmLfoGain", "vinyl", "vinylFilter", "vinylGain", "noiseBuffer"
+  ];
+
+  function resetAudioGraphHandles() {
+    for (var i = 0; i < AUDIO_GRAPH_HANDLE_KEYS.length; i += 1) {
+      audio[AUDIO_GRAPH_HANDLE_KEYS[i]] = null;
+    }
+    audio.layers = [];
+  }
+
+  function closeAudioGraphForRebuild() {
+    var oldCtx = audio.ctx;
+    if (audio.timer) {
+      window.clearInterval(audio.timer);
+      audio.timer = null;
+    }
+    try {
+      if (audio.vinyl && audio.vinyl.stop) audio.vinyl.stop(0);
+    } catch (error) {}
+    try {
+      if (audio.pwmLfo && audio.pwmLfo.stop) audio.pwmLfo.stop(0);
+    } catch (error) {}
+    resetAudioGraphHandles();
+    if (oldCtx && oldCtx.state !== "closed" && oldCtx.close) {
+      try {
+        oldCtx.close();
+      } catch (error) {}
+    }
+  }
+
+  function recreateAudioGraphAfterForeground() {
+    if (!audio.started) {
+      updateAudioButtonState();
+      return false;
+    }
+    closeAudioGraphForRebuild();
+    if (!ensureAudioGraph()) {
+      setAudioButtonFace("No Audio", "off");
+      audioButton.disabled = true;
+      return false;
+    }
+    applyAudioPalette();
+    audio.nextStepTime = audio.ctx.currentTime + 0.08;
+    startClock();
+    try {
+      var resumeResult = audio.ctx.resume ? audio.ctx.resume() : null;
+      if (resumeResult && typeof resumeResult.then === "function") {
+        resumeResult.then(updateAudioButtonState).catch(updateAudioButtonState);
+      } else {
+        updateAudioButtonState();
+      }
+    } catch (error) {
+      updateAudioButtonState();
+    }
+    return true;
+  }
+
+  function handleNativeForegroundAudio() {
+    recreateAudioGraphAfterForeground();
+  }
+
+  window.NeonLatticeNative = {
+    handleForeground: handleNativeForegroundAudio,
+    recreateAudioGraph: recreateAudioGraphAfterForeground
+  };
+
   function updateAudioButtonState() {
     if (!audio.ctx) {
       setAudioButtonFace("Sound On", "on");
@@ -16723,17 +17418,54 @@
   }
 
   function playGoalComplete(index) {
-    // Goal-complete blip: a short in-key two-note "ding" rolled onto the hero
-    // beat grid (heroSnapSteps), so it lands quantized to 124 BPM and consonant
-    // with the track. Reuses the hero-snap audio path. Stacked completions
-    // arpeggiate up by index instead of piling on one pitch; no music duck so
-    // it stays a light blip, never a stinger.
+    // JUICE PASS: Goal-complete flourish — a 4-note rising arpeggio (root,
+    // third, fifth, octave) rolled onto the hero beat grid, so it lands
+    // quantized to 124 BPM and consonant with the track. Stacked completions
+    // arpeggiate up by index instead of piling on one pitch. Upgraded from
+    // the old 2-note blip to a real payoff moment.
     if (!audio.started) return;
     var start = quantize(audio.ctx.currentTime + 0.012, AUDIO_TUNING.heroSnapSteps);
     var palette = getMusicPalette();
     var step = Math.min(3, index || 0);
-    playTone(getHarmonyToneFreq(audio.step, 2 + step, 1), start, AUDIO_TUNING.goalBlipDur, palette.leadWave, AUDIO_TUNING.goalBlipGain, 0, 2600);
-    playTone(getHarmonyToneFreq(audio.step, 4 + step, 1), start + AUDIO_TUNING.goalBlipSpread, AUDIO_TUNING.goalBlipDur * 0.85, "sine", AUDIO_TUNING.goalBlipGain * 0.8, 0, 3600);
+    var degs = [2 + step, 4 + step, 5 + step, 7 + step];
+    var spread = AUDIO_TUNING.goalBlipSpread;
+    var baseGain = AUDIO_TUNING.goalBlipGain * 1.2;
+    for (var i = 0; i < degs.length; i += 1) {
+      var wave = i === degs.length - 1 ? "sine" : palette.leadWave;
+      var gain = baseGain * (1 - i * 0.12);
+      playTone(
+        getHarmonyToneFreq(audio.step, degs[i], 1),
+        start + i * spread,
+        AUDIO_TUNING.goalBlipDur * (1 - i * 0.06),
+        wave,
+        gain,
+        i % 2 ? 0.14 : -0.14,
+        2800 + i * 500
+      );
+    }
+  }
+
+  // MUSIC POLISH: Cascade bloom — a quick ascending arpeggio on chain 4+
+  // that makes big cascades feel like a musical bloom, not just a score pop.
+  // 3 notes rising on the scale, quantized to the hero-snap grid.
+  function playCascadeBloom(chain) {
+    if (!audio.started) return;
+    var start = quantize(audio.ctx.currentTime + 0.012, AUDIO_TUNING.heroSnapSteps);
+    var palette = getMusicPalette();
+    var baseDeg = Math.min(4, chain - 3);
+    var degs = [baseDeg, baseDeg + 2, baseDeg + 4];
+    var gain = Math.min(0.06, 0.03 + (chain - 3) * 0.008);
+    for (var i = 0; i < degs.length; i += 1) {
+      playTone(
+        getHarmonyToneFreq(audio.step, degs[i], 1),
+        start + i * 0.04,
+        0.12 * (1 - i * 0.1),
+        i === degs.length - 1 ? "sine" : palette.leadWave,
+        gain * (1 - i * 0.15),
+        i % 2 ? 0.12 : -0.12,
+        2800 + i * 400
+      );
+    }
   }
 
   function playLayerEnterCue(index) {
@@ -18571,6 +19303,7 @@
   bindMenuPress(menuAudioButton, startAudioFromMenu);
   window.addEventListener("pointerdown", resumeAudioFromGesture);
   window.addEventListener("click", resumeAudioFromGesture);
+  window.addEventListener("neon-lattice-native-foreground", handleNativeForegroundAudio);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) resumeAudioFromGesture();
   });
