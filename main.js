@@ -3937,12 +3937,21 @@
     var minBoardSize = 280;
     var boardScale = 0.94;
     if (view.width < 600) {
-      var shortPhone = view.height < 620;
-      topReserve = shortPhone ? 78 : 84;
-      bottomPad = shortPhone ? 154 : 164;
-      minUsableHeight = shortPhone ? 220 : 300;
-      minBoardSize = shortPhone ? 226 : 280;
-      boardScale = 0.985;
+      // shortPhone catches SE (667px) and anything compact;
+      // modern iPhones (812px+) get the normal phone layout
+      var shortPhone = view.height < 720;
+      topReserve = shortPhone ? 74 : 84;
+      bottomPad = shortPhone ? 220 : 178;
+      minUsableHeight = shortPhone ? 220 : 280;
+      minBoardSize = shortPhone ? 240 : 280;
+      boardScale = shortPhone ? 0.96 : 0.985;
+    } else if (view.height < 500) {
+      // Landscape phone: w>600 but very short. Treat as a compact layout.
+      topReserve = 64;
+      bottomPad = 80;
+      minUsableHeight = 200;
+      minBoardSize = 200;
+      boardScale = 0.92;
     }
     topReserve = Math.max(topReserve, getTopChromeReserve(topReserve));
     bottomPad = Math.max(bottomPad, getBottomChromeReserve(bottomPad));

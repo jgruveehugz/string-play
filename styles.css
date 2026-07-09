@@ -2706,8 +2706,8 @@ input[type="range"] {
     grid-template-columns: 1fr auto;
     gap: 5px;
     padding: 6px;
-    max-height: calc(34vh - env(safe-area-inset-bottom));
-    max-height: calc(34dvh - env(safe-area-inset-bottom));
+    max-height: calc(30vh - env(safe-area-inset-bottom));
+    max-height: calc(30dvh - env(safe-area-inset-bottom));
     overflow-y: auto;
   }
 
