@@ -1076,10 +1076,10 @@
     revealSteps: 32, // sector-entry hold length in 16th steps; 32 = 2 bars before the full groove lands (16-64)
     revealDroneGain: 0.02, // root drone gain under the sector-entry hold (0-0.05)
     revealMotifGain: 0.03, // reveal motif note gain during the hold; the hold plays the track hook's prime form (0-0.06)
-    motifOpsMax: 2, // max seed-picked operators composed onto the track hook per level (1-3)
+    motifOpsMax: 3, // max seed-picked operators composed onto the track hook per level (1-3); higher = more per-level melodic variation (Jung's "less samey" knob)
     motifDegreeMin: -3, // lowest scale degree a motif variant may reach after operators (-5-0)
     motifDegreeMax: 9, // highest scale degree a motif variant may reach after operators (5-12)
-    motifGainByTier: [0.014, 0.018, 0.022], // signature motif layer gain by difficulty tier 0/1/2 (each 0-0.03)
+    motifGainByTier: [0.020, 0.025, 0.030], // signature motif layer gain by difficulty tier 0/1/2 (each 0-0.03); louder so the per-level motif shift is actually heard (pairs with motifOpsMax)
     motifTensionCalmMax: 0.75, // difficulty tier below this picks the calm operator pool (0.3-1.2)
     motifTensionUrgentMin: 2, // difficulty tier at/above this picks the urgent operator pool (1.5-2.8)
     motifNoteDurScale: 0.8, // fraction of a motif note's rhythmic slot the tone sustains (0.4-1)
@@ -1165,7 +1165,7 @@
     // energy as the floor so the next level opens AT that energy and continues (rising with its
     // own progress) instead of dipping vibrant->sparse across the boundary. The carry re-arms
     // each within-track hand-off, so a world's baseline rides the running energy.
-    continuousCarryBars: 8, // (retained for a future slow-relax option; the carry now holds)
+    continuousCarryBars: 14, // bars the carried level-end energy holds+glides into the next level before it relaxes to that level's natural floor; bigger = energy extends longer (Jung's ear knob)
     // Extra beats of the continuous groove held between levels (before the result card) so the
     // transition breathes instead of cutting straight to the next board. 0 = off.
     continuousTransitionBeats: 2,
@@ -1269,7 +1269,7 @@
     {
       number: 1,
       title: "Ignition Grid",
-      moves: 24,
+      moves: 18,
       scoreTarget: 1500,
       goals: [
         { kind: "score", target: 1500 },
@@ -1282,11 +1282,11 @@
     {
       number: 2,
       title: "Prism Current",
-      moves: 22,
+      moves: 17,
       scoreTarget: 1900,
       goals: [
         { kind: "score", target: 1900 },
-        { kind: "collect", type: 1, target: 9 }
+        { kind: "collect", type: 1, target: 10 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
       coach: "Prism pieces are pink triangles. Same swap, new color.",
@@ -1295,7 +1295,7 @@
     {
       number: 3,
       title: "Line Spark",
-      moves: 24,
+      moves: 17,
       scoreTarget: 2300,
       goals: [
         { kind: "score", target: 2300 },
@@ -1308,13 +1308,13 @@
     {
       number: 4,
       title: "Beam Loan",
-      moves: 22,
-      scoreTarget: 2700,
+      moves: 11,
+      scoreTarget: 3200,
       goals: [
-        { kind: "score", target: 2700 },
-        { kind: "collect", type: 2, target: 9 }
+        { kind: "score", target: 3200 },
+        { kind: "collect", type: 2, target: 26 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
       starterSpecials: [
         { row: 4, col: 3, special: "lineH" }
       ],
@@ -1324,7 +1324,7 @@
     {
       number: 5,
       title: "Nova Primer",
-      moves: 26,
+      moves: 18,
       scoreTarget: 3100,
       goals: [
         { kind: "score", target: 3100 },
@@ -1337,11 +1337,11 @@
     {
       number: 6,
       title: "Twin Circuit",
-      moves: 26,
-      scoreTarget: 3500,
+      moves: 13,
+      scoreTarget: 4200,
       goals: [
-        { kind: "score", target: 3500 },
-        { kind: "collect", type: 3, target: 9 },
+        { kind: "score", target: 4200 },
+        { kind: "collect", type: 3, target: 26 },
         { kind: "specials", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
@@ -1351,20 +1351,20 @@
     {
       number: 7,
       title: "Toolkit Relay",
-      moves: 24,
-      scoreTarget: 3900,
+      moves: 10,
+      scoreTarget: 5000,
       goals: [
-        { kind: "score", target: 3900 },
-        { kind: "collect", type: 4, target: 10 }
+        { kind: "score", target: 5000 },
+        { kind: "collect", type: 4, target: 34 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
-      coach: "Core pieces are orange hexes. Clear ten.",
+      coach: "Core pieces are orange hexes. Clear a big stack of them.",
       pressure: "Win this take and the booster bar opens."
     },
     {
       number: 8,
       title: "Cascade Signal",
-      moves: 25,
+      moves: 20,
       scoreTarget: 3900,
       goals: [
         { kind: "score", target: 3900 },
@@ -1377,11 +1377,11 @@
     {
       number: 9,
       title: "Echo Chamber",
-      moves: 26,
-      scoreTarget: 4400,
+      moves: 11,
+      scoreTarget: 5200,
       goals: [
-        { kind: "score", target: 4400 },
-        { kind: "collect", type: 5, target: 10 },
+        { kind: "score", target: 5200 },
+        { kind: "collect", type: 5, target: 26 },
         { kind: "chain", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", producers: [{ row: 4, col: 4 }] },
@@ -1391,11 +1391,11 @@
     {
       number: 10,
       title: "First Encore",
-      moves: 28,
+      moves: 30,
       scoreTarget: 4800,
       goals: [
         { kind: "score", target: 4800 },
-        { kind: "collect", type: 0, target: 11 }
+        { kind: "collect", type: 0, target: 10 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
       coach: "Milestone take. Play loose and bank moves.",
@@ -1404,11 +1404,11 @@
     {
       number: 11,
       title: "Shield Debut",
-      moves: 28,
-      scoreTarget: 5000,
+      moves: 8,
+      scoreTarget: 5200,
       goals: [
-        { kind: "score", target: 5000 },
-        { kind: "flux", target: 4 }
+        { kind: "score", target: 5200 },
+        { kind: "flux", target: 5 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", blockers: [{ row: 3, col: 2 }, { row: 3, col: 5 }, { row: 4, col: 3 }, { row: 5, col: 2 }, { row: 5, col: 5 }] },
       coach: "Shields are solid walls. Pieces fall through them. Match right beside a wall to break it open.",
@@ -1417,24 +1417,24 @@
     {
       number: 12,
       title: "Shield Current",
-      moves: 26,
-      scoreTarget: 5400,
+      moves: 7,
+      scoreTarget: 6200,
       goals: [
-        { kind: "score", target: 5400 },
-        { kind: "flux", target: 5 },
+        { kind: "score", target: 6200 },
+        { kind: "flux", target: 7 },
         { kind: "chain", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2 }, { row: 2, col: 5 }, { row: 3, col: 4 }, { row: 4, col: 2 }, { row: 5, col: 5 }, { row: 5, col: 3 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2, strength: 2 }, { row: 2, col: 5 }, { row: 3, col: 4 }, { row: 4, col: 2 }, { row: 5, col: 5, strength: 2 }, { row: 5, col: 3 }] },
       coach: "Break the walls by matching beside them. Chains break more at once.",
       pressure: "Walls plus chains. Pieces fall through until you break them."
     },
     {
       number: 13,
       title: "Shield Forge",
-      moves: 27,
-      scoreTarget: 5600,
+      moves: 10,
+      scoreTarget: 6000,
       goals: [
-        { kind: "score", target: 5600 },
+        { kind: "score", target: 6000 },
         { kind: "flux", target: 6 },
         { kind: "specials", target: 2 }
       ],
@@ -1449,11 +1449,11 @@
     {
       number: 14,
       title: "Creep Debut",
-      moves: 25,
-      scoreTarget: 5000,
+      moves: 14,
+      scoreTarget: 6000,
       goals: [
-        { kind: "score", target: 5000 },
-        { kind: "spread", target: 5 }
+        { kind: "score", target: 6000 },
+        { kind: "spread", target: 7 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", spreaders: [{ row: 3, col: 2 }, { row: 5, col: 5 }] },
       coach: "The green Creep spreads to a new cell every few moves. Match an infected cell to clear it.",
@@ -1462,14 +1462,14 @@
     {
       number: 15,
       title: "Track Gate",
-      moves: 26,
-      scoreTarget: 6200,
+      moves: 11,
+      scoreTarget: 7500,
       goals: [
-        { kind: "score", target: 6200 },
-        { kind: "flux", target: 8 },
+        { kind: "score", target: 7500 },
+        { kind: "flux", target: 10 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2 }, { row: 2, col: 5 }, { row: 3, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 5, col: 3 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2, strength: 2 }, { row: 2, col: 5 }, { row: 3, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 5, col: 3 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5, strength: 2 }] },
       coach: "The finale wall. Break beside the shields. Gold ones take two hits.",
       pressure: "Break the walls and bank a big finish. Some are reinforced."
     },
@@ -1774,6 +1774,7 @@
     carryFloor: 0,
     carryFloorStep: 0,
     lastArrangeFloor: 0,
+    lastEffectiveEnergy: 0, // ending EFFECTIVE energy (excitement above the floor) carried across a hand-off
     gateState: { snare: false, hat: false, hat16: false, bass: false, kickHi: false },
     failRamp: null,
     // Iso-principle director: meets the player where they are (arousal),
@@ -2319,6 +2320,16 @@
     };
     layout.fluxTarget = countFluxCells(layout);
     if (spectrum.length > 0) layout.fluxTarget = spectrum.length;
+    // De-isolation (validateBoard.isolatedCells): on a few procedural flux
+    // boards the checkerboard shields fully wall off one active cell (no
+    // legal neighbour to fill it). Un-mask a single trapping shield so the
+    // pocket keeps an active neighbour. Center (21/37): the 7-shield cap
+    // back-fills (5,5) when (3,3) opens, so shield count, feel and the flux
+    // goal target (fluxTarget, left untouched) all hold. Corners (22): the
+    // top-right cell (0,7) sits between (0,6)/(1,7) and the board edge; open
+    // (0,6) to reach it (that board's goal is chain, not flux).
+    if (number === 21 || number === 37) layout.blockerExclude = [{ row: 3, col: 3 }];
+    if (number === 22) layout.blockerExclude = [{ row: 0, col: 6 }];
     return layout;
   }
 
@@ -2794,9 +2805,15 @@
     if (strength > 0 && layout && layout.pattern && layout.pattern !== "none") {
       var placed = 0;
       var MAX_PATTERN_BLOCKERS = 7;
+      // Cells a layout opts out of shielding, to keep the board free of
+      // isolated pockets (see createLevelLayout blockerExclude).
+      var excluded = {};
+      (layout.blockerExclude || []).forEach(function (cell) {
+        excluded[cell.row + ":" + cell.col] = true;
+      });
       for (var r = 0; r < GRID && placed < MAX_PATTERN_BLOCKERS; r += 1) {
         for (var c = 0; c < GRID && placed < MAX_PATTERN_BLOCKERS; c += 1) {
-          if (isCellActive(r, c) && !isBeatGateCell(r, c) && isFluxCell(layout.pattern, r, c)) {
+          if (isCellActive(r, c) && !isBeatGateCell(r, c) && isFluxCell(layout.pattern, r, c) && !excluded[r + ":" + c]) {
             tileCharges[r][c] = strength;
             boardMask[r][c] = false; // blocker hole until broken
             placed += 1;
@@ -2811,6 +2828,34 @@
       tileCharges[b.row][b.col] = b.strength || strength || 1;
       boardMask[b.row][b.col] = false;
     });
+    // General de-isolation guard: shields are BLOCKERS (masked holes), so a placement can wall off
+    // an active cell whose every in-shape neighbour is now a hole -> an isolated pocket the collapse
+    // can never fill (validateBoard.isolatedCells, ok=false). Procedural flux boards (L16+) hit this
+    // on ~1-2 cells each (L21/22/37 are pre-empted by createLevelLayout.blockerExclude; this catches
+    // the rest generally). Any active cell with no active neighbour gets one adjacent shield
+    // un-masked as its outlet. Un-masking only ADDS active cells, so isolation strictly decreases and
+    // a few sweeps converge. Structural holes (shape / node carves, tileCharges 0) are left alone --
+    // only shields we placed here are relaxed.
+    for (var dePass = 0; dePass < 4; dePass += 1) {
+      var deFixed = false;
+      for (var di = 0; di < GRID; di += 1) {
+        for (var dj = 0; dj < GRID; dj += 1) {
+          if (!isCellActive(di, dj) || hasActiveNeighbor(di, dj)) continue;
+          var dn = [[di - 1, dj], [di + 1, dj], [di, dj - 1], [di, dj + 1]];
+          for (var dk = 0; dk < dn.length; dk += 1) {
+            var nr = dn[dk][0], nc = dn[dk][1];
+            if (nr < 0 || nr >= GRID || nc < 0 || nc >= GRID) continue;
+            if (tileCharges[nr][nc] > 0 && boardMask[nr] && !boardMask[nr][nc]) {
+              boardMask[nr][nc] = true; // relax this shield into a fillable cell
+              tileCharges[nr][nc] = 0;
+              deFixed = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!deFixed) break;
+    }
   }
 
   function resetPhaseAndFuseState() {
@@ -11881,7 +11926,10 @@
     // session was ending on, then eases it down (getCampaignArrangement). A reset clears the
     // carry so a new track / mode starts from its own opening floor.
     if (phaseContinuous) {
-      audio.carryFloor = audio.lastArrangeFloor;
+      // Carry the level's ending EFFECTIVE energy (its excitement, not just the bare density
+      // floor) so the next level opens matched to where this one peaked, then glides down over
+      // continuousCarryBars (see getCampaignArrangement) instead of dropping across the boundary.
+      audio.carryFloor = Math.max(audio.lastArrangeFloor, audio.lastEffectiveEnergy || 0);
       audio.carryFloorStep = audio.step;
     } else {
       audio.carryFloor = 0;
@@ -13186,49 +13234,116 @@
     if (spreaderList.length === 0) return;
     var intensity = Math.max(0.4, fxScale());
     var now = performance.now();
+    var CREEP_HOT = "rgba(238, 255, 176, 0.92)"; // pale acid highlight / hot heart
     ctx.save();
+    ctx.lineJoin = "round";
     for (var i = 0; i < spreaderList.length; i += 1) {
       var sp = spreaderList[i];
       var x = view.boardX + sp.col * view.cell;
       var y = view.boardY + sp.row * view.cell;
       var cx = x + view.cell / 2;
       var cy = y + view.cell / 2;
+      var seed = sp.row * 2.3 + sp.col * 1.7;
       var spawn = sp.spawnAt ? Math.max(0, 1 - (now - sp.spawnAt) / 420) : 0;
-      var pulse = 0.5 + Math.sin(time * 4 + sp.row * 0.9 + sp.col * 0.7) * 0.25;
-      var pad = view.cell * 0.08;
+      var pulse = 0.5 + Math.sin(time * 2.2 + seed) * 0.5;     // 0..1 slow body breath
+      var throb = 0.5 + Math.sin(time * 6 + seed * 1.6) * 0.5; // 0..1 fast core throb
+      var grow = 1 - spawn * 0.35;                             // pops open as it spawns
+      var tame = sp.contained ? 0.5 : 1;                       // held-back creep reads calmer
+      var baseR = view.cell * (0.30 + pulse * 0.03) * grow * (sp.contained ? 0.84 : 1);
 
-      // Toxic veil over the gem (the gem still reads through it, stays matchable).
-      ctx.globalAlpha = (0.2 + pulse * 0.14 + spawn * 0.25) * intensity;
+      // 1. Toxic membrane: a wobbling organic mass, filled then rimmed with a
+      // thick high-contrast stroke. Fill stays translucent so the infected gem
+      // still reads through it and stays matchable (mechanic unchanged).
+      var pts = 12;
+      ctx.beginPath();
+      for (var p = 0; p <= pts; p += 1) {
+        var ang = (Math.PI * 2 * p) / pts;
+        var wob = 1 + Math.sin(ang * 3 + time * 2.4 + seed) * 0.15
+                    + Math.sin(ang * 5 - time * 1.7 + seed * 2) * 0.08;
+        var rr = baseR * wob;
+        var mpx = cx + Math.cos(ang) * rr;
+        var mpy = cy + Math.sin(ang) * rr;
+        if (p === 0) ctx.moveTo(mpx, mpy); else ctx.lineTo(mpx, mpy);
+      }
+      ctx.closePath();
+      ctx.globalAlpha = (0.26 + pulse * 0.12 + spawn * 0.2) * intensity * tame;
       ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(200, 255, 46, 0.16)";
-      ctx.fillRect(x + pad, y + pad, view.cell - pad * 2, view.cell - pad * 2);
-
-      // Creep border.
-      ctx.globalAlpha = Math.min(0.9, 0.4 + pulse * 0.3 + spawn * 0.4) * intensity;
-      ctx.shadowBlur = glowBlur(8 + pulse * 6 + spawn * 12);
+      ctx.fillStyle = "rgba(174, 255, 40, 0.24)";
+      ctx.fill();
+      // thick bright membrane rim + heavy glow
+      ctx.globalAlpha = Math.min(1, 0.6 + pulse * 0.3 + spawn * 0.4) * intensity;
+      ctx.shadowBlur = glowBlur(12 + pulse * 8 + spawn * 16);
       ctx.shadowColor = SPREAD_COLOR;
       ctx.strokeStyle = SPREAD_COLOR;
-      ctx.lineWidth = Math.max(1.5, view.cell * 0.03);
-      ctx.strokeRect(x + pad, y + pad, view.cell - pad * 2, view.cell - pad * 2);
-
-      // Tendrils reaching toward the edges (the creep toward neighbors).
-      ctx.globalAlpha = (0.4 + pulse * 0.35) * intensity;
+      ctx.lineWidth = Math.max(2, view.cell * 0.055);
+      ctx.stroke();
+      // hot inner highlight tracing the same membrane
+      ctx.globalAlpha = (0.45 + throb * 0.3) * intensity * tame;
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = CREEP_HOT;
       ctx.lineWidth = Math.max(1, view.cell * 0.02);
-      var reach = view.cell * (0.34 + pulse * 0.06);
-      ctx.beginPath();
-      for (var t = 0; t < 4; t += 1) {
-        var a = (Math.PI / 2) * t + Math.sin(time * 2 + t + sp.row) * 0.2;
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + Math.cos(a) * reach, cy + Math.sin(a) * reach);
-      }
       ctx.stroke();
 
-      // Contained: a small inner ring when a clear held it back this cycle.
-      if (sp.contained) {
-        ctx.globalAlpha = 0.6 * intensity;
-        ctx.shadowBlur = glowBlur(6);
+      // 2. Spreading tendrils crawling toward the neighbours, with pustule tips.
+      var tendrils = sp.contained ? 3 : 5;
+      ctx.shadowColor = SPREAD_COLOR;
+      ctx.strokeStyle = SPREAD_COLOR;
+      ctx.fillStyle = SPREAD_COLOR;
+      ctx.lineCap = "round";
+      for (var t = 0; t < tendrils; t += 1) {
+        var a0 = (Math.PI * 2 * t) / tendrils + Math.sin(time * 1.6 + t + seed) * 0.25;
+        var len = view.cell * (0.28 + pulse * 0.08) * grow * tame;
+        var midA = a0 + Math.sin(time * 3 + t * 1.3 + seed) * 0.55;
+        var sx = cx + Math.cos(a0) * baseR * 0.7;
+        var sy = cy + Math.sin(a0) * baseR * 0.7;
+        var mx = cx + Math.cos(midA) * (baseR + len * 0.5);
+        var my = cy + Math.sin(midA) * (baseR + len * 0.5);
+        var ex = cx + Math.cos(a0) * (baseR + len);
+        var ey = cy + Math.sin(a0) * (baseR + len);
+        ctx.globalAlpha = (0.5 + pulse * 0.35) * intensity * tame;
+        ctx.shadowBlur = glowBlur(8 + pulse * 6);
+        ctx.lineWidth = Math.max(1.5, view.cell * 0.035);
         ctx.beginPath();
-        ctx.arc(cx, cy, view.cell * 0.12, 0, Math.PI * 2);
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(mx, my, ex, ey);
+        ctx.stroke();
+        ctx.globalAlpha = (0.5 + throb * 0.4) * intensity * tame;
+        ctx.beginPath();
+        ctx.arc(ex, ey, Math.max(1.5, view.cell * (0.03 + throb * 0.015)), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.lineCap = "butt";
+
+      // 3. Pulsing nucleus: a dark toxic well with a hot throbbing heart.
+      ctx.globalAlpha = (0.4 + pulse * 0.2) * intensity;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(24, 42, 0, 0.7)";
+      ctx.beginPath();
+      ctx.arc(cx, cy, view.cell * 0.13 * grow, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = Math.min(1, 0.7 + throb * 0.3) * intensity;
+      ctx.shadowBlur = glowBlur(10 + throb * 12);
+      ctx.shadowColor = SPREAD_COLOR;
+      ctx.fillStyle = SPREAD_COLOR;
+      ctx.beginPath();
+      ctx.arc(cx, cy, view.cell * (0.065 + throb * 0.03) * grow, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = Math.min(1, 0.6 + throb * 0.4) * intensity;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = CREEP_HOT;
+      ctx.beginPath();
+      ctx.arc(cx, cy, view.cell * (0.028 + throb * 0.014) * grow, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4. Contained: a cyan locking ring shows a clear held it back this cycle.
+      if (sp.contained) {
+        ctx.globalAlpha = 0.7 * intensity;
+        ctx.shadowBlur = glowBlur(6);
+        ctx.shadowColor = "#bffcff";
+        ctx.strokeStyle = "rgba(191, 252, 255, 0.85)";
+        ctx.lineWidth = Math.max(1.5, view.cell * 0.03);
+        ctx.beginPath();
+        ctx.arc(cx, cy, baseR * 1.08, 0, Math.PI * 2);
         ctx.stroke();
       }
     }
@@ -15837,11 +15952,13 @@
     // is left untouched so a lost song still eases to failFloorBase cleanly.
     floor = Math.max(0, Math.min(1, floor + getGenre().floorBonus));
     if (AUDIO_TUNING.continuousGroove && audio.carryFloor > 0) {
-      // HOLD the carried level-end energy as the floor for the whole level so the next level opens
-      // AT the previous energy and continues (rising with its own progress), never dips across the
-      // boundary. carryFloor re-arms each within-track hand-off, so a world's baseline rides the
-      // running energy instead of resetting sparse per level.
-      floor = Math.max(floor, audio.carryFloor);
+      // Open the level AT the previous level's ending energy (its excitement, carried in
+      // resetMusicPhrase) and GLIDE it down to this level's natural floor over continuousCarryBars,
+      // so the boundary reads as a continuation that eases rather than an abrupt drop. carryFloor
+      // re-arms each within-track hand-off; bigger continuousCarryBars = the energy holds longer.
+      var carryBars = Math.max(0, (audio.step - audio.carryFloorStep) / 16);
+      var carryEase = 1 - Math.min(1, carryBars / Math.max(1, AUDIO_TUNING.continuousCarryBars));
+      floor = Math.max(floor, floor + (audio.carryFloor - floor) * carryEase);
     }
     return { progress: progress, floor: floor, cap: cap, tier: tier };
   }
@@ -16064,6 +16181,10 @@
       ? Math.max(0, Math.min(Math.min(arrange.cap, dir.ceiling), genreEnergyCap, Math.max(energy, arrange.floor) + dirBias))
       : Math.max(0, Math.min(dir.ceiling, genreEnergyCap, energy + dirBias));
     audio.effectiveEnergy = effectiveEnergy;
+    // Remember the ending EFFECTIVE energy (excitement above the density floor) while playing, so a
+    // continuous hand-off opens the next level AT that energy and glides down (see resetMusicPhrase
+    // + getCampaignArrangement), instead of dropping to the bare carried floor.
+    if (arrange && levelState === "playing") audio.lastEffectiveEnergy = effectiveEnergy;
     if (arrange && arrange.progress >= AUDIO_TUNING.climaxProgress) {
       if (audio.climaxStep < 0) audio.climaxStep = step;
     } else {
@@ -17653,6 +17774,9 @@
           },
           signalNodes: signalNodeList.length === 0 ? null : signalNodeList.map(function (node) {
             return { row: node.row, col: node.col };
+          }),
+          spreaders: spreaderList.length === 0 ? null : spreaderList.map(function (sp) {
+            return { row: sp.row, col: sp.col };
           }),
           spectrum: spectrumList.length === 0 ? null : spectrumList.map(function (shield) {
             return { row: shield.row, col: shield.col, colors: shield.colors.slice(), remaining: shield.remaining.slice() };
