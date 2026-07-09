@@ -556,17 +556,20 @@
   //   shimmer: adds one low-gain sine partial N harmonics up (air; 3 = an octave+fifth)
   //   filtEnv: reuses the seq 3 filter envelope; true = defaults, object = per-voice override
   var VOICE_CHARACTERS = {
+    // ORCHID RE-VOICE: Telepathic Instruments / Kevin Parker aesthetic.
+    // Warm, dreamy, lush. Triangle waves, heavy detune, slow filter blooms.
+    // No harsh transients. Everything blooms in.
     single: { type: "single", wave: "triangle", filtEnv: true },
-    warm:   { type: "stack",  wave: "triangle", detune: 7,  sub: 0.35, filtEnv: { octaves: 1.6, decay: 0.16 } },
-    stack:  { type: "stack",  wave: "sawtooth", detune: 14, sub: 0,    filtEnv: { octaves: 2.4, decay: 0.10 } },
-    hollow: { type: "pwm",    duty: 0.22,       motion: 6,             filtEnv: { octaves: 2.0, decay: 0.12 } },
-    glass:  { type: "single", wave: "square",   filtEnv: { octaves: 2.8, decay: 0.06 } },
-    bell:   { type: "fm",     ratio: 2, index: 3, fmDecay: 0.09,       filtEnv: { octaves: 1.2, decay: 0.20 } },
-    brass:  { type: "fm",     ratio: 1, index: 5, fmDecay: 0.12,       filtEnv: { octaves: 2.2, decay: 0.14 } },
-    pluck:  { type: "fm",     ratio: 3, index: 4, fmDecay: 0.05,       filtEnv: { octaves: 3.0, decay: 0.05 } },
+    warm:   { type: "stack",  wave: "triangle", detune: 12, sub: 0.45, filtEnv: { octaves: 2.0, decay: 0.28, attack: 0.014 } },
+    stack:  { type: "stack",  wave: "triangle", detune: 18, sub: 0.25, filtEnv: { octaves: 2.0, decay: 0.20, attack: 0.012 } },
+    hollow: { type: "pwm",    duty: 0.35,       motion: 4,             filtEnv: { octaves: 1.6, decay: 0.22, attack: 0.014 } },
+    glass:  { type: "single", wave: "triangle", filtEnv: { octaves: 2.0, decay: 0.18, attack: 0.012 } },
+    bell:   { type: "fm",     ratio: 2, index: 2, fmDecay: 0.18,       filtEnv: { octaves: 1.0, decay: 0.32, attack: 0.016 } },
+    brass:  { type: "fm",     ratio: 1, index: 3, fmDecay: 0.22,       filtEnv: { octaves: 1.6, decay: 0.26, attack: 0.014 } },
+    pluck:  { type: "fm",     ratio: 3, index: 2.5, fmDecay: 0.15,     filtEnv: { octaves: 2.0, decay: 0.18, attack: 0.012 } },
     sub:    { type: "stack",  wave: "triangle", detune: 4,  sub: 0.6,  filtEnv: { octaves: 1.0, decay: 0.22 } },
-    air:    { type: "single", wave: "sine",     shimmer: 3,            filtEnv: { octaves: 1.4, decay: 0.30 } },
-    nova:   { type: "stack",  wave: "sawtooth", detune: 16, sub: 0.2,  filtEnv: { octaves: 2.6, decay: 0.10 } },
+    air:    { type: "single", wave: "sine",     shimmer: 2,            filtEnv: { octaves: 1.2, decay: 0.40, attack: 0.018 } },
+    nova:   { type: "stack",  wave: "triangle", detune: 20, sub: 0.35, filtEnv: { octaves: 2.0, decay: 0.22, attack: 0.012 } },
     // FM electric piano (Rhodes) for the jazz genre (music genres seq 2): the sustained
     // comp/pad voice that carries the 6/9 stacks and the guarded b7/9 color tones. A soft
     // ratio-1 FM bell with a slow filter bloom = the DX7-style tine sound, no samples.
@@ -590,14 +593,15 @@
       progression: [0, 3, 4, 2],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "square",
+      // ORCHID: triangle lead, warm pad, hazy delay
+      leadWave: "triangle",
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.14,
-      delayDrive: 0.16,
-      feedbackBase: 0.18,
-      feedbackDrive: 0.14,
+      delayBase: 0.20,
+      delayDrive: 0.20,
+      feedbackBase: 0.28,
+      feedbackDrive: 0.20,
       groove: {
         kick: [0, 4, 8, 12],
         snare: [4, 12],
@@ -621,10 +625,11 @@
       layerWave: "sine",
       bassWave: "sawtooth",
       padWave: "sine",
-      delayBase: 0.18,
-      delayDrive: 0.18,
-      feedbackBase: 0.2,
-      feedbackDrive: 0.16,
+      // ORCHID: widen delay for hazy texture
+      delayBase: 0.24,
+      delayDrive: 0.22,
+      feedbackBase: 0.30,
+      feedbackDrive: 0.22,
       groove: {
         kick: [0, 4, 8, 12],
         snare: [4, 12],
@@ -644,14 +649,15 @@
       progression: [0, 2, 3, 4],
       bassRatio: 0.375,
       subRatio: 0.1875,
-      leadWave: "square",
-      layerWave: "square",
+      // ORCHID: triangle lead+layer
+      leadWave: "triangle",
+      layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.12,
-      delayDrive: 0.12,
-      feedbackBase: 0.16,
-      feedbackDrive: 0.12,
+      delayBase: 0.18,
+      delayDrive: 0.18,
+      feedbackBase: 0.24,
+      feedbackDrive: 0.18,
       groove: {
         kick: [0, 6, 10],
         snare: [4, 12],
@@ -670,14 +676,15 @@
       progression: [0, 4, 3, 2],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "sawtooth",
-      layerWave: "square",
+      // ORCHID: warm triangle lead, triangle layer
+      leadWave: "triangle",
+      layerWave: "triangle",
       bassWave: "square",
       padWave: "triangle",
-      delayBase: 0.1,
-      delayDrive: 0.12,
-      feedbackBase: 0.14,
-      feedbackDrive: 0.1,
+      delayBase: 0.16,
+      delayDrive: 0.18,
+      feedbackBase: 0.22,
+      feedbackDrive: 0.16,
       delaySteps: 2,
       bpmOffset: 2,
       groove: GROOVES["break"]
@@ -692,14 +699,15 @@
       progression: [0, 2, 4, 3],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "square",
+      // ORCHID: triangle lead
+      leadWave: "triangle",
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.11,
-      delayDrive: 0.14,
-      feedbackBase: 0.15,
-      feedbackDrive: 0.12,
+      delayBase: 0.18,
+      delayDrive: 0.20,
+      feedbackBase: 0.24,
+      feedbackDrive: 0.18,
       delaySteps: 2,
       bpmOffset: 3,
       groove: GROOVES.drive
@@ -718,10 +726,11 @@
       layerWave: "sine",
       bassWave: "triangle",
       padWave: "sine",
-      delayBase: 0.22,
-      delayDrive: 0.16,
-      feedbackBase: 0.26,
-      feedbackDrive: 0.14,
+      // ORCHID: hazy, lush delay
+      delayBase: 0.28,
+      delayDrive: 0.20,
+      feedbackBase: 0.34,
+      feedbackDrive: 0.18,
       delaySteps: 6,
       bpmOffset: 0,
       groove: GROOVES.half
@@ -736,14 +745,15 @@
       progression: [0, 4, 2, 3],
       bassRatio: 0.375,
       subRatio: 0.1875,
-      leadWave: "square",
-      layerWave: "square",
+      // ORCHID: triangle lead+layer, hazy delay
+      leadWave: "triangle",
+      layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "sine",
-      delayBase: 0.1,
-      delayDrive: 0.1,
-      feedbackBase: 0.12,
-      feedbackDrive: 0.08,
+      delayBase: 0.16,
+      delayDrive: 0.16,
+      feedbackBase: 0.20,
+      feedbackDrive: 0.14,
       delaySteps: 2,
       bpmOffset: 2,
       groove: GROOVES.four
@@ -758,14 +768,15 @@
       progression: [0, 2, 3, 5],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "sawtooth",
+      // ORCHID: triangle lead, lush delay
+      leadWave: "triangle",
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.16,
-      delayDrive: 0.2,
-      feedbackBase: 0.2,
-      feedbackDrive: 0.18,
+      delayBase: 0.22,
+      delayDrive: 0.24,
+      feedbackBase: 0.28,
+      feedbackDrive: 0.22,
       delaySteps: 3,
       bpmOffset: 3,
       groove: GROOVES.floor4
@@ -784,10 +795,11 @@
       layerWave: "sine",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.15,
-      delayDrive: 0.14,
-      feedbackBase: 0.19,
-      feedbackDrive: 0.12,
+      // ORCHID: hazy delay
+      delayBase: 0.22,
+      delayDrive: 0.20,
+      feedbackBase: 0.28,
+      feedbackDrive: 0.18,
       delaySteps: 3,
       bpmOffset: 2,
       groove: {
@@ -813,10 +825,11 @@
       layerWave: "triangle",
       bassWave: "triangle",
       padWave: "sine",
-      delayBase: 0.2,
-      delayDrive: 0.18,
-      feedbackBase: 0.24,
-      feedbackDrive: 0.16,
+      // ORCHID: hazy, liquid delay
+      delayBase: 0.28,
+      delayDrive: 0.22,
+      feedbackBase: 0.32,
+      feedbackDrive: 0.20,
       delaySteps: 4,
       bpmOffset: 1,
       groove: {
@@ -837,14 +850,15 @@
       progression: [0, 2, 3, 4],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "square",
-      layerWave: "square",
+      // ORCHID: triangle lead+layer, hazy delay
+      leadWave: "triangle",
+      layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.08,
-      delayDrive: 0.1,
-      feedbackBase: 0.1,
-      feedbackDrive: 0.08,
+      delayBase: 0.14,
+      delayDrive: 0.16,
+      feedbackBase: 0.18,
+      feedbackDrive: 0.14,
       delaySteps: 2,
       bpmOffset: 4,
       groove: GROOVES.drive
@@ -859,14 +873,15 @@
       progression: [0, 3, 4, 5],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "sawtooth",
+      // ORCHID: triangle lead, lush delay
+      leadWave: "triangle",
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.17,
-      delayDrive: 0.2,
-      feedbackBase: 0.2,
-      feedbackDrive: 0.16,
+      delayBase: 0.24,
+      delayDrive: 0.24,
+      feedbackBase: 0.28,
+      feedbackDrive: 0.22,
       delaySteps: 3,
       bpmOffset: 4,
       groove: GROOVES.floor4
@@ -885,10 +900,11 @@
       layerWave: "sine",
       bassWave: "sine",
       padWave: "sine",
-      delayBase: 0.16,
-      delayDrive: 0.1,
-      feedbackBase: 0.22,
-      feedbackDrive: 0.1,
+      // ORCHID: hazy delay
+      delayBase: 0.24,
+      delayDrive: 0.16,
+      feedbackBase: 0.30,
+      feedbackDrive: 0.16,
       delaySteps: 4,
       bpmOffset: 0,
       groove: GROOVES.half
@@ -907,10 +923,11 @@
       layerWave: "sine",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.19,
-      delayDrive: 0.2,
-      feedbackBase: 0.24,
-      feedbackDrive: 0.18,
+      // ORCHID: hazy, lush delay
+      delayBase: 0.26,
+      delayDrive: 0.24,
+      feedbackBase: 0.32,
+      feedbackDrive: 0.22,
       delaySteps: 4,
       bpmOffset: 3,
       groove: GROOVES["break"]
@@ -925,14 +942,15 @@
       progression: [0, 2, 4, 3],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "square",
-      layerWave: "square",
+      // ORCHID: triangle lead+layer, warm delay
+      leadWave: "triangle",
+      layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.1,
-      delayDrive: 0.14,
-      feedbackBase: 0.13,
-      feedbackDrive: 0.12,
+      delayBase: 0.16,
+      delayDrive: 0.18,
+      feedbackBase: 0.22,
+      feedbackDrive: 0.18,
       delaySteps: 2,
       bpmOffset: 6,
       groove: GROOVES.drive
@@ -947,14 +965,15 @@
       progression: [0, 2, 3, 4, 5, 4, 3, 2],
       bassRatio: 0.5,
       subRatio: 0.25,
-      leadWave: "sawtooth",
+      // ORCHID: triangle lead, lush delay
+      leadWave: "triangle",
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "sine",
-      delayBase: 0.18,
-      delayDrive: 0.2,
-      feedbackBase: 0.22,
-      feedbackDrive: 0.16,
+      delayBase: 0.24,
+      delayDrive: 0.24,
+      feedbackBase: 0.30,
+      feedbackDrive: 0.22,
       delaySteps: 3,
       bpmOffset: 4,
       groove: GROOVES.floor4
@@ -989,8 +1008,9 @@
     hitStopNovaSweep: 100
   };
   var AUDIO_TUNING = {
-    macroFloorHz: 3200, // macro lowpass cutoff at zero intensity (Hz, 800-6000)
-    macroCeilHz: 14000, // macro lowpass cutoff at full intensity (Hz, 8000-18000)
+    // ORCHID: darker macro filter for warm, analog feel
+    macroFloorHz: 2200, // macro lowpass cutoff at zero intensity (Hz, 800-6000)
+    macroCeilHz: 11000, // macro lowpass cutoff at full intensity (Hz, 8000-18000)
     macroEnergyWeight: 0.55, // how much board energy pushes the macro open (0-1)
     macroDriveWeight: 0.45, // how much visual drive pushes the macro open (0-1)
     macroOverdriveBoost: 0.25, // flat intensity bonus while overdrive is live (0-0.5)
@@ -1001,11 +1021,12 @@
     duckHold: 0.07, // time held at the ducked level (seconds, 0.02-0.2)
     duckRelease: 0.22, // setTargetAtTime constant for recovery to full (seconds, 0.08-0.5)
     duckSmallScale: 0.6, // duck scale for smaller hits like line specials (0-1)
-    kickSubGain: 0.18, // sub sine layer peak gain per unit amount (0-0.3)
-    kickKnockGain: 0.07, // mid triangle knock layer peak gain; carries the beat on phone speakers (0-0.15)
-    kickKnockHz: 190, // knock layer start frequency, drops an octave over 30ms (Hz, 120-320)
-    kickClickGain: 0.05, // attack click noise gain for transient definition (0-0.1)
-    kickClickHz: 3200, // attack click bandpass center (Hz, 2000-6000)
+    // ORCHID: softer, warmer percussion
+    kickSubGain: 0.16, // sub sine layer peak gain per unit amount (0-0.3)
+    kickKnockGain: 0.045, // mid triangle knock layer peak gain; carries the beat on phone speakers (0-0.15)
+    kickKnockHz: 150, // knock layer start frequency, drops an octave over 30ms (Hz, 120-320)
+    kickClickGain: 0.025, // attack click noise gain for transient definition (0-0.1)
+    kickClickHz: 2400, // attack click bandpass center (Hz, 2000-6000)
     defaultDelaySteps: 3, // echo delay length in 16th steps when a palette sets no delaySteps; 3 = dotted eighth (1-6)
     delayGlide: 0.05, // setTargetAtTime smoothing when delay retunes to a new BPM (seconds, 0.02-0.2)
     heroSnapSteps: 2, // hero stingers snap to this many 16th steps (1-4)
@@ -1084,27 +1105,28 @@
     motifTensionUrgentMin: 2, // difficulty tier at/above this picks the urgent operator pool (1.5-2.8)
     motifNoteDurScale: 0.8, // fraction of a motif note's rhythmic slot the tone sustains (0.4-1)
     winMotifSpacing: 0.05, // seconds between win-sting motif arpeggio notes (0.03-0.09)
-    driftDetuneCents: 6, // MUSIC POLISH: widened from 4 → 6 (±3 cents) so per-level pitch tint is audible
-    driftCutoffMul: 0.08, // MUSIC POLISH: widened from 0.05 → 0.08 so per-level brightness shift is audible
-    driftFeedbackNudge: 0.015, // per-level seed delay-feedback half-range added to the feedback target (0-0.04)
+    driftDetuneCents: 8, // ORCHID: widened from 6 to 8 for more hazy detune
+    driftCutoffMul: 0.12, // ORCHID: widened from 0.08 for more brightness shift
+    driftFeedbackNudge: 0.02, // ORCHID: widened from 0.015 for more delay variation
     driftFiltEnvOctaves: 0.25, // per-level seed filter-envelope sweep-depth half-range in octaves; voice engine (seq 4) (0-0.6)
     driftVoiceBias: 0.15, // per-level seed voice-character/stack-brightness half-range bias; voice engine (seq 4) (0-0.4)
-    voiceFiltEnvAttack: 0.008, // filter-envelope attack for character voices (seconds, 0.002-0.03)
-    voiceFiltEnvDecay: 0.12, // filter-envelope decay to the sustain floor (seconds, 0.03-0.4)
-    voiceFiltEnvOctaves: 2.2, // filter-env sweep height above the note base cutoff (octaves, 0-4)
-    voiceFiltEnvFloor: 0.5, // cutoff multiplier the env settles to, times base cutoff (0.2-1)
-    voiceFiltEnvStart: 0.6, // cutoff multiplier at note onset, times base cutoff (0.2-1)
-    voiceStackDetuneMax: 22, // hard cap on 2-osc stack detune, keeps stacks in tune (cents, 0-40)
-    voiceSubMix: 0.5, // sub-oscillator (-12 st) gain vs the main osc when a character sets sub>0 (0-0.8)
-    voiceFmIndexMax: 6, // hard cap on FM modulation index so sidebands stay musical (0-10)
-    voiceFmDecayDefault: 0.08, // fallback FM index-envelope decay when a character sets none (seconds, 0.02-0.3)
-    voicePwmMotionHz: 5, // PWM/stack chorus LFO rate on detune (Hz, 2-8)
-    voicePwmMotionCents: 6, // depth of that chorus LFO (cents, 0-14)
+    // ORCHID: slower filter env attack for blooming transients
+    voiceFiltEnvAttack: 0.014, // filter-envelope attack for character voices (seconds, 0.002-0.03)
+    voiceFiltEnvDecay: 0.20, // filter-envelope decay to the sustain floor (seconds, 0.03-0.4)
+    voiceFiltEnvOctaves: 2.0, // filter-env sweep height above the note base cutoff (octaves, 0-4)
+    voiceFiltEnvFloor: 0.45, // cutoff multiplier the env settles to, times base cutoff (0.2-1)
+    voiceFiltEnvStart: 0.5, // cutoff multiplier at note onset, times base cutoff (0.2-1)
+    voiceStackDetuneMax: 30, // ORCHID: wider detune cap for lush chorus (cents, 0-40)
+    voiceSubMix: 0.55, // ORCHID: slightly more sub for warmth (0-0.8)
+    voiceFmIndexMax: 5, // ORCHID: slightly lower FM index for softer sidebands (0-10)
+    voiceFmDecayDefault: 0.12, // ORCHID: slower FM decay (seconds, 0.02-0.3)
+    voicePwmMotionHz: 4, // ORCHID: slower PWM/chorus LFO (Hz, 2-8)
+    voicePwmMotionCents: 10, // ORCHID: wider PWM chorus depth (cents, 0-14)
     voiceMaxOscPerNote: 4, // safety cap on oscillators a single character note may spawn (2-6)
     pieceVoiceGainTrim: 0.9, // global trim on piece-voice notes vs the old flat tone, avoids stacking hot (0.6-1.1)
     pieceVoiceCascadeLift: 1, // extra register added to piece voices at chain >= 4 (0-2)
-    heroNovaDetuneCents: 16, // detune of the nova super-saw hero stab (6-30)
-    heroFusionFmIndex: 5, // FM index for the fusion/combo bell hero timbre (2-8)
+    heroNovaDetuneCents: 22, // ORCHID: widened from 16 for warmer super-saw
+    heroFusionFmIndex: 4, // ORCHID: lowered from 5 for softer fusion bell
     phraseBars: 4, // bars per call-and-response phrase; front half call, back half response (2-8)
     responseDuck: 0.3, // motif layer gain multiplier during response bars; the band steps back (0.1-1)
     responseBoost: 1.3, // player tone gain multiplier during response bars; the answer rings louder (1-1.6)
@@ -12328,7 +12350,9 @@
   }
 
   function getPadChordDegrees() {
-    return energy > 0.58 ? [0, 2, 3, 5] : [0, 2, 3];
+    // ORCHID: lush extended chords. Low energy = root, 3rd, 7th (warm minor color).
+    // High energy = add the 9th for dreamy psych-pop harmony.
+    return energy > 0.58 ? [0, 2, 3, 6, 8] : [0, 2, 3, 6];
   }
 
   function getChordDegrees() {
@@ -17940,7 +17964,7 @@
           freq * (i % 2 === 0 ? 2 : 1) * pvOctave,
           start + i * (overdrive ? 0.036 : 0.045),
           overdrive ? 0.105 : 0.13,
-          overdrive ? "square" : "triangle",
+          overdrive ? "triangle" : "triangle", // ORCHID: was square, now warm triangle
           Math.min(AUDIO_TUNING.responseToneGainCap, (0.048 + chain * 0.008 + (overdrive ? 0.012 : 0)) * boost) * AUDIO_TUNING.pieceVoiceGainTrim * pv.gain,
           pan,
           pv.filter + chain * 220 + drive * 1200,
@@ -18487,8 +18511,9 @@
     var osc = audio.ctx.createOscillator();
     var gain = audio.ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(100, time);
-    osc.frequency.exponentialRampToValueAtTime(44, time + 0.12);
+    // ORCHID: lower kick for warmer, softer thump
+    osc.frequency.setValueAtTime(80, time);
+    osc.frequency.exponentialRampToValueAtTime(38, time + 0.14);
     gain.gain.setValueAtTime(0.0001, time);
     gain.gain.exponentialRampToValueAtTime(AUDIO_TUNING.kickSubGain * amount, time + 0.006);
     gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.18);
@@ -18538,9 +18563,9 @@
       playTone(200, time, 0.05, "triangle", amount * 0.09, 0.05, 1000);
       return;
     }
-    // Electronic (default): the shipped snare.
-    playNoise(time, 0.11, amount, 1600, 0.9);
-    playTone(196, time, 0.08, "triangle", amount * 0.09, 0.05, 900);
+    // ORCHID: softer, darker electronic snare
+    playNoise(time, 0.13, amount * 0.85, 1200, 0.8);
+    playTone(180, time, 0.1, "triangle", amount * 0.07, 0.04, 600);
   }
 
   function playHat(time, amount) {
@@ -18558,8 +18583,8 @@
       playNoise(time, 0.035, amount, 4800, 0.2);
       return;
     }
-    // clean/electronic: the shipped bright hat.
-    playNoise(time, 0.035, amount, 7200, 0.2);
+    // ORCHID: softer, darker hat
+    playNoise(time, 0.04, amount * 0.85, 5200, 0.25);
   }
 
   function playNoiseSweep(time, chain) {
