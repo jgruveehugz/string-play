@@ -12991,15 +12991,13 @@
     var visualDrive = getVisualDrive();
     var pulse = beatPulse * 0.6 + energy * 0.4 + visualDrive * 0.32;
     ctx.save();
-    ctx.fillStyle = stageBgGradient || "#04050a";
+    // GW STYLE: pure black background. No gradients, no nebula, no washes.
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, view.width, view.height);
-    if (frameQuality.level < 2) drawNebula(time, visualDrive);
-    drawStageEnergyWash(time, visualDrive, pulse);
-    drawParallaxGeometry(time, pulse);
 
     var gap = Math.max(34, Math.min(54, view.width / 22)) * (1 + frameQuality.level * 0.34);
     var shift = (time * (22 + visualDrive * 34)) % gap;
-    drawAtmosphereMotes(time, pulse);
+    // GW STYLE: the warped lattice IS the background. Cranked brighter + more responsive.
     drawVectorField(time, pulse);
     drawWarpedLattice(time, gap, shift, pulse);
     drawVectorArena(time, pulse);
@@ -13330,28 +13328,33 @@
   function drawWarpedLattice(time, gap, shift, pulse) {
     var segments = frameQuality.level >= 2 ? 2 : frameQuality.level === 1 ? 4 : 6;
     var visualDrive = getVisualDrive();
-    var waveEnergy = Math.min(0.22, shockwaves.reduce(function (sum, wave) {
-      return wave.delay > 0 ? sum : sum + wave.life * 0.12;
+    var waveEnergy = Math.min(0.3, shockwaves.reduce(function (sum, wave) {
+      return wave.delay > 0 ? sum : sum + wave.life * 0.15;
     }, 0));
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.12 + pulse * 0.14 + waveEnergy;
+    // GW STYLE: brighter cyan grid, stronger warp, shadowBlur for glow.
+    ctx.globalAlpha = 0.18 + pulse * 0.16 + waveEnergy;
     ctx.strokeStyle = "#46f4ff";
     ctx.lineWidth = 1;
+    ctx.shadowBlur = 4 + pulse * 8;
+    ctx.shadowColor = "#46f4ff";
     for (var x = -gap + shift; x < view.width + gap; x += gap) {
-      drawWarpedLine(x, 0, x + view.height * 0.22, view.height, segments, time, 8 + visualDrive * 18);
+      drawWarpedLine(x, 0, x + view.height * 0.22, view.height, segments, time, 10 + visualDrive * 24);
     }
     if (frameQuality.level < 2) {
-      ctx.globalAlpha = 0.07 + pulse * 0.08 + waveEnergy;
+      ctx.globalAlpha = 0.12 + pulse * 0.1 + waveEnergy;
       ctx.strokeStyle = "#ff4fd8";
+      ctx.shadowColor = "#ff4fd8";
       for (var y = -gap + shift; y < view.height + gap; y += gap) {
-        drawWarpedLine(0, y, view.width, y - view.width * 0.18, segments, time + 1.7, 7 + visualDrive * 14);
+        drawWarpedLine(0, y, view.width, y - view.width * 0.18, segments, time + 1.7, 9 + visualDrive * 18);
       }
     }
-    ctx.globalAlpha = 0.09 + visualDrive * 0.1;
+    ctx.globalAlpha = 0.12 + visualDrive * 0.12;
     ctx.strokeStyle = "#ffffff";
-    drawWarpedLine(view.boardX, view.boardY, view.boardX + view.boardSize, view.boardY + view.boardSize, segments, time, 10);
-    drawWarpedLine(view.boardX + view.boardSize, view.boardY, view.boardX, view.boardY + view.boardSize, segments, time + 0.9, 10);
+    ctx.shadowColor = "#ffffff";
+    drawWarpedLine(view.boardX, view.boardY, view.boardX + view.boardSize, view.boardY + view.boardSize, segments, time, 12);
+    drawWarpedLine(view.boardX + view.boardSize, view.boardY, view.boardX, view.boardY + view.boardSize, segments, time + 0.9, 12);
     ctx.restore();
   }
 
@@ -13400,35 +13403,27 @@
     var y = view.boardY;
     var size = view.boardSize;
 
-    ctx.fillStyle = "rgba(2, 4, 10, 0.9)";
+    // GW STYLE: pure black board interior. No checker, no scanline.
+    ctx.fillStyle = "#000000";
     ctx.fillRect(x, y, size, size);
 
-    for (var row = 0; row < GRID; row += 1) {
-      for (var col = 0; col < GRID; col += 1) {
-        if (!isCellActive(row, col)) continue;
-        var cellX = x + col * view.cell;
-        var cellY = y + row * view.cell;
-        ctx.globalAlpha = 0.88;
-        ctx.fillStyle = (row + col) % 2 === 0 ? "rgba(8, 18, 28, 0.74)" : "rgba(5, 11, 19, 0.66)";
-        ctx.fillRect(cellX + 1.5, cellY + 1.5, view.cell - 3, view.cell - 3);
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = "rgba(166, 244, 255, 0.08)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(Math.round(cellX) + 0.5, Math.round(cellY) + 0.5, view.cell, view.cell);
-        if (neonDetail()) {
-          ctx.strokeStyle = "rgba(196, 240, 255, 0.07)";
-          ctx.beginPath();
-          ctx.moveTo(cellX + 2, Math.round(cellY) + 2.5);
-          ctx.lineTo(cellX + view.cell - 2, Math.round(cellY) + 2.5);
-          ctx.stroke();
-          ctx.strokeStyle = "rgba(0, 0, 0, 0.32)";
-          ctx.beginPath();
-          ctx.moveTo(cellX + 2, Math.round(cellY + view.cell) - 2.5);
-          ctx.lineTo(cellX + view.cell - 2, Math.round(cellY + view.cell) - 2.5);
-          ctx.stroke();
-        }
-      }
+    // Faint cell grid so the playfield is legible — thin, single color, no tint.
+    ctx.globalAlpha = 0.06;
+    ctx.strokeStyle = "#46f4ff";
+    ctx.lineWidth = 1;
+    for (var row = 0; row <= GRID; row += 1) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + row * view.cell);
+      ctx.lineTo(x + size, y + row * view.cell);
+      ctx.stroke();
     }
+    for (var col = 0; col <= GRID; col += 1) {
+      ctx.beginPath();
+      ctx.moveTo(x + col * view.cell, y);
+      ctx.lineTo(x + col * view.cell, y + size);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
 
     drawBoardMaskOutline(time, "rgba(70, 244, 255, 0.26)", 1.1, 2 + getVisualDrive() * 6);
 
@@ -14696,22 +14691,24 @@
     ctx.scale(scale * breath, scale * breath);
     drawGemBacking(radius, type.color, gem.special, gem.birth);
 
-    // VIBRANT: bright neon halo stroke — thicker, higher alpha, on all tiers.
+    // GW STYLE: bright neon halo — additive, thick, heavy glow. On all tiers.
     {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.38 + haloPulse + gem.pop * 0.3;
-      ctx.lineWidth = coreWidth * 4;
+      ctx.globalAlpha = 0.5 + haloPulse + gem.pop * 0.3;
+      ctx.lineWidth = coreWidth * 3;
       ctx.strokeStyle = type.color;
-      ctx.shadowBlur = glowBlur(8 + beatPulse * 12);
+      ctx.shadowBlur = glowBlur(12 + beatPulse * 14);
       ctx.shadowColor = type.color;
       drawShape(type.shape, radius, time + gem.spin, type.color);
       ctx.restore();
     }
 
-    // VIBRANT: thicker core outline for presence.
-    ctx.globalAlpha = 0.98;
-    ctx.lineWidth = coreWidth * 1.2;
+    // GW STYLE: crisp white-hot core outline. This is the shape identity.
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = coreWidth * 1.3;
+    ctx.shadowBlur = glowBlur(6 + beatPulse * 6);
+    ctx.shadowColor = type.color;
     var birthWhite = Math.min(1, (gem.birth || 0) / 0.8);
     ctx.strokeStyle = birthWhite > 0 ? type.birthColors[Math.min(3, Math.round(birthWhite * 3))] : type.coreColor;
     drawShape(type.shape, radius, time + gem.spin, type.color);
@@ -14940,97 +14937,53 @@
     };
   }
 
+  // GW STYLE: gem backing is pure glow — no fills, no gradients inside the shape.
+  // The shadowBlur on the outline stroke IS the color body. Brighter = more vibrant.
   function drawGemBacking(radius, color, special, birth) {
     birth = birth || 0;
     var visualDrive = getVisualDrive();
     var beat = Math.min(1, beatPulse * 0.8 + visualDrive * 0.35 + birth * 0.8);
-    var core = radius * (special ? 1.35 : 1.18);
-    var inner = radius * (special ? 1.0 : 0.9);
-    var s = Math.max(0.5, fxScale());
+    var glowR = radius * (special ? 1.4 : 1.2);
 
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // VIBRANT: outer glow halo — much bigger, much brighter. This is the bloom.
-    ctx.globalAlpha = (0.12 + birth * 0.2 + beat * 0.1 + (special ? 0.1 : 0)) * s;
+    // GW STYLE: a single bright glow disc. No gradient fill, no rim.
+    // The shadowBlur creates the bloom that IS the gem's color body.
+    ctx.globalAlpha = (0.15 + birth * 0.25 + beat * 0.12 + (special ? 0.1 : 0)) * Math.max(0.5, fxScale());
     ctx.fillStyle = color;
-    ctx.shadowBlur = glowBlur(24 + birth * 28 + beat * 18);
+    ctx.shadowBlur = glowBlur(22 + birth * 28 + beat * 20);
     ctx.shadowColor = color;
     ctx.beginPath();
-    ctx.arc(0, 0, core, 0, Math.PI * 2);
-    ctx.fill();
-
-    // VIBRANT: bright inner radial fill — saturated, hot center, color body.
-    // Alpha pushed way up from the timid 0.12-0.42 range to 0.3-0.75.
-    var fill = ctx.createRadialGradient(-inner * 0.18, -inner * 0.22, inner * 0.04, 0, 0, inner);
-    fill.addColorStop(0, rgbaFromHex("#ffffff", 0.65 + beat * 0.2));
-    fill.addColorStop(0.15, rgbaFromHex(color, 0.55 + beat * 0.15));
-    fill.addColorStop(0.45, rgbaFromHex(color, 0.28 + beat * 0.12));
-    fill.addColorStop(0.82, rgbaFromHex(color, 0.10 + beat * 0.06));
-    fill.addColorStop(1, "rgba(2,4,10,0)");
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = (special ? 0.95 : 0.85) * s;
-    ctx.fillStyle = fill;
-    ctx.beginPath();
-    ctx.arc(0, 0, inner, 0, Math.PI * 2);
-    ctx.fill();
-
-    // VIBRANT: a second smaller hot core pulse for "lit from within" intensity.
-    ctx.globalAlpha = (0.4 + beat * 0.3) * s;
-    var hotCore = ctx.createRadialGradient(0, 0, 0, 0, 0, inner * 0.4);
-    hotCore.addColorStop(0, rgbaFromHex("#ffffff", 0.35 + beat * 0.25));
-    hotCore.addColorStop(0.6, rgbaFromHex(color, 0.15 + beat * 0.1));
-    hotCore.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = hotCore;
-    ctx.beginPath();
-    ctx.arc(0, 0, inner * 0.4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Subtle dark lower rim for glass depth (source-over, not additive).
-    ctx.globalCompositeOperation = "source-over";
-    var rim = ctx.createRadialGradient(0, inner * 0.28, inner * 0.12, 0, 0, inner * 1.05);
-    rim.addColorStop(0, "rgba(255,255,255,0)");
-    rim.addColorStop(0.62, "rgba(255,255,255,0)");
-    rim.addColorStop(1, "rgba(0,0,0,0.28)");
-    ctx.globalAlpha = 0.55 * s;
-    ctx.fillStyle = rim;
-    ctx.beginPath();
-    ctx.arc(0, 0, inner, 0, Math.PI * 2);
+    ctx.arc(0, 0, glowR, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  // VIBRANT: inner sparkle — a cross + glint that drifts inside the gem.
-  // Now shows on all quality tiers (was neonDetail-gated, now just fxScale).
+  // GW STYLE: simple bright sparkle cross inside the gem. No dot, no glint.
   function drawGemInnerSparkle(radius, color, time, seed, special) {
     var s = Math.max(0.5, fxScale());
     if (s < 0.5) return;
-    var pulseAmount = 0.45 + Math.sin(time * 3.1 + seed * 0.017) * 0.55;
-    var alpha = (0.15 + pulseAmount * 0.2 + beatPulse * 0.1) * s;
+    var pulseAmount = 0.4 + Math.sin(time * 3.1 + seed * 0.017) * 0.6;
+    var alpha = (0.12 + pulseAmount * 0.16 + beatPulse * 0.08) * s;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = special ? alpha * 1.35 : alpha;
-    ctx.strokeStyle = mixColor(color, "#ffffff", 0.72);
-    ctx.lineWidth = Math.max(0.8, radius * 0.035);
-    ctx.shadowBlur = glowBlur(8 + beatPulse * 8);
+    ctx.globalAlpha = special ? alpha * 1.3 : alpha;
+    ctx.strokeStyle = mixColor(color, "#ffffff", 0.8);
+    ctx.lineWidth = Math.max(0.8, radius * 0.03);
+    ctx.shadowBlur = glowBlur(6 + beatPulse * 6);
     ctx.shadowColor = color;
 
     var a = seed * 0.013 + time * 0.7;
-    var sx = Math.cos(a) * radius * 0.34;
-    var sy = Math.sin(a * 1.7) * radius * 0.24;
-    var len = radius * (0.13 + pulseAmount * 0.04);
+    var sx = Math.cos(a) * radius * 0.3;
+    var sy = Math.sin(a * 1.7) * radius * 0.22;
+    var len = radius * (0.1 + pulseAmount * 0.05);
     ctx.beginPath();
     ctx.moveTo(sx - len, sy);
     ctx.lineTo(sx + len, sy);
     ctx.moveTo(sx, sy - len);
     ctx.lineTo(sx, sy + len);
     ctx.stroke();
-
-    ctx.globalAlpha *= 0.55;
-    ctx.beginPath();
-    ctx.arc(-sx * 0.55, -sy * 0.45, Math.max(1, radius * 0.045), 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
     ctx.restore();
   }
 
