@@ -14652,7 +14652,7 @@
   function drawSingleGem(gem, time) {
     var type = TYPES[gem.type];
     var radius = view.cell * (0.34 + gem.pop * 0.09);
-    var coreWidth = Math.max(2.5, view.cell * 0.05);
+    var coreWidth = Math.max(1.5, view.cell * 0.028);
     var scale = gem.scale + gem.pop * 0.25 + beatPulse * 0.035;
     var driftX = gem.x - gem.tx;
     var driftY = gem.y - gem.ty;
