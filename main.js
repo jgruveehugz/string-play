@@ -1297,7 +1297,7 @@
         { kind: "score", target: 1500 },
         { kind: "collect", type: 0, target: 8 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond" },
       coach: "Ion pieces are cyan circles. Match three to collect them.",
       pressure: "Every clear scores. Hunt cyan circles first."
     },
@@ -1352,7 +1352,7 @@
         { kind: "score", target: 3100 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond" },
       coach: "Match five for a nova. Tap it to arm, tap again to fire.",
       pressure: "Make the five. Tap the nova to arm, tap again to fire the sweep."
     },
@@ -1392,7 +1392,7 @@
         { kind: "score", target: 3900 },
         { kind: "chain", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "staircase" },
       coach: "Set one clear that drops into another.",
       pressure: "Chains finish goals with fewer moves."
     },
@@ -1446,7 +1446,7 @@
         { kind: "flux", target: 7 },
         { kind: "chain", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2, strength: 2 }, { row: 2, col: 5 }, { row: 3, col: 4 }, { row: 4, col: 2 }, { row: 5, col: 5, strength: 2 }, { row: 5, col: 3 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "cross", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 3 }] },
       coach: "Break the walls by matching beside them. Chains break more at once.",
       pressure: "Walls plus chains. Pieces fall through until you break them."
     },
@@ -1460,10 +1460,10 @@
         { kind: "flux", target: 6 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 3 }, { row: 2, col: 4 }, { row: 3, col: 1 }, { row: 3, col: 6 }, { row: 5, col: 1 }, { row: 5, col: 6 }, { row: 6, col: 3 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "twin-towers", blockers: [{ row: 2, col: 1 }, { row: 3, col: 6 }, { row: 4, col: 0, strength: 2 }, { row: 5, col: 7, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }] },
       starterSpecials: [
-        { row: 4, col: 3, special: "lineH" },
-        { row: 4, col: 4, special: "lineV" }
+        { row: 6, col: 3, special: "lineH" },
+        { row: 6, col: 4, special: "lineV" }
       ],
       coach: "Fire a beam beside a wall to smash it. Two beams wait on the board.",
       pressure: "Specials break walls fast. Pieces fall through until then."
@@ -1477,7 +1477,7 @@
         { kind: "score", target: 6000 },
         { kind: "spread", target: 7 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", spreaders: [{ row: 3, col: 2 }, { row: 5, col: 5 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wave", spreaders: [{ row: 2, col: 3 }, { row: 5, col: 4 }] },
       coach: "The green Creep spreads to a new cell every few moves. Match an infected cell to clear it.",
       pressure: "Clear next to the Creep to contain it. Match it to remove it."
     },
@@ -1491,7 +1491,7 @@
         { kind: "flux", target: 10 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2, strength: 2 }, { row: 2, col: 5 }, { row: 3, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 5, col: 3 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5, strength: 2 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "vault", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 6, col: 3, strength: 2 }, { row: 7, col: 5 }] },
       coach: "The finale wall. Break beside the shields. Gold ones take two hits.",
       pressure: "Break the walls and bank a big finish. Some are reinforced."
     },
@@ -1518,7 +1518,7 @@
         { kind: "score", target: 4000 },
         { kind: "specials", target: 3 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "butterfly" },
       starterSpecials: [
         { row: 3, col: 3, special: "nova" }
       ],
@@ -1575,7 +1575,7 @@
         { kind: "flux", target: 8 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2, strength: 2 }, { row: 2, col: 5 }, { row: 3, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4, strength: 2 }, { row: 5, col: 2 }, { row: 5, col: 5, strength: 2 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "cross", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 4, col: 2, strength: 2 }, { row: 4, col: 5, strength: 2 }, { row: 5, col: 3, strength: 2 }, { row: 6, col: 4 }] },
       coach: "Gold shields take two hits. Bombs crack the whole cluster faster than single matches.",
       pressure: "The wall is deeper now, and soft clears will not open it in time."
     },
@@ -1588,7 +1588,7 @@
         { kind: "score", target: 5900 },
         { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond" },
       starterSpecials: [
         { row: 3, col: 4, special: "seeker" }
       ],
@@ -1635,7 +1635,7 @@
         { kind: "score", target: 5200 },
         { kind: "chain", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wave" },
       coach: "Use the open board to build long matches and let cascades do the scoring work for you.",
       pressure: "You have plenty of room and moves, so keep the board flowing instead of forcing risky setups."
     },
@@ -1683,7 +1683,7 @@
         { kind: "spread", target: 10 },
         { kind: "flux", target: 8 }
       ],
-      layout: { pattern: "none", strength: 1, fluxTarget: 8, boardShape: "full", blockers: [{ row: 1, col: 2 }, { row: 1, col: 5 }, { row: 2, col: 3, strength: 2 }, { row: 2, col: 4, strength: 2 }, { row: 5, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }], spreaders: [{ row: 0, col: 3 }, { row: 7, col: 4 }] },
+      layout: { pattern: "none", strength: 1, fluxTarget: 8, boardShape: "fang", blockers: [{ row: 2, col: 4 }, { row: 3, col: 5, strength: 2 }, { row: 4, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 5 }], spreaders: [{ row: 0, col: 5 }, { row: 7, col: 3 }] },
       coach: "Clear creep before it spreads too far, but keep chipping the shields so the board does not lock around the middle.",
       pressure: "If you chase only one threat, the other will take over the board."
     },
@@ -1696,10 +1696,10 @@
         { kind: "score", target: 7200 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "twin-towers" },
       starterSpecials: [
-        { row: 3, col: 3, special: "lineH" },
-        { row: 3, col: 4, special: "bomb" }
+        { row: 6, col: 3, special: "lineH" },
+        { row: 6, col: 4, special: "bomb" }
       ],
       coach: "Fuse the seeded Line and Bomb to fire a three-row and three-column blast, then build one more special from the opened board.",
       pressure: "The move count is fair, but missing the combo leaves a much smaller scoring window."
@@ -1731,7 +1731,7 @@
         { kind: "score", target: 5400 },
         { kind: "collect", type: 5, target: 14 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "staircase" },
       coach: "Relax back into an open board and make clean matches while watching for Atom clusters.",
       pressure: "The goal is gentle, but loose play can still waste the relief level."
     },
@@ -1744,7 +1744,7 @@
         { kind: "score", target: 6000 },
         { kind: "overdrive", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "vault" },
       coach: "Make rapid consecutive matches to fill the pulse meter, then trigger Overdrive once it is ready.",
       pressure: "You have room to experiment, but long pauses will slow your Overdrive charge."
     },
@@ -1775,7 +1775,7 @@
         { kind: "flux", target: 10 },
         { kind: "spread", target: 8 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 10, boardShape: "full", blockers: [{ row: 1, col: 2 }, { row: 1, col: 5 }, { row: 2, col: 3, strength: 2 }, { row: 2, col: 4, strength: 2 }, { row: 5, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }], spreaders: [{ row: 0, col: 3 }, { row: 7, col: 4 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 10, boardShape: "chevron", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 2, col: 4, strength: 2 }, { row: 3, col: 2 }, { row: 3, col: 5, strength: 2 }, { row: 4, col: 3, strength: 2 }, { row: 4, col: 4, strength: 2 }], spreaders: [{ row: 0, col: 3 }, { row: 1, col: 4 }] },
       starterSpecials: [
         { row: 3, col: 3, special: "seeker" }
       ],
@@ -1791,10 +1791,10 @@
         { kind: "score", target: 6200 },
         { kind: "specials", target: 3 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "arena" },
       starterSpecials: [
         { row: 2, col: 2, special: "lineH" },
-        { row: 5, col: 5, special: "lineV" }
+        { row: 7, col: 5, special: "lineV" }
       ],
       coach: "This is a breather: build wide matches, combine specials when they meet, and enjoy the oversized score bursts.",
       pressure: "You have plenty of moves, but the celebration only lands if you actually make the board sparkle."
@@ -1808,10 +1808,10 @@
         { kind: "score", target: 8400 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "butterfly" },
       starterSpecials: [
-        { row: 3, col: 3, special: "bomb" },
-        { row: 3, col: 4, special: "nova" }
+        { row: 4, col: 3, special: "bomb" },
+        { row: 4, col: 4, special: "nova" }
       ],
       coach: "Fuse the bomb with the nova to turn the board's most common color into bombs, then detonate the chain before it scatters.",
       pressure: "The combo gives you a huge spike, but the score target expects you to cash it in cleanly."
@@ -1854,9 +1854,9 @@
       goals: [
         { kind: "score", target: 11250 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "fang" },
       starterSpecials: [
-        { row: 3, col: 3, special: "bomb" }
+        { row: 3, col: 5, special: "bomb" }
       ],
       coach: "Treat every move like a setup move: save the bomb until it can trigger a cascade instead of spending it for a small clear.",
       pressure: "The target is tuned just above a normal finish, so one inefficient swap leaves you staring at SO CLOSE."
@@ -1869,10 +1869,10 @@
       goals: [
         { kind: "score", target: 12000 },
         { kind: "collect", type: 5, target: 28 },
-        { kind: "flux", target: 14 },
+        { kind: "flux", target: 6 },
         { kind: "specials", target: 4 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 14, boardShape: "full", blockers: [{ row: 1, col: 1 }, { row: 1, col: 6 }, { row: 2, col: 2, strength: 2 }, { row: 2, col: 5, strength: 2 }, { row: 3, col: 3 }, { row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4 }, { row: 5, col: 2, strength: 2 }, { row: 5, col: 5, strength: 2 }, { row: 6, col: 1 }, { row: 6, col: 6 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 6, boardShape: "cross", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 4, col: 2, strength: 2 }, { row: 5, col: 5, strength: 2 }, { row: 6, col: 3 }, { row: 7, col: 4, strength: 2 }] },
       starterSpecials: [
         { row: 0, col: 3, special: "seeker" },
         { row: 7, col: 4, special: "bomb" }
