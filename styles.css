@@ -71,6 +71,24 @@ textarea {
   cursor: pointer;
 }
 
+.level-badge {
+  position: fixed;
+  z-index: 4;
+  display: none;
+  padding: 3px 10px;
+  border: 1.5px solid rgba(70, 244, 255, 0.6);
+  border-radius: 6px;
+  background: rgba(8, 12, 18, 0.88);
+  box-shadow: 0 0 10px rgba(70, 244, 255, 0.3);
+  color: #46f4ff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: -apple-system, system-ui, sans-serif;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .splash-panel {
   position: fixed;
   inset: 0;

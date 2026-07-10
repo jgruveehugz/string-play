@@ -1297,7 +1297,7 @@
         { kind: "score", target: 1500 },
         { kind: "collect", type: 0, target: 8 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 4, leftCol: 1, rightCol: 5 }, activeColors: [0, 1, 2] },
       coach: "Ion pieces are cyan circles. Match three to collect them.",
       pressure: "Every clear scores. Hunt cyan circles first."
     },
@@ -1310,7 +1310,7 @@
         { kind: "score", target: 1900 },
         { kind: "collect", type: 1, target: 10 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 4, leftCol: 1, rightCol: 5 }, activeColors: [0, 1, 2] },
       coach: "Prism pieces are pink triangles. Same swap, new color.",
       pressure: "Keep swapping. Every match plays a note."
     },
@@ -1323,7 +1323,7 @@
         { kind: "score", target: 2300 },
         { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 5, leftCol: 1, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
       coach: "Match four to create a beam piece.",
       pressure: "Make one special, then ride the burst."
     },
@@ -1336,7 +1336,7 @@
         { kind: "score", target: 3200 },
         { kind: "collect", type: 2, target: 26 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", gridExtent: { topRow: 0, bottomRow: 5, leftCol: 1, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
       starterSpecials: [
         { row: 4, col: 3, special: "lineH" }
       ],
@@ -1352,7 +1352,7 @@
         { kind: "score", target: 3100 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
       coach: "Match five for a nova. Tap it to arm, tap again to fire.",
       pressure: "Make the five. Tap the nova to arm, tap again to fire the sweep."
     },
@@ -1366,7 +1366,7 @@
         { kind: "collect", type: 3, target: 26 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
       coach: "Pulse pieces are gold squares. Build two specials.",
       pressure: "Beams and novas together. No new tricks."
     },
@@ -1943,6 +1943,9 @@
   var board = [];
   var boardMask = [];
   var currentBoardShape = "full";
+  // Grid extent: when set, only cells within [topRow..bottomRow] x [leftCol..rightCol]
+  // are active. Reduces cognitive load for early tutorial levels.
+  var currentGridExtent = null;
   var tileCharges = [];
   var tileWobble = []; // JUICE PASS: per-cell wobble decay when shields take a hit
   // Beat Gates: masked cells that toggle open/closed per MOVE (never per
@@ -2499,7 +2502,9 @@
         return (network || []).map(function (cell) {
           return { row: cell.row, col: cell.col, special: cell.special };
         });
-      })
+      }),
+      gridExtent: layout.gridExtent ? { topRow: layout.gridExtent.topRow, bottomRow: layout.gridExtent.bottomRow, leftCol: layout.gridExtent.leftCol, rightCol: layout.gridExtent.rightCol } : null,
+      activeColors: Array.isArray(layout.activeColors) ? layout.activeColors.slice() : null
     };
   }
 
@@ -3103,6 +3108,11 @@
 
   function isCellActiveForShape(shape, row, col) {
     if (row < 0 || row >= GRID || col < 0 || col >= GRID) return false;
+    // Grid extent: tutorial levels can shrink the active area below 8x8.
+    if (currentGridExtent) {
+      var ge = currentGridExtent;
+      if (row < ge.topRow || row > ge.bottomRow || col < ge.leftCol || col > ge.rightCol) return false;
+    }
     // Top-edge holes read as dead pieces on phones.
     if (row <= 1) return true;
     if (shape === "corner-bites") {
@@ -3172,6 +3182,7 @@
 
   function applyBoardShape(level) {
     currentBoardShape = level && level.layout && level.layout.boardShape ? level.layout.boardShape : "full";
+    currentGridExtent = level && level.layout && level.layout.gridExtent ? level.layout.gridExtent : null;
     boardMask = buildBoardMask(currentBoardShape);
     // Signal nodes carve the mask before gates so gates never land on a node.
     applySignalNodes(level && level.layout ? level.layout : null);
@@ -4330,9 +4341,24 @@
     var usableWidth = view.width < 600 ? Math.max(300, view.width - 12) : Math.max(280, view.width - 28);
     view.boardSize = Math.floor(Math.min(usableWidth, usableHeight) * boardScale);
     view.boardSize = Math.max(minBoardSize, Math.min(view.boardSize, 690));
-    view.cell = view.boardSize / GRID;
-    view.boardX = (view.width - view.boardSize) / 2;
-    view.boardY = topReserve + (usableHeight - view.boardSize) / 2;
+    // When gridExtent is set (tutorial levels), the active area is smaller
+    // than 8x8. Size the cell to fit the effective grid within the same
+    // board area, so a 5x5 board uses larger cells (not a tiny 5x5 in a
+    // corner of the 8x8 frame).
+    var effCols = GRID, effRows = GRID;
+    if (currentGridExtent) {
+      effCols = currentGridExtent.rightCol - currentGridExtent.leftCol + 1;
+      effRows = currentGridExtent.bottomRow - currentGridExtent.topRow + 1;
+    }
+    var effMax = Math.max(effCols, effRows);
+    view.cell = view.boardSize / effMax;
+    // Shrink boardSize to match the effective grid (frame hugs the active area).
+    view.boardSize = view.cell * effMax;
+    // Center the effective grid. boardX maps col=leftCol to the frame's left edge.
+    var geLeft = currentGridExtent ? currentGridExtent.leftCol : 0;
+    var geTop = currentGridExtent ? currentGridExtent.topRow : 0;
+    view.boardX = (view.width - view.boardSize) / 2 - geLeft * view.cell;
+    view.boardY = topReserve + (usableHeight - view.boardSize) / 2 - geTop * view.cell;
 
     rebuildStageGradients();
     setTargets();
@@ -4942,11 +4968,17 @@
   var ACTIVE_COLORS_BY_TRACK = [4, 4, 5, 5, 6]; // tracks 1,2,3,4,5+; clamped to TYPES.length
   function activeColorCountForLevel(level) {
     if (!level || !level.id) return TYPES.length;
+    // Per-level override: layout.activeColors forces an exact color set.
+    if (level.layout && Array.isArray(level.layout.activeColors)) return level.layout.activeColors.length;
     var track = Math.floor((level.id - 1) / 15);
     var count = ACTIVE_COLORS_BY_TRACK[Math.min(track, ACTIVE_COLORS_BY_TRACK.length - 1)];
     return Math.max(3, Math.min(TYPES.length, count)); // never below 3 -- a match-3 needs headroom
   }
   function computeActiveColorSet(level) {
+    // Per-level override: exact color list from layout.activeColors.
+    if (level && level.layout && Array.isArray(level.layout.activeColors) && level.layout.activeColors.length > 0) {
+      return level.layout.activeColors.filter(function (c) { return c >= 0 && c < TYPES.length; });
+    }
     var count = activeColorCountForLevel(level);
     if (count >= TYPES.length) return null; // full palette -> no restriction
     var set = [];
@@ -13659,6 +13691,7 @@
     ctx.restore();
     drawScreenWash(time);
     drawVignette();
+    updateLevelBadgeDOM();
     if (humPreview) drawHumPreview(time);
     if (isGreenroomOpen()) drawGreenroom(time);
   }
@@ -14916,6 +14949,42 @@
     }
     drawMeterChip(x, y, size, time);
     ctx.restore();
+  }
+
+  // Level badge: DOM element positioned at the board's top-left corner,
+  // visible during campaign play. Uses CSS for styling instead of canvas.
+  function updateLevelBadgeDOM() {
+    var el = document.getElementById("levelBadge");
+    if (!el) return;
+    var show = gameMode === MODE_CAMPAIGN && view.boardSize && !isSplashOpen() && levelState === "playing";
+    if (!show) {
+      el.style.display = "none";
+      return;
+    }
+    var label = currentLevel ? "L" + currentLevel.id : "";
+    if (currentLevel && currentLevel.badge) label = currentLevel.badge + " L" + currentLevel.id;
+    if (el.textContent !== label) el.textContent = label;
+    el.style.display = "block";
+    // Position at the top-left corner of the board frame.
+    var bx = view.boardX + 2;
+    var by = view.boardY - 26;
+    if (by < 4) by = view.boardY + 2;
+    el.style.left = Math.round(bx) + "px";
+    el.style.top = Math.round(by) + "px";
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
   }
 
   // Layer-growth payoff for "every swap plays the track": a promoted song-arc bar
