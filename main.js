@@ -1508,6 +1508,377 @@
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "diamond", blockers: [{ row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4 }] },
       coach: "Mix it all. Break the walls, then collect the gold squares.",
       pressure: "Clean take here earns the full booster kit."
+    },
+    {
+      number: 17,
+      title: "Nova Playground",
+      moves: 28,
+      scoreTarget: 4000,
+      goals: [
+        { kind: "score", target: 4000 },
+        { kind: "specials", target: 3 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      starterSpecials: [
+        { row: 3, col: 3, special: "nova" }
+      ],
+      coach: "Open board, no walls. Make novas and let the board explode.",
+      pressure: "This is a relief take: score big and enjoy the sweep."
+    },
+    {
+      number: 18,
+      title: "Bomb Shape",
+      moves: 24,
+      scoreTarget: 4700,
+      goals: [
+        { kind: "score", target: 4700 },
+        { kind: "specials", target: 1 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      coach: "Match five in an L or T shape to make a Bomb. Bombs clear a wide blast around them.",
+      pressure: "Find the bend, build the blast, then cash it in."
+    },
+    {
+      number: 19,
+      title: "Corner Cache",
+      moves: 21,
+      scoreTarget: 5400,
+      goals: [
+        { kind: "score", target: 5400 },
+        { kind: "collect", type: 4, target: 26 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
+      coach: "Bombs reach into cramped corners. Use one blast to pull Core pieces out of the bites.",
+      pressure: "The corners steal space, so every special has to do real work."
+    },
+    {
+      number: 20,
+      title: "Hourglass Score",
+      moves: 19,
+      scoreTarget: 6200,
+      goals: [
+        { kind: "score", target: 6200 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "hourglass" },
+      coach: "The middle is narrow. Build clears at the neck so cascades can reach both halves.",
+      pressure: "The board pinches in the center and every wasted move feels tight."
+    },
+    {
+      number: 21,
+      title: "Gold Wall Blast",
+      moves: 20,
+      scoreTarget: 7000,
+      goals: [
+        { kind: "score", target: 7000 },
+        { kind: "flux", target: 8 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2, strength: 2 }, { row: 2, col: 5 }, { row: 3, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4, strength: 2 }, { row: 5, col: 2 }, { row: 5, col: 5, strength: 2 }] },
+      coach: "Gold shields take two hits. Bombs crack the whole cluster faster than single matches.",
+      pressure: "The wall is deeper now, and soft clears will not open it in time."
+    },
+    {
+      number: 22,
+      title: "Seeker Lock",
+      moves: 23,
+      scoreTarget: 5900,
+      goals: [
+        { kind: "score", target: 5900 },
+        { kind: "specials", target: 1 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      starterSpecials: [
+        { row: 3, col: 4, special: "seeker" }
+      ],
+      coach: "Match a 2x2 square to make a Seeker. A Seeker flies to the most important target on the board.",
+      pressure: "The first Seeker is loaded for you; fire it and watch where it hunts."
+    },
+    {
+      number: 23,
+      title: "Shield Hunter",
+      moves: 20,
+      scoreTarget: 7700,
+      goals: [
+        { kind: "score", target: 7700 },
+        { kind: "flux", target: 7 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", blockers: [{ row: 2, col: 3 }, { row: 2, col: 4, strength: 2 }, { row: 3, col: 2 }, { row: 3, col: 5, strength: 2 }, { row: 4, col: 2, strength: 2 }, { row: 4, col: 5 }, { row: 5, col: 3, strength: 2 }] },
+      starterSpecials: [
+        { row: 4, col: 4, special: "seeker" }
+      ],
+      coach: "Seekers prefer the hardest shield. Use them to punch the reinforced cells you cannot reach.",
+      pressure: "The corners are missing and the gold shields are calling the shots."
+    },
+    {
+      number: 24,
+      title: "Gate Cascade",
+      moves: 24,
+      scoreTarget: 9000,
+      goals: [
+        { kind: "score", target: 9000 },
+        { kind: "chain", target: 3 },
+        { kind: "specials", target: 3 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
+      coach: "Chain three clears in one cascade. Set the gate first, then trigger the move that drops everything through.",
+      pressure: "This is the first real mastery check: high score, narrow lanes, and one huge cascade."
+    },
+    {
+      number: 25,
+      title: "Cascade Celebration",
+      moves: 24,
+      scoreTarget: 5200,
+      goals: [
+        { kind: "score", target: 5200 },
+        { kind: "chain", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      coach: "Use the open board to build long matches and let cascades do the scoring work for you.",
+      pressure: "You have plenty of room and moves, so keep the board flowing instead of forcing risky setups."
+    },
+    {
+      number: 26,
+      title: "Nova Line Fusion",
+      moves: 22,
+      scoreTarget: 5600,
+      goals: [
+        { kind: "score", target: 5600 },
+        { kind: "specials", target: 3 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      starterSpecials: [
+        { row: 4, col: 3, special: "lineH" },
+        { row: 4, col: 4, special: "nova" }
+      ],
+      coach: "Swap the seeded Line and Nova together to discover a fusion, then create one more special to finish the lesson.",
+      pressure: "The target is light, but the level expects you to use the gift instead of ignoring it."
+    },
+    {
+      number: 27,
+      title: "Seeker Supply Run",
+      moves: 20,
+      scoreTarget: 6800,
+      goals: [
+        { kind: "score", target: 6800 },
+        { kind: "collect", type: 2, target: 18 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", producers: [{ row: 4, col: 4 }] },
+      starterSpecials: [
+        { row: 3, col: 4, special: "seeker" }
+      ],
+      coach: "Use the starter Seeker after the producer has fed the board so it can pick off valuable pieces for your collection goal.",
+      pressure: "The bitten corners reduce space, so every special should help open the center."
+    },
+    {
+      number: 28,
+      title: "Creep Behind Walls",
+      moves: 19,
+      scoreTarget: 7600,
+      goals: [
+        { kind: "score", target: 7600 },
+        { kind: "spread", target: 10 },
+        { kind: "flux", target: 8 }
+      ],
+      layout: { pattern: "none", strength: 1, fluxTarget: 8, boardShape: "full", blockers: [{ row: 1, col: 2 }, { row: 1, col: 5 }, { row: 2, col: 3, strength: 2 }, { row: 2, col: 4, strength: 2 }, { row: 5, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }], spreaders: [{ row: 0, col: 3 }, { row: 7, col: 4 }] },
+      coach: "Clear creep before it spreads too far, but keep chipping the shields so the board does not lock around the middle.",
+      pressure: "If you chase only one threat, the other will take over the board."
+    },
+    {
+      number: 29,
+      title: "Line Bomb Ladder",
+      moves: 20,
+      scoreTarget: 7200,
+      goals: [
+        { kind: "score", target: 7200 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      starterSpecials: [
+        { row: 3, col: 3, special: "lineH" },
+        { row: 3, col: 4, special: "bomb" }
+      ],
+      coach: "Fuse the seeded Line and Bomb to fire a three-row and three-column blast, then build one more special from the opened board.",
+      pressure: "The move count is fair, but missing the combo leaves a much smaller scoring window."
+    },
+    {
+      number: 30,
+      title: "Track Two Gate",
+      moves: 18,
+      scoreTarget: 10000,
+      goals: [
+        { kind: "score", target: 10000 },
+        { kind: "collect", type: 3, target: 22 },
+        { kind: "flux", target: 10 },
+        { kind: "chain", target: 3 }
+      ],
+      layout: { pattern: "none", strength: 1, fluxTarget: 10, boardShape: "wide-gate", blockers: [{ row: 1, col: 3 }, { row: 1, col: 4 }, { row: 2, col: 2, strength: 2 }, { row: 2, col: 5, strength: 2 }, { row: 5, col: 2, strength: 2 }, { row: 5, col: 5, strength: 2 }, { row: 6, col: 3 }, { row: 6, col: 4 }], producers: [{ row: 3, col: 3 }, { row: 4, col: 4 }] },
+      starterSpecials: [
+        { row: 3, col: 4, special: "lineV" }
+      ],
+      coach: "Use vertical blasts and cascades through the gate to break shields, collect Pulse pieces, and keep your chain alive.",
+      pressure: "This finale gives few spare moves, so every swap needs to advance more than one goal."
+    },
+    {
+      number: 31,
+      title: "Open Spectrum",
+      moves: 24,
+      scoreTarget: 5400,
+      goals: [
+        { kind: "score", target: 5400 },
+        { kind: "collect", type: 5, target: 14 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      coach: "Relax back into an open board and make clean matches while watching for Atom clusters.",
+      pressure: "The goal is gentle, but loose play can still waste the relief level."
+    },
+    {
+      number: 32,
+      title: "Overdrive Primer",
+      moves: 26,
+      scoreTarget: 6000,
+      goals: [
+        { kind: "score", target: 6000 },
+        { kind: "overdrive", target: 1 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      coach: "Make rapid consecutive matches to fill the pulse meter, then trigger Overdrive once it is ready.",
+      pressure: "You have room to experiment, but long pauses will slow your Overdrive charge."
+    },
+    {
+      number: 33,
+      title: "Mega Bomb Lesson",
+      moves: 18,
+      scoreTarget: 7800,
+      goals: [
+        { kind: "score", target: 7800 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
+      starterSpecials: [
+        { row: 3, col: 3, special: "bomb" },
+        { row: 3, col: 4, special: "bomb" }
+      ],
+      coach: "Swap the two bombs together to launch a Mega Bomb, then use the open center to build two more specials.",
+      pressure: "The bitten corners shrink your space, so the first combo needs to create the whole level's momentum."
+    },
+    {
+      number: 34,
+      title: "Seeker Under Siege",
+      moves: 20,
+      scoreTarget: 9200,
+      goals: [
+        { kind: "score", target: 9200 },
+        { kind: "flux", target: 10 },
+        { kind: "spread", target: 8 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 10, boardShape: "full", blockers: [{ row: 1, col: 2 }, { row: 1, col: 5 }, { row: 2, col: 3, strength: 2 }, { row: 2, col: 4, strength: 2 }, { row: 5, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }], spreaders: [{ row: 0, col: 3 }, { row: 7, col: 4 }] },
+      starterSpecials: [
+        { row: 3, col: 3, special: "seeker" }
+      ],
+      coach: "Fire the seeker early so it can pick off the most dangerous obstacle, then keep matching beside shields before the creep spreads.",
+      pressure: "Every slow move lets the spreaders claim more lanes and bury the shield targets."
+    },
+    {
+      number: 35,
+      title: "Power Parade",
+      moves: 28,
+      scoreTarget: 6200,
+      goals: [
+        { kind: "score", target: 6200 },
+        { kind: "specials", target: 3 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      starterSpecials: [
+        { row: 2, col: 2, special: "lineH" },
+        { row: 5, col: 5, special: "lineV" }
+      ],
+      coach: "This is a breather: build wide matches, combine specials when they meet, and enjoy the oversized score bursts.",
+      pressure: "You have plenty of moves, but the celebration only lands if you actually make the board sparkle."
+    },
+    {
+      number: 36,
+      title: "Nova Cluster",
+      moves: 19,
+      scoreTarget: 8400,
+      goals: [
+        { kind: "score", target: 8400 },
+        { kind: "specials", target: 2 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      starterSpecials: [
+        { row: 3, col: 3, special: "bomb" },
+        { row: 3, col: 4, special: "nova" }
+      ],
+      coach: "Fuse the bomb with the nova to turn the board's most common color into bombs, then detonate the chain before it scatters.",
+      pressure: "The combo gives you a huge spike, but the score target expects you to cash it in cleanly."
+    },
+    {
+      number: 37,
+      title: "Diamond Shields",
+      moves: 21,
+      scoreTarget: 9800,
+      goals: [
+        { kind: "score", target: 9800 },
+        { kind: "flux", target: 14 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 14, boardShape: "diamond", blockers: [{ row: 1, col: 3, strength: 2 }, { row: 1, col: 4, strength: 2 }, { row: 2, col: 2 }, { row: 2, col: 5 }, { row: 3, col: 1, strength: 2 }, { row: 3, col: 6, strength: 2 }, { row: 4, col: 1, strength: 2 }, { row: 4, col: 6, strength: 2 }, { row: 5, col: 2 }, { row: 5, col: 5 }, { row: 6, col: 3, strength: 2 }, { row: 6, col: 4, strength: 2 }] },
+      coach: "On a diamond board, work from the middle outward so every match touches shields and opens more playable cells.",
+      pressure: "Reinforced shields will survive careless blasts, and the shaped board gives you fewer recovery swaps."
+    },
+    {
+      number: 38,
+      title: "Hourglass Engine",
+      moves: 22,
+      scoreTarget: 10100,
+      goals: [
+        { kind: "score", target: 10100 },
+        { kind: "chain", target: 2 },
+        { kind: "spread", target: 7 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "hourglass", producers: [{ row: 0, col: 3 }, { row: 0, col: 4 }], spreaders: [{ row: 7, col: 3 }, { row: 7, col: 4 }] },
+      starterSpecials: [
+        { row: 3, col: 3, special: "lineV" }
+      ],
+      coach: "Use the hourglass neck to force cascades, and clear the lower spreaders before the producer-fed board gets too crowded.",
+      pressure: "You need two real chain reactions while the board keeps changing underneath you."
+    },
+    {
+      number: 39,
+      title: "So Close",
+      moves: 16,
+      scoreTarget: 11250,
+      goals: [
+        { kind: "score", target: 11250 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      starterSpecials: [
+        { row: 3, col: 3, special: "bomb" }
+      ],
+      coach: "Treat every move like a setup move: save the bomb until it can trigger a cascade instead of spending it for a small clear.",
+      pressure: "The target is tuned just above a normal finish, so one inefficient swap leaves you staring at SO CLOSE."
+    },
+    {
+      number: 40,
+      title: "Track Two Gate",
+      moves: 24,
+      scoreTarget: 12000,
+      goals: [
+        { kind: "score", target: 12000 },
+        { kind: "collect", type: 5, target: 28 },
+        { kind: "flux", target: 14 },
+        { kind: "specials", target: 4 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 14, boardShape: "full", blockers: [{ row: 1, col: 1 }, { row: 1, col: 6 }, { row: 2, col: 2, strength: 2 }, { row: 2, col: 5, strength: 2 }, { row: 3, col: 3 }, { row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4 }, { row: 5, col: 2, strength: 2 }, { row: 5, col: 5, strength: 2 }, { row: 6, col: 1 }, { row: 6, col: 6 }] },
+      starterSpecials: [
+        { row: 0, col: 3, special: "seeker" },
+        { row: 7, col: 4, special: "bomb" }
+      ],
+      coach: "This gate asks for everything: break shields with targeted specials, collect Atom pieces during cascades, and reserve combos for the final score push.",
+      pressure: "Track 3 only opens if you balance objectives instead of chasing one goal at a time."
     }
   ];
   // Boosters teach by gifting: end-of-level grants at 7/9/12/16 only,
