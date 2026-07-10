@@ -6154,12 +6154,47 @@
       }
     }
 
+    // 2x2 square detection: scan for 4 pieces of the same type forming a box.
+    // These don't produce runs of 3 in any direction, so the line scanner misses them.
+    // Each square becomes a group that chooseSpecialSpawn routes to Seeker.
+    findSquareMatches(groups, marked);
+
     var cells = Object.keys(marked).map(function (key) {
       var parts = key.split(":");
       return { row: Number(parts[0]), col: Number(parts[1]) };
     });
 
     return { groups: groups, cells: cells };
+  }
+
+  function findSquareMatches(groups, marked) {
+    for (var row = 0; row < GRID - 1; row += 1) {
+      for (var col = 0; col < GRID - 1; col += 1) {
+        var a = board[row] && board[row][col];
+        var b = board[row] && board[row][col + 1];
+        var c = board[row + 1] && board[row + 1][col];
+        var d = board[row + 1] && board[row + 1][col + 1];
+        if (!a || !b || !c || !d) continue;
+        if (a.locked || b.locked || c.locked || d.locked) continue;
+        if (a.type !== b.type || a.type !== c.type || a.type !== d.type) continue;
+        // Skip if any cell already has a special (don't overwrite)
+        if (a.special || b.special || c.special || d.special) continue;
+        var cells = [
+          { row: row, col: col },
+          { row: row, col: col + 1 },
+          { row: row + 1, col: col },
+          { row: row + 1, col: col + 1 }
+        ];
+        cells.forEach(function (cell) { marked[cell.row + ":" + cell.col] = true; });
+        groups.push({
+          type: a.type,
+          length: 4,
+          horizontal: false,
+          square: true,
+          cells: cells
+        });
+      }
+    }
   }
 
   function recordRun(groups, marked, fixed, start, length, horizontal, type) {
@@ -8323,6 +8358,15 @@
   }
 
   function chooseSpecialSpawn(groups, anchors) {
+    // 2x2 square match → Seeker (smart targeting). Check before cross/bomb.
+    var squareGroup = groups.find(function (g) { return g.square; });
+    if (squareGroup) {
+      return {
+        cell: pickSpawnCell(squareGroup, anchors),
+        special: "seeker"
+      };
+    }
+
     var crossCell = findCrossCell(groups);
     if (crossCell) {
       // L/T-shaped cross match → Bomb (area blast). 5-in-a-line → Nova (below).
@@ -8342,13 +8386,8 @@
     });
 
     var group = worthy[0];
-    // Match-4 in a 2×2 square → Seeker (smart targeting). Match-4 in a line → Line.
+    // Match-4 in a line → Line special. (2x2 squares are caught above as Seeker.)
     if (group.length === 4 && !group.horizontal) {
-      // Check if this is actually a 2×2 square (4 pieces forming a box).
-      // The cross detector above already caught L/T shapes, so a vertical 4
-      // that isn't a cross is a line. But we need to detect 2×2 separately.
-      // For now: 2×2 squares produce a cross (caught above as "bomb"), so
-      // we route match-4 lines to Line as before.
       return {
         cell: pickSpawnCell(group, anchors),
         special: "lineV"
