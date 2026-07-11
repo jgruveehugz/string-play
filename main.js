@@ -3775,7 +3775,8 @@
   var pointerStart = null;
   var pointerStartPoint = null;
   var activePointerId = null;
-  var pendingSwap = null;
+  var pendingSwaps = [];
+  var MAX_QUEUED_SWAPS = 3;
   var PENDING_SWAP_MAX_AGE = 2500;
   var hintIdle = 0;
   var swapHint = null;
@@ -6304,7 +6305,7 @@
 
   function newBoard() {
     guidedMove = null;
-    pendingSwap = null;
+    pendingSwaps = [];
     if (gameMode === MODE_RUSH) {
       startRush();
       return;
@@ -6385,7 +6386,7 @@
     selected = null;
     armedSpecial = null;
     pointerStart = null;
-    pendingSwap = null;
+    pendingSwaps = [];
     resetSwapHint();
     guidedMove = null;
     particles = [];
@@ -6541,7 +6542,7 @@
     selected = null;
     armedSpecial = null;
     pointerStart = null;
-    pendingSwap = null;
+    pendingSwaps = [];
     resetSwapHint();
     guidedMove = null;
     particles = [];
@@ -6624,7 +6625,7 @@
     selected = null;
     armedSpecial = null;
     pointerStart = null;
-    pendingSwap = null;
+    pendingSwaps = [];
     resetSwapHint();
     guidedMove = null;
     particles = [];
@@ -6695,7 +6696,7 @@
 
   function recoverInputLock(reason) {
     if (!animating) return;
-    pendingSwap = null;
+    pendingSwaps = [];
     endAnimation();
     selected = null;
     armedSpecial = null;
@@ -7689,26 +7690,63 @@
   function queuePendingSwap(a, b) {
     if (!a || !b) return;
     if (activeBooster === "hammer") return;
-    pendingSwap = {
+    // Prevent duplicate queues for the same pair
+    for (var i = 0; i < pendingSwaps.length; i++) {
+      var ps = pendingSwaps[i];
+      if ((ps.a.row === a.row && ps.a.col === a.col && ps.b.row === b.row && ps.b.col === b.col) ||
+          (ps.a.row === b.row && ps.a.col === b.col && ps.b.row === a.row && ps.b.col === a.col)) {
+        return; // already queued
+      }
+    }
+    if (pendingSwaps.length >= MAX_QUEUED_SWAPS) {
+      // Shift out the oldest to make room
+      pendingSwaps.shift();
+    }
+    pendingSwaps.push({
       a: { row: a.row, col: a.col },
       b: { row: b.row, col: b.col },
       at: performance.now()
-    };
+    });
     pulseGem(a.row, a.col, 0.1);
     pulseGem(b.row, b.col, 0.1);
   }
 
   function flushPendingSwap() {
-    if (!pendingSwap) return;
-    var p = pendingSwap;
-    pendingSwap = null;
-    if (performance.now() - p.at > PENDING_SWAP_MAX_AGE) return;
-    if (levelState !== "playing") return;
-    if (!isCellActive(p.a.row, p.a.col) || !isCellActive(p.b.row, p.b.col)) return;
-    if (!board[p.a.row] || !board[p.b.row] || !board[p.a.row][p.a.col] || !board[p.b.row][p.b.col]) return;
-    window.setTimeout(function () {
-      attemptSwap(p.a, p.b);
-    }, 0);
+    if (pendingSwaps.length === 0) return;
+    if (levelState !== "playing") {
+      pendingSwaps = [];
+      return;
+    }
+    var now = performance.now();
+    // Remove stale entries (older than PENDING_SWAP_MAX_AGE)
+    pendingSwaps = pendingSwaps.filter(function(ps) {
+      return now - ps.at <= PENDING_SWAP_MAX_AGE;
+    });
+    if (pendingSwaps.length === 0) return;
+
+    // Execute only the first valid swap; leave the rest queued.
+    // attemptSwap calls beginAnimation() which sets animating=true, so
+    // the remaining swaps will fire on the NEXT endAnimation() when the
+    // board settles — matching Royal Match's concurrent matching feel.
+    var swap = pendingSwaps.shift();
+    // Validate the first swap; if invalid, try the next, etc.
+    while (swap) {
+      if (!isCellActive(swap.a.row, swap.a.col) || !isCellActive(swap.b.row, swap.b.col)) {
+        swap = pendingSwaps.shift();
+        continue;
+      }
+      if (!board[swap.a.row] || !board[swap.b.row] || !board[swap.a.row][swap.a.col] || !board[swap.b.row][swap.b.col]) {
+        swap = pendingSwaps.shift();
+        continue;
+      }
+      // Valid swap found — execute it. The rest stay in pendingSwaps
+      // and will be flushed on the next endAnimation().
+      window.setTimeout(function() {
+        if (levelState !== "playing") return;
+        attemptSwap(swap.a, swap.b);
+      }, 0);
+      break;
+    }
   }
 
   function clearPointerStart(event) {
@@ -8996,7 +9034,7 @@
     wormholes = [];
     nebulaCells = [];
     syncMissionPlayingClass();
-    pendingSwap = null;
+    pendingSwaps = [];
     var savedMoves = movesLeft;
     if (savedMoves > 0) score += savedMoves * 200;
     var stars = calculateStars();
@@ -9813,7 +9851,7 @@
     wormholes = [];
     nebulaCells = [];
     syncMissionPlayingClass();
-    pendingSwap = null;
+    pendingSwaps = [];
     recordWaveformEvent("flatline");
     campaignSave.failStreaks[currentLevel.id] = (campaignSave.failStreaks[currentLevel.id] || 0) + 1;
     campaignSave.winStreak = 0; // PROGRESSION: reset consecutive-win escalation on loss
@@ -10425,7 +10463,7 @@
       if (hasSeeker) {
         var seekerCell = comboData.specialA === "seeker" ? comboData.a : comboData.b;
         for (var st = 0; st < 3; st += 1) {
-          var tgt = findSeekerTarget(seekerCell);
+          var tgt = retargetSeeker(seekerCell, findSeekerTarget(seekerCell), clearMap);
           if (tgt) { markBox(clearMap, tgt, 1); markCell(clearMap, tgt.row, tgt.col); }
         }
       }
@@ -10473,7 +10511,7 @@
       var seekerCell2 = comboData.specialA === "seeker" ? comboData.a : comboData.b;
       var bombCell3 = comboData.specialA === "bomb" ? comboData.a : comboData.b;
       markBox(clearMap, bombCell3, 2);
-      var tgt2 = findSeekerTarget(seekerCell2);
+      var tgt2 = retargetSeeker(seekerCell2, findSeekerTarget(seekerCell2), clearMap);
       if (tgt2) markBox(clearMap, tgt2, 3);
       return;
     }
@@ -10483,7 +10521,7 @@
       markCell(clearMap, comboData.a.row, comboData.a.col);
       markCell(clearMap, comboData.b.row, comboData.b.col);
       for (var ss = 0; ss < 3; ss += 1) {
-        var tgt3 = findSeekerTarget(comboData.a);
+        var tgt3 = retargetSeeker(comboData.a, findSeekerTarget(comboData.a), clearMap);
         if (tgt3) { markBox(clearMap, tgt3, 1); }
       }
       return;
@@ -10496,7 +10534,7 @@
         else markColumn(clearMap, entry.cell.col);
       });
       var seekerCell3 = comboData.specialA === "seeker" ? comboData.a : comboData.b;
-      var tgt4 = findSeekerTarget(seekerCell3);
+      var tgt4 = retargetSeeker(seekerCell3, findSeekerTarget(seekerCell3), clearMap);
       if (tgt4) markBox(clearMap, tgt4, 2);
       return;
     }
@@ -10683,6 +10721,37 @@
     return null;
   }
 
+  // Smart retargeting: if the seeker's original target was destroyed or
+  // already claimed for clearing during the cascade, find a new valid cell.
+  // This makes the seeker beam visually redirect when its original
+  // destination is gone — transparent to the player.
+  function retargetSeeker(fromCell, target, clearMap) {
+    // Verify the original target still has a piece and hasn't been claimed.
+    if (target) {
+      var gem = board[target.row] && board[target.row][target.col];
+      var alreadyCleared = clearMap && clearMap[target.row + ":" + target.col];
+      if (gem && !alreadyCleared) return target;
+    }
+    // Original target destroyed or already claimed — try a fresh find.
+    var newTarget = findSeekerTarget(fromCell);
+    if (newTarget) {
+      var newGem = board[newTarget.row] && board[newTarget.row][newTarget.col];
+      var newAlreadyCleared = clearMap && clearMap[newTarget.row + ":" + newTarget.col];
+      if (newGem && !newAlreadyCleared) return newTarget;
+    }
+    // findSeekerTarget returned an invalid or already-claimed cell.
+    // Fall back to a direct board scan for any valid, unclaimed cell.
+    for (var rr = 0; rr < GRID; rr += 1) {
+      for (var cc = 0; cc < GRID; cc += 1) {
+        if (rr === fromCell.row && cc === fromCell.col) continue;
+        if (!board[rr] || !board[rr][cc] || !isCellActive(rr, cc)) continue;
+        if (clearMap && clearMap[rr + ":" + cc]) continue;
+        return { row: rr, col: cc };
+      }
+    }
+    return null;
+  }
+
   // PROGRESSION: Seeker tracer — a bright beam from origin to target.
   function addSeekerTracer(from, to, color) {
     beams.push({
@@ -10816,9 +10885,12 @@
     }
 
     // PROGRESSION: Seeker special — flies to the hardest remaining objective.
+    // Smart retargeting: if the original target was destroyed by an earlier
+    // special in the same cascade, retarget to a new valid cell instead of
+    // hitting an empty cell.
     if (hit.special === "seeker") {
       markSpecialCandidate(cell.row, cell.col, clearMap, queue, visited);
-      var seekTarget = findSeekerTarget(cell);
+      var seekTarget = retargetSeeker(cell, findSeekerTarget(cell), clearMap);
       if (seekTarget) {
         markSpecialCandidate(seekTarget.row, seekTarget.col, clearMap, queue, visited);
         // Also clear a 1-tile radius around the target.
@@ -10829,6 +10901,10 @@
         }
         addSeekerTracer(cell, seekTarget, TYPES[gem.type].color);
         announceSpecialClear("seeker", [{ row: cell.row, col: cell.col }, seekTarget], TYPES[gem.type].color);
+      } else {
+        // No valid target anywhere — just clear the seeker's own cell.
+        addSeekerTracer(cell, cell, TYPES[gem.type].color);
+        announceSpecialClear("seeker", [{ row: cell.row, col: cell.col }], TYPES[gem.type].color);
       }
       return;
     }
@@ -18935,29 +19011,33 @@
   }
 
   function drawPendingSwap(time) {
-    if (!pendingSwap || levelState !== "playing") return;
-    if (performance.now() - pendingSwap.at > PENDING_SWAP_MAX_AGE) {
-      pendingSwap = null;
-      return;
-    }
-    var a = getBoardCellCenter(pendingSwap.a);
-    var b = getBoardCellCenter(pendingSwap.b);
+    if (!pendingSwaps || pendingSwaps.length === 0 || levelState !== "playing") return;
+    var now = performance.now();
+    // Filter out stale entries
+    pendingSwaps = pendingSwaps.filter(function(ps) {
+      return now - ps.at <= PENDING_SWAP_MAX_AGE;
+    });
     var pulseAmount = 0.5 + Math.sin(time * 6.4) * 0.5;
     var radius = view.cell * 0.4;
 
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.26 + pulseAmount * 0.18;
     ctx.strokeStyle = "#46f4ff";
     ctx.lineWidth = Math.max(2, view.cell * 0.035);
-    ctx.shadowBlur = 12 + pulseAmount * 10;
     ctx.shadowColor = "#46f4ff";
-    ctx.beginPath();
-    ctx.arc(a.x, a.y, radius, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, radius, 0, Math.PI * 2);
-    ctx.stroke();
+    for (var i = 0; i < pendingSwaps.length; i++) {
+      var ps = pendingSwaps[i];
+      var a = getBoardCellCenter(ps.a);
+      var b = getBoardCellCenter(ps.b);
+      ctx.globalAlpha = 0.26 + pulseAmount * 0.18;
+      ctx.shadowBlur = 12 + pulseAmount * 10;
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
