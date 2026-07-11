@@ -1625,6 +1625,41 @@ button:active {
   opacity: 1;
 }
 
+/* ── Always-visible quick-exit button ─────────────────────────────
+   Reachable from any level on desktop + mobile. Hidden by default;
+   JS adds .is-visible during active gameplay. Sits above the HUD/canvas
+   (z-index 12) but below the menu modal (z-index 13) so opening the
+   full menu covers it cleanly. */
+.quick-exit {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  z-index: 12;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  font: 600 13px/1 inherit;
+  letter-spacing: 0.02em;
+  color: #ffdfe6;
+  background: rgba(20, 6, 12, 0.72);
+  border: 1px solid rgba(255, 90, 120, 0.55);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+.quick-exit.is-visible { display: inline-flex; }
+.quick-exit:hover { background: rgba(40, 10, 20, 0.85); border-color: rgba(255, 120, 150, 0.85); }
+.quick-exit:active { transform: scale(0.94); }
+.quick-exit.confirming {
+  color: #fff;
+  background: rgba(200, 40, 70, 0.92);
+  border-color: rgba(255, 160, 180, 0.95);
+}
+
 .menu-panel {
   position: fixed;
   inset: 0;

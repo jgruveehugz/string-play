@@ -76,6 +76,7 @@
   var splashStartButton = document.getElementById("splashStartButton");
   var splashMenuButton = document.getElementById("splashMenuButton");
   var menuButton = document.getElementById("menuButton");
+  var quickExitButton = document.getElementById("quickExitButton");
   var menuPanel = document.getElementById("menuPanel");
   var closeMenuButton = document.getElementById("closeMenuButton");
   var menuSummaryEl = document.getElementById("menuSummary");
@@ -3765,6 +3766,11 @@
       if (isPlaying) hudPanel.classList.add("is-playing");
       else hudPanel.classList.remove("is-playing");
     }
+    // Quick-exit button: mirror the HUD's own visibility (shown while playing).
+    if (quickExitButton) {
+      if (isPlaying) quickExitButton.classList.add("is-visible");
+      else { quickExitButton.classList.remove("is-visible"); resetQuickExitConfirm(); }
+    }
   }
   var levelStats = createLevelStats();
   var activeBooster = null;
@@ -4212,10 +4218,15 @@
     activeBiomeBgIndex = idx;
   }
 
+  // True on frames where a biome photo actually painted — lets drawStageBackground
+  // suppress the procedural mountains/ground so the photo reads (photo-forward mode).
+  var biomeImageActive = false;
   function drawBiomeBackground() {
+    biomeImageActive = false;
     if (activeBiomeBgIndex < 0 || activeBiomeBgIndex >= biomeBgImages.length) return;
     var img = biomeBgImages[activeBiomeBgIndex];
     if (!img || !img.complete || img.naturalWidth === 0) return;
+    biomeImageActive = true;
     // Scale-to-cover: landscape PNG → portrait canvas. Crop excess width.
     var imgW = img.naturalWidth, imgH = img.naturalHeight;
     var canvasW = view.width, canvasH = view.height;
@@ -4223,8 +4234,8 @@
     var drawW = imgW * scale, drawH = imgH * scale;
     var dx = (canvasW - drawW) / 2, dy = (canvasH - drawH) / 2;
     ctx.drawImage(img, dx, dy, drawW, drawH);
-    // Dark overlay for readability — lets the lattice/pieces pop on top.
-    ctx.fillStyle = "rgba(8,12,18,0.55)";
+    // Dark overlay for readability — lighter in photo-forward mode so the landscape reads.
+    ctx.fillStyle = "rgba(8,12,18,0.30)";
     ctx.fillRect(0, 0, canvasW, canvasH);
   }
 
@@ -13065,6 +13076,35 @@
     updateSplashStartLabel();
   }
 
+  // ── Quick-exit (always-visible in-level button) with two-tap confirm ──
+  // First tap arms a confirm state ("✕ Sure?"); a second tap within 2.6s
+  // actually exits to the main menu. Prevents a stray tap from nuking a run.
+  var quickExitConfirmUntil = 0;
+  function resetQuickExitConfirm() {
+    quickExitConfirmUntil = 0;
+    if (quickExitButton) {
+      quickExitButton.classList.remove("confirming");
+      quickExitButton.textContent = "✕ Exit";
+    }
+  }
+  function handleQuickExit() {
+    var now = Date.now();
+    if (now <= quickExitConfirmUntil) {
+      resetQuickExitConfirm();
+      exitFromMenu();
+      return;
+    }
+    // Arm confirm state.
+    quickExitConfirmUntil = now + 2600;
+    if (quickExitButton) {
+      quickExitButton.classList.add("confirming");
+      quickExitButton.textContent = "✕ Sure?";
+    }
+    setTimeout(function () {
+      if (Date.now() > quickExitConfirmUntil - 50) resetQuickExitConfirm();
+    }, 2650);
+  }
+
   function openSettingsFromMenu() {
     openSettings();
   }
@@ -14018,16 +14058,13 @@
       shareStatsEl.appendChild(item);
     });
 
-    // Album cover (share feature #2): render the run's generative cover art and show it at
-    // the top of the card, so the share reads as art first, not a wall of text. Best-effort;
-    // if the canvas export throws, hide it and keep the rest of the card intact.
+    // Level-complete card: intentionally NO cover image at the top — the screen
+    // shows score/stars/text only (per product direction). The generative album
+    // cover is still produced on demand for the Share/Save-PNG export path; it is
+    // just not rendered as the on-screen results hero.
     if (shareCoverImg) {
-      try {
-        shareCoverImg.src = drawAlbumCover(lastSharePayload).toDataURL("image/png");
-        shareCoverImg.classList.add("is-shown");
-      } catch (coverError) {
-        shareCoverImg.classList.remove("is-shown");
-      }
+      shareCoverImg.classList.remove("is-shown");
+      shareCoverImg.removeAttribute("src");
     }
 
     stopShareScoreCount();
@@ -14287,10 +14324,16 @@
     var moment = payload.humMoment || {};
     var accent = moment.accent || "#46f4ff";
     var humSpec = findHumSpec(moment.humId || payload.humId);
+    // Sleeping (still-recording) Hums render as a DARK SILHOUETTE + progressive
+    // outline — a shadow of the pet coming up, not a bright orb. Suppress the
+    // bloomy nebula background in that state so the outline reads cleanly.
+    var isSleepingReveal = Boolean(moment.sleeping) && (moment.progress == null || moment.progress < 1);
 
     // Background: radial bloom in the Hum's color over near-black.
+    // Dimmed hard when sleeping so the pet silhouette isn't washed into an orb.
+    var bloom = isSleepingReveal ? 0.03 : 0.14;
     var bg = ictx.createRadialGradient(size / 2, size * 0.42, 40, size / 2, size * 0.42, size * 0.82);
-    bg.addColorStop(0, rgbaFromHex(accent, 0.14));
+    bg.addColorStop(0, rgbaFromHex(accent, bloom));
     bg.addColorStop(0.5, "#070b14");
     bg.addColorStop(1, "#04050a");
     ictx.fillStyle = bg;
@@ -14348,30 +14391,46 @@
           noTrail: true,
           eyeOpen: moment.eyeOpen != null ? moment.eyeOpen : 1,
           sleeping: moment.sleeping,
-          drawProgress: moment.progress || 0
+          drawProgress: moment.progress || 0,
+          shadowBase: isSleepingReveal
         });
       } finally {
         ctx = saved;
       }
     }
 
-    // Progress ring for sleeping Hums.
+    // Progress ring for sleeping Hums. On the reveal card we DROP the ring almost
+    // entirely — a bright cyan ring around the pet reads as a glowing orb and
+    // fights the dark silhouette. Keep only a whisper-faint arc; the "notes
+    // recorded" text already communicates progress. Full ring kept for non-reveal.
     if (moment.sleeping && moment.progress < 1) {
       var ringR = 260;
-      ictx.save();
-      ictx.strokeStyle = rgbaFromHex(accent, 0.15);
-      ictx.lineWidth = 6;
-      ictx.beginPath();
-      ictx.arc(size / 2, size * 0.42, ringR, 0, Math.PI * 2);
-      ictx.stroke();
-      ictx.strokeStyle = accent;
-      ictx.lineWidth = 6;
-      ictx.shadowBlur = 20;
-      ictx.shadowColor = accent;
-      ictx.beginPath();
-      ictx.arc(size / 2, size * 0.42, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * moment.progress);
-      ictx.stroke();
-      ictx.restore();
+      if (isSleepingReveal) {
+        // Whisper-faint progress arc only, no full track ring, no glow.
+        ictx.save();
+        ictx.globalAlpha = 0.22;
+        ictx.strokeStyle = accent;
+        ictx.lineWidth = 3;
+        ictx.beginPath();
+        ictx.arc(size / 2, size * 0.42, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * moment.progress);
+        ictx.stroke();
+        ictx.restore();
+      } else {
+        ictx.save();
+        ictx.strokeStyle = rgbaFromHex(accent, 0.15);
+        ictx.lineWidth = 6;
+        ictx.beginPath();
+        ictx.arc(size / 2, size * 0.42, ringR, 0, Math.PI * 2);
+        ictx.stroke();
+        ictx.strokeStyle = accent;
+        ictx.lineWidth = 6;
+        ictx.shadowBlur = 20;
+        ictx.shadowColor = accent;
+        ictx.beginPath();
+        ictx.arc(size / 2, size * 0.42, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * moment.progress);
+        ictx.stroke();
+        ictx.restore();
+      }
     }
 
     // Title block at bottom.
@@ -16550,11 +16609,16 @@
     // 1) Biome background image (bottom layer) + dark overlay — replaces flat sky fill.
     //    Falls back to procedural sky if the image hasn't loaded yet.
     drawBiomeBackground();
-    // 2) Procedural stars/particles/mountains ON TOP of the image (additive atmosphere).
+    // 2) Procedural stars always render — they read as sky detail over the photo.
     drawBackdropStars(time);
-    drawBackdropGroundGlow(backdrop);
-    drawBackdropParticles(time, backdrop);
-    drawBackdropMountains(time, backdrop);
+    // 3) Photo-forward: when a biome photo painted, SKIP procedural ground glow,
+    //    particles, and mountains so the landscape isn't buried. Otherwise draw
+    //    the full procedural stack as a fallback.
+    if (!biomeImageActive) {
+      drawBackdropGroundGlow(backdrop);
+      drawBackdropParticles(time, backdrop);
+      drawBackdropMountains(time, backdrop);
+    }
   }
 
   function drawBackdropSky(backdrop) {
@@ -19765,7 +19829,7 @@
     if (opts.drawProgress != null && opts.drawProgress < 1) {
       ctx.save();
       ctx.translate(cx, cy);
-      drawHumOutlineProgress(ctx, body, radius, primary, coreWidth, Math.max(0, opts.drawProgress));
+      drawHumOutlineProgress(ctx, body, radius, primary, coreWidth, Math.max(0, opts.drawProgress), opts.shadowBase);
       ctx.restore();
       return;
     }
@@ -20055,13 +20119,34 @@
 
   // Recording reveal: resample the silhouette into 15 equal segments and stroke
   // only the first N, so the outline draws in stroke-by-stroke across a track.
-  function drawHumOutlineProgress(ctx, body, radius, color, coreWidth, progress) {
+  // When shadowBase is set, first fill the COMPLETE silhouette as a dark shadow
+  // so there is always a recognizable pet shape (the reveal stroke brightens the
+  // portion recorded so far). Used on the level-complete card so the "pet coming
+  // up" reads as a shadow, not a bright partial arc.
+  function drawHumOutlineProgress(ctx, body, radius, color, coreWidth, progress, shadowBase) {
     var verts = humOutlineVerts(body.shape, radius);
     var n = verts.length, segLen = [], total = 0;
     for (var i = 0; i < n; i += 1) {
       var a = verts[i], b = verts[(i + 1) % n];
       var d = Math.hypot(b[0] - a[0], b[1] - a[1]);
       segLen.push(d); total += d;
+    }
+    // Dark full-body silhouette so the pet's shape is always readable.
+    if (shadowBase) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(verts[0][0], verts[0][1]);
+      for (var v = 1; v < n; v += 1) ctx.lineTo(verts[v][0], verts[v][1]);
+      ctx.closePath();
+      ctx.fillStyle = mixColor(color, "#05070c", 0.82);
+      ctx.globalAlpha = 0.85;
+      ctx.fill();
+      // Faint full outline so the whole silhouette edge is visible even unfilled.
+      ctx.globalAlpha = 0.28;
+      ctx.lineWidth = Math.max(1, coreWidth * 0.6);
+      ctx.strokeStyle = mixColor(color, "#0a0f18", 0.35);
+      ctx.stroke();
+      ctx.restore();
     }
     var SEGMENTS = 15, step = total / SEGMENTS;
     var shown = Math.max(1, Math.round(progress * SEGMENTS));
@@ -23867,6 +23952,7 @@
   bindPrimaryPress(splashStartButton, startSplashRun);
   bindPrimaryPress(splashDailyButton, startDailyFromSplash);
   bindPrimaryPress(splashMenuButton, openMenu);
+  if (quickExitButton) bindMenuPress(quickExitButton, handleQuickExit);
   if (starHop) {
     starHop.addEventListener("pointerdown", skipStarHop);
     starHop.addEventListener("click", skipStarHop);
