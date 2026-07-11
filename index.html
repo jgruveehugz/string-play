@@ -6,15 +6,15 @@
     <meta name="theme-color" content="#05060a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="STRING">
+    <meta name="apple-mobile-web-app-title" content="Shooting Star">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>STRING</title>
-    <link rel="manifest" href="manifest.webmanifest?v=1b8dd5b">
+    <title>Shooting Star</title>
+    <link rel="manifest" href="manifest.webmanifest?v=421f598">
     <link rel="icon" href="neon-lattice-icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" sizes="180x180" href="neon-lattice-icon-180.png">
     <link rel="mask-icon" href="neon-lattice-icon.svg" color="#46f4ff">
-    <link rel="stylesheet" href="styles.css?v=1b8dd5b">
+    <link rel="stylesheet" href="styles.css?v=421f598">
   </head>
   <body>
 <script id="__string_gate__">
@@ -53,19 +53,75 @@
 </script>
 
     <main class="game-shell">
-      <canvas id="game" aria-label="STRING match board"></canvas>
+      <canvas id="game" aria-label="Shooting Star match board"></canvas>
       <div id="levelBadge" class="level-badge" aria-hidden="true"></div>
+      <div id="starHop" class="star-hop" aria-hidden="true">
+        <div class="star-hop-star" aria-hidden="true"></div>
+        <div class="star-hop-skip" aria-hidden="true">Tap to follow the star</div>
+      </div>
 
       <section id="splashPanel" class="splash-panel is-open" aria-label="Start screen" aria-hidden="false">
-        <div class="splash-stage" aria-hidden="true">
-          <span class="splash-ring splash-ring--one"></span>
-          <span class="splash-ring splash-ring--two"></span>
-          <span class="splash-ray splash-ray--one"></span>
-          <span class="splash-ray splash-ray--two"></span>
+        <div class="splash-aurora" aria-hidden="true"></div>
+        <div class="splash-stars" aria-hidden="true">
+          <span class="ss-star" style="left:6%;top:5%;width:2px;height:2px;--delay:-.2s;--twinkle:4.8s"></span>
+          <span class="ss-star" style="left:18%;top:9%;width:1.5px;height:1.5px;--delay:-2.1s;--twinkle:5.6s"></span>
+          <span class="ss-star teal" style="left:72%;top:7%;width:2.5px;height:2.5px;--delay:-1.4s;--twinkle:4.3s"></span>
+          <span class="ss-star" style="left:82%;top:15%;width:1px;height:1px;--delay:-3.5s;--twinkle:6s"></span>
+          <span class="ss-star" style="left:12%;top:19%;width:1px;height:1px;--delay:-1.1s;--twinkle:3.8s"></span>
+          <span class="ss-star" style="left:35%;top:16%;width:2px;height:2px;--delay:-2.6s;--twinkle:5.2s"></span>
+          <span class="ss-star teal" style="left:58%;top:20%;width:1.5px;height:1.5px;--delay:-.8s;--twinkle:4.5s"></span>
+          <span class="ss-star" style="left:68%;top:26%;width:2px;height:2px;--delay:-3.3s;--twinkle:5.9s"></span>
+          <span class="ss-star" style="left:22%;top:28%;width:1.5px;height:1.5px;--delay:-4.2s;--twinkle:4.9s"></span>
+          <span class="ss-star" style="left:5%;top:35%;width:2px;height:2px;--delay:-2.9s;--twinkle:5.1s"></span>
+          <span class="ss-star" style="left:85%;top:39%;width:1.5px;height:1.5px;--delay:-1.7s;--twinkle:6.1s"></span>
+          <span class="ss-star teal" style="left:40%;top:37%;width:1px;height:1px;--delay:-.5s;--twinkle:4.4s"></span>
+          <span class="ss-star" style="left:16%;top:46%;width:1px;height:1px;--delay:-2.2s;--twinkle:5.5s"></span>
+          <span class="ss-star" style="left:66%;top:47%;width:1.2px;height:1.2px;--delay:-3.7s;--twinkle:5.3s"></span>
+          <span class="ss-star" style="left:48%;top:8%;width:1px;height:1px;--delay:-3.9s;--twinkle:4.7s"></span>
+          <span class="ss-star" style="left:56%;top:31%;width:1px;height:1px;--delay:-1.9s;--twinkle:4.1s"></span>
+          <span class="ss-star teal" style="left:28%;top:54%;width:1.4px;height:1.4px;--delay:-2.8s;--twinkle:5.8s"></span>
+          <span class="ss-star" style="left:78%;top:55%;width:1px;height:1px;--delay:-.9s;--twinkle:4.6s"></span>
         </div>
+
+        <div class="splash-falling-star" aria-hidden="true"></div>
+        <div class="splash-landing-glow" aria-hidden="true"></div>
+
+        <div class="splash-mountains" aria-hidden="true">
+          <div class="splash-ridge" style="--bottom:13%;--height:24%;--color:linear-gradient(180deg,rgba(79,82,148,.78),rgba(48,51,102,.92));--opacity:.92;--blur:.4px"></div>
+          <div class="splash-ridge" style="--bottom:7%;--height:24%;--color:linear-gradient(180deg,rgba(55,55,106,.96),rgba(22,23,62,1));--opacity:.96"></div>
+          <div class="splash-ridge" style="--bottom:0;--height:22%;--color:linear-gradient(180deg,rgba(29,30,63,1),rgba(2,3,15,1));--opacity:1"></div>
+          <div class="splash-mist"></div>
+        </div>
+
+        <div class="splash-foreground" aria-hidden="true"><div class="splash-ground-line"></div></div>
+
+        <div class="splash-creature" aria-hidden="true">
+          <div class="splash-creature-glow"></div>
+          <svg class="splash-creature-svg" viewBox="0 0 82 110" role="img" aria-label="A small child standing on a tiny planet, looking up at a falling star">
+            <defs>
+              <linearGradient id="creatureFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#101238" />
+                <stop offset="1" stop-color="#02030f" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="41" cy="96" rx="28" ry="7" fill="rgba(0,0,0,.28)" />
+            <ellipse cx="41" cy="94" rx="24" ry="11" fill="url(#creatureFill)" />
+            <path d="M36 72 L35 88 L38 88 L39 72 Z" fill="url(#creatureFill)" />
+            <path d="M44 72 L45 88 L48 88 L47 72 Z" fill="url(#creatureFill)" />
+            <path d="M35 52 C34 58 34 66 36 73 L47 73 C49 66 49 58 48 52 C46 48 37 48 35 52 Z" fill="url(#creatureFill)" />
+            <path d="M34 54 C30 58 28 65 29 71 L32 71 C32 65 33 60 36 57 Z" fill="url(#creatureFill)" />
+            <path d="M49 54 C53 56 55 62 54 68 C53 65 51 62 48 58 Z" fill="url(#creatureFill)" />
+            <path d="M38 48 C34 47 30 48 27 52 C30 50 33 50 36 51 Z" fill="rgba(70,244,255,.12)" />
+            <path d="M45 48 C49 47 53 49 56 53 C53 51 50 50 47 51 Z" fill="rgba(70,244,255,.12)" />
+            <ellipse cx="41.5" cy="38" rx="9" ry="10" fill="url(#creatureFill)" />
+            <path d="M37 30 C38 27 40 26 42 27 C44 26 46 28 46 31" fill="none" stroke="url(#creatureFill)" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M41 28 C38 28 36 31 35 35 C35 39 37 43 41 44" fill="none" stroke="rgba(255,209,102,.16)" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </div>
+
         <div class="splash-copy">
-          <strong>STRING</strong>
-          <em>Every swap plays the track.</em>
+          <strong>Shooting Star</strong>
+          <em>A star fell from the sky.</em>
           <small id="splashBuild" style="margin-top:10px;font-family:monospace;font-size:9px;letter-spacing:2px;color:rgba(150,180,210,0.5);">Build —</small>
         </div>
         <div class="splash-actions">
@@ -77,12 +133,13 @@
           <button id="splashStartButton" type="button">Play</button>
           <button id="splashMenuButton" type="button">Options</button>
         </div>
+        <div class="splash-vignette" aria-hidden="true"></div>
       </section>
 
       <section id="hudPanel" class="hud" aria-label="Game status">
         <div class="brand">
           <span class="brand-mark"></span>
-          <span>STRING</span>
+          <span>Shooting Star</span>
         </div>
         <div class="stat stat--level">
           <span id="levelLabel">Level</span>
@@ -215,6 +272,7 @@
             <button id="menuSetlistButton" class="menu-action menu-action--setlist" type="button">Setlist</button>
             <button id="menuGreenroomButton" class="menu-action menu-action--greenroom" type="button">Greenroom</button>
             <button id="menuRestartButton" class="menu-action menu-action--restart" type="button">Restart</button>
+            <button id="menuExitButton" class="menu-action menu-action--exit" type="button">Exit Level</button>
             <button id="menuSettingsButton" class="menu-action menu-action--settings" type="button">Settings</button>
           </div>
         </div>
@@ -323,6 +381,8 @@
           <div class="store-wallet" aria-label="Wallet">
             <span>Credits</span>
             <strong id="creditCount">0</strong>
+            <span>Stardust</span>
+            <strong id="stardustCount" class="">0</strong>
           </div>
           <div id="storeOffers" class="store-offers"></div>
           <span id="storeStatus" class="store-status" aria-live="polite"></span>
@@ -333,7 +393,7 @@
         <div class="share-card">
           <img id="shareCoverImg" class="share-cover" alt="Your run's cover art">
           <div class="share-copy">
-            <span id="shareEyebrow">STRING</span>
+            <span id="shareEyebrow">Shooting Star</span>
             <strong id="shareTitle">Proof Ready</strong>
             <em id="shareSubtitle">Post the run.</em>
           </div>
@@ -393,7 +453,7 @@
       </section>
     </main>
 
-    <script src="build.js?v=1b8dd5b"></script>
-    <script src="main.js?v=1b8dd5b"></script>
+    <script src="build.js?v=421f598"></script>
+    <script src="main.js?v=421f598"></script>
   </body>
 </html>

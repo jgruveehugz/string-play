@@ -72,6 +72,7 @@
   var mapButton = document.getElementById("mapButton");
   var storeButton = document.getElementById("storeButton");
   var splashPanel = document.getElementById("splashPanel");
+  var starHop = document.getElementById("starHop");
   var splashStartButton = document.getElementById("splashStartButton");
   var splashMenuButton = document.getElementById("splashMenuButton");
   var menuButton = document.getElementById("menuButton");
@@ -86,6 +87,7 @@
   var menuRushButton = document.getElementById("menuRushButton");
   var menuDailyButton = document.getElementById("menuDailyButton");
   var menuRestartButton = document.getElementById("menuRestartButton");
+  var menuExitButton = document.getElementById("menuExitButton");
   var menuSettingsButton = document.getElementById("menuSettingsButton");
   var menuRivalEl = document.getElementById("menuRival");
   var menuHookEl = document.getElementById("menuHook");
@@ -127,6 +129,7 @@
   var closeStoreButton = document.getElementById("closeStoreButton");
   var storeSummaryEl = document.getElementById("storeSummary");
   var creditCountEl = document.getElementById("creditCount");
+  var stardustCountEl = document.getElementById("stardustCount");
   var storeOffersEl = document.getElementById("storeOffers");
   var storeStatusEl = document.getElementById("storeStatus");
   var sharePanel = document.getElementById("sharePanel");
@@ -158,24 +161,24 @@
 
   var GRID = 8;
   var TYPES = [
-    { name: "Ion", color: "#46f4ff", fill: "rgba(70,244,255,0.09)", shape: "circle", scaleDegree: 0 },
-    { name: "Prism", color: "#ff4fd8", fill: "rgba(255,79,216,0.085)", shape: "triangle", scaleDegree: 1 },
-    { name: "Quark", color: "#8cff6b", fill: "rgba(140,255,107,0.08)", shape: "diamond", scaleDegree: 2 },
-    { name: "Pulse", color: "#ffd166", fill: "rgba(255,209,102,0.085)", shape: "square", scaleDegree: 3 },
-    { name: "Core", color: "#ff8a3d", fill: "rgba(255,138,61,0.08)", shape: "hex", scaleDegree: 4 },
-    { name: "Atom", color: "#7a6bff", fill: "rgba(122,107,255,0.08)", shape: "atom", scaleDegree: 5 }
+    { name: "Pulsar", color: "#46f4ff", fill: "rgba(70,244,255,0.09)", shape: "circle", scaleDegree: 0 },
+    { name: "Nova", color: "#ff4fd8", fill: "rgba(255,79,216,0.085)", shape: "triangle", scaleDegree: 1 },
+    { name: "Quasar", color: "#8cff6b", fill: "rgba(140,255,107,0.08)", shape: "diamond", scaleDegree: 2 },
+    { name: "Comet", color: "#ffd166", fill: "rgba(255,209,102,0.085)", shape: "square", scaleDegree: 3 },
+    { name: "Core Star", color: "#ff8a3d", fill: "rgba(255,138,61,0.08)", shape: "hex", scaleDegree: 4 },
+    { name: "Galaxy", color: "#7a6bff", fill: "rgba(122,107,255,0.08)", shape: "atom", scaleDegree: 5 }
   ];
   // Single silhouette source for every piece shape, normalized to radius = 1.
   // BOTH the board gems (drawShape / drawAtom, canvas) and the goal-chip icons
   // (buildPieceGlyphSvg, inline SVG) read these exact ratios, so a goal chip can
   // never drift from the gem it names. Ratios are the ones the board draws.
   var PIECE_GLYPH_SHAPES = {
-    circle: { kind: "rings", radii: [1, 0.48] },                                     // Ion double-ring
-    triangle: { kind: "poly", sides: 3, radius: 1, offset: -Math.PI / 2 },           // Prism up-triangle
-    diamond: { kind: "path", points: [[0, -1.18], [0.72, 0], [0, 1.18], [-0.72, 0]] }, // Quark tall vertical rhombus
-    square: { kind: "poly", sides: 4, radius: 0.82, offset: Math.PI / 4 },           // Pulse flat-top inset square
-    hex: { kind: "poly", sides: 6, radius: 1, offset: Math.PI / 6, dot: 0.16 },      // Core hex + center dot
-    atom: { kind: "atom", rx: 1.06, ry: 0.38, nucleus: 0.25 }                        // Atom crossed ellipses
+    circle: { kind: "rings", radii: [1, 0.48] },                                     // Pulsar double-ring
+    triangle: { kind: "poly", sides: 3, radius: 1, offset: -Math.PI / 2 },           // Nova up-triangle
+    diamond: { kind: "path", points: [[0, -1.18], [0.72, 0], [0, 1.18], [-0.72, 0]] }, // Quasar tall vertical rhombus
+    square: { kind: "poly", sides: 4, radius: 0.82, offset: Math.PI / 4 },           // Comet flat-top inset square
+    hex: { kind: "poly", sides: 6, radius: 1, offset: Math.PI / 6, dot: 0.16 },      // Core Star hex + center dot
+    atom: { kind: "atom", rx: 1.06, ry: 0.38, nucleus: 0.25 }                        // Galaxy crossed ellipses
   };
   var PIECE_COLOR_NAMES = ["Cyan", "Pink", "Green", "Gold", "Orange", "Violet"];
   TYPES.forEach(function (type) {
@@ -193,12 +196,12 @@
   // from; gain trims per-piece level. Pitch still comes from frequencyForType, so every
   // match/cascade stays pentatonic-consonant on any 16th. Indexed by TYPES id.
   var PIECE_VOICES = [
-    { character: "warm",   register: 0, filter: 1400, gain: 0.9 },  // Ion (cyan)    round low pluck
-    { character: "stack",  register: 1, filter: 2200, gain: 0.9 },  // Prism (pink)  bright detuned saw
-    { character: "pluck",  register: 1, filter: 2600, gain: 0.85 }, // Quark (green) short FM blip
-    { character: "hollow", register: 1, filter: 2000, gain: 0.9 },  // Pulse (gold)  PWM reed lead
-    { character: "brass",  register: 0, filter: 1800, gain: 0.9 },  // Core (orange) warm FM mid
-    { character: "air",    register: 2, filter: 3600, gain: 0.8 }   // Atom (violet) airy sine shimmer high
+    { character: "warm",   register: 0, filter: 1400, gain: 0.9 },  // Pulsar (cyan) round low pluck
+    { character: "stack",  register: 1, filter: 2200, gain: 0.9 },  // Nova (pink) bright detuned saw
+    { character: "pluck",  register: 1, filter: 2600, gain: 0.85 }, // Quasar (green) short FM blip
+    { character: "hollow", register: 1, filter: 2000, gain: 0.9 },  // Comet (gold) PWM reed lead
+    { character: "brass",  register: 0, filter: 1800, gain: 0.9 },  // Core Star (orange) warm FM mid
+    { character: "air",    register: 2, filter: 3600, gain: 0.8 }   // Galaxy (violet) airy sine shimmer high
   ];
 
   // --- Glyph Creature Spec (GCS v1) validator ---------------------------
@@ -428,8 +431,8 @@
     });
   }
 
-  var GAME_TITLE = "STRING";
-  var GAME_CODE_PREFIX = "STR";
+  var GAME_TITLE = "Shooting Star";
+  var GAME_CODE_PREFIX = "SST";
 
   var SCALE = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22];
   var BASE_FREQ = 130.81;
@@ -560,16 +563,16 @@
     // Warm, dreamy, lush. Triangle waves, heavy detune, slow filter blooms.
     // No harsh transients. Everything blooms in.
     single: { type: "single", wave: "triangle", filtEnv: true },
-    warm:   { type: "stack",  wave: "triangle", detune: 12, sub: 0.45, filtEnv: { octaves: 2.0, decay: 0.28, attack: 0.014 } },
-    stack:  { type: "stack",  wave: "triangle", detune: 18, sub: 0.25, filtEnv: { octaves: 2.0, decay: 0.20, attack: 0.012 } },
-    hollow: { type: "pwm",    duty: 0.35,       motion: 4,             filtEnv: { octaves: 1.6, decay: 0.22, attack: 0.014 } },
-    glass:  { type: "single", wave: "triangle", filtEnv: { octaves: 2.0, decay: 0.18, attack: 0.012 } },
-    bell:   { type: "fm",     ratio: 2, index: 2, fmDecay: 0.18,       filtEnv: { octaves: 1.0, decay: 0.32, attack: 0.016 } },
-    brass:  { type: "fm",     ratio: 1, index: 3, fmDecay: 0.22,       filtEnv: { octaves: 1.6, decay: 0.26, attack: 0.014 } },
-    pluck:  { type: "fm",     ratio: 3, index: 2.5, fmDecay: 0.15,     filtEnv: { octaves: 2.0, decay: 0.18, attack: 0.012 } },
-    sub:    { type: "stack",  wave: "triangle", detune: 4,  sub: 0.6,  filtEnv: { octaves: 1.0, decay: 0.22 } },
-    air:    { type: "single", wave: "sine",     shimmer: 2,            filtEnv: { octaves: 1.2, decay: 0.40, attack: 0.018 } },
-    nova:   { type: "stack",  wave: "triangle", detune: 20, sub: 0.35, filtEnv: { octaves: 2.0, decay: 0.22, attack: 0.012 } },
+    warm:   { type: "stack",  wave: "triangle", detune: 22, sub: 0.55, filtEnv: { octaves: 2.4, decay: 0.38, attack: 0.022 } },
+    stack:  { type: "stack",  wave: "triangle", detune: 28, sub: 0.35, filtEnv: { octaves: 2.4, decay: 0.30, attack: 0.018 } },
+    hollow: { type: "pwm",    duty: 0.38,       motion: 3,             filtEnv: { octaves: 2.0, decay: 0.32, attack: 0.022 } },
+    glass:  { type: "single", wave: "triangle", filtEnv: { octaves: 2.2, decay: 0.26, attack: 0.020 } },
+    bell:   { type: "fm",     ratio: 2, index: 1.6, fmDecay: 0.24,   filtEnv: { octaves: 1.2, decay: 0.42, attack: 0.024 } },
+    brass:  { type: "fm",     ratio: 1, index: 2.4, fmDecay: 0.28,   filtEnv: { octaves: 1.8, decay: 0.34, attack: 0.022 } },
+    pluck:  { type: "fm",     ratio: 3, index: 2.0, fmDecay: 0.20,   filtEnv: { octaves: 2.2, decay: 0.24, attack: 0.018 } },
+    sub:    { type: "stack",  wave: "triangle", detune: 8,  sub: 0.70, filtEnv: { octaves: 1.2, decay: 0.30 } },
+    air:    { type: "single", wave: "sine",     shimmer: 3,            filtEnv: { octaves: 1.4, decay: 0.55, attack: 0.028 } },
+    nova:   { type: "stack",  wave: "triangle", detune: 32, sub: 0.45, filtEnv: { octaves: 2.4, decay: 0.32, attack: 0.020 } },
     // FM electric piano (Rhodes) for the jazz genre (music genres seq 2): the sustained
     // comp/pad voice that carries the 6/9 stacks and the guarded b7/9 color tones. A soft
     // ratio-1 FM bell with a slow filter bloom = the DX7-style tine sound, no samples.
@@ -598,9 +601,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.20,
+      delayBase: 0.36,
       delayDrive: 0.20,
-      feedbackBase: 0.28,
+      feedbackBase: 0.38,
       feedbackDrive: 0.20,
       groove: {
         kick: [0, 4, 8, 12],
@@ -626,9 +629,9 @@
       bassWave: "sawtooth",
       padWave: "sine",
       // ORCHID: widen delay for hazy texture
-      delayBase: 0.24,
+      delayBase: 0.32,
       delayDrive: 0.22,
-      feedbackBase: 0.30,
+      feedbackBase: 0.40,
       feedbackDrive: 0.22,
       groove: {
         kick: [0, 4, 8, 12],
@@ -654,9 +657,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.18,
+      delayBase: 0.34,
       delayDrive: 0.18,
-      feedbackBase: 0.24,
+      feedbackBase: 0.44,
       feedbackDrive: 0.18,
       groove: {
         kick: [0, 6, 10],
@@ -681,9 +684,9 @@
       layerWave: "triangle",
       bassWave: "square",
       padWave: "triangle",
-      delayBase: 0.16,
+      delayBase: 0.24,
       delayDrive: 0.18,
-      feedbackBase: 0.22,
+      feedbackBase: 0.42,
       feedbackDrive: 0.16,
       delaySteps: 2,
       bpmOffset: 2,
@@ -704,9 +707,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.18,
+      delayBase: 0.34,
       delayDrive: 0.20,
-      feedbackBase: 0.24,
+      feedbackBase: 0.44,
       feedbackDrive: 0.18,
       delaySteps: 2,
       bpmOffset: 3,
@@ -727,9 +730,9 @@
       bassWave: "triangle",
       padWave: "sine",
       // ORCHID: hazy, lush delay
-      delayBase: 0.28,
+      delayBase: 0.36,
       delayDrive: 0.20,
-      feedbackBase: 0.34,
+      feedbackBase: 0.44,
       feedbackDrive: 0.18,
       delaySteps: 6,
       bpmOffset: 0,
@@ -750,9 +753,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "sine",
-      delayBase: 0.16,
+      delayBase: 0.24,
       delayDrive: 0.16,
-      feedbackBase: 0.20,
+      feedbackBase: 0.30,
       feedbackDrive: 0.14,
       delaySteps: 2,
       bpmOffset: 2,
@@ -773,9 +776,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.22,
+      delayBase: 0.30,
       delayDrive: 0.24,
-      feedbackBase: 0.28,
+      feedbackBase: 0.38,
       feedbackDrive: 0.22,
       delaySteps: 3,
       bpmOffset: 3,
@@ -796,9 +799,9 @@
       bassWave: "sawtooth",
       padWave: "triangle",
       // ORCHID: hazy delay
-      delayBase: 0.22,
+      delayBase: 0.30,
       delayDrive: 0.20,
-      feedbackBase: 0.28,
+      feedbackBase: 0.38,
       feedbackDrive: 0.18,
       delaySteps: 3,
       bpmOffset: 2,
@@ -826,9 +829,9 @@
       bassWave: "triangle",
       padWave: "sine",
       // ORCHID: hazy, liquid delay
-      delayBase: 0.28,
+      delayBase: 0.36,
       delayDrive: 0.22,
-      feedbackBase: 0.32,
+      feedbackBase: 0.42,
       feedbackDrive: 0.20,
       delaySteps: 4,
       bpmOffset: 1,
@@ -855,9 +858,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.14,
+      delayBase: 0.22,
       delayDrive: 0.16,
-      feedbackBase: 0.18,
+      feedbackBase: 0.28,
       feedbackDrive: 0.14,
       delaySteps: 2,
       bpmOffset: 4,
@@ -878,9 +881,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.24,
+      delayBase: 0.32,
       delayDrive: 0.24,
-      feedbackBase: 0.28,
+      feedbackBase: 0.38,
       feedbackDrive: 0.22,
       delaySteps: 3,
       bpmOffset: 4,
@@ -901,9 +904,9 @@
       bassWave: "sine",
       padWave: "sine",
       // ORCHID: hazy delay
-      delayBase: 0.24,
+      delayBase: 0.32,
       delayDrive: 0.16,
-      feedbackBase: 0.30,
+      feedbackBase: 0.40,
       feedbackDrive: 0.16,
       delaySteps: 4,
       bpmOffset: 0,
@@ -924,9 +927,9 @@
       bassWave: "sawtooth",
       padWave: "triangle",
       // ORCHID: hazy, lush delay
-      delayBase: 0.26,
+      delayBase: 0.34,
       delayDrive: 0.24,
-      feedbackBase: 0.32,
+      feedbackBase: 0.42,
       feedbackDrive: 0.22,
       delaySteps: 4,
       bpmOffset: 3,
@@ -947,9 +950,9 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "triangle",
-      delayBase: 0.16,
+      delayBase: 0.24,
       delayDrive: 0.18,
-      feedbackBase: 0.22,
+      feedbackBase: 0.42,
       feedbackDrive: 0.18,
       delaySteps: 2,
       bpmOffset: 6,
@@ -970,33 +973,1517 @@
       layerWave: "triangle",
       bassWave: "sawtooth",
       padWave: "sine",
-      delayBase: 0.24,
+      delayBase: 0.32,
       delayDrive: 0.24,
-      feedbackBase: 0.30,
+      feedbackBase: 0.40,
       feedbackDrive: 0.22,
       delaySteps: 3,
       bpmOffset: 4,
       groove: GROOVES.floor4
     }
   ];
-  var EPISODE_THEMES = [
-    { id: "ion-gate", name: "Ion Gate", tag: "Clean arcs", hook: "First spark field", palette: "neon" },
-    { id: "prism-wake", name: "Prism Wake", tag: "Bright lift", hook: "Candy-color lasers", palette: "pulse" },
-    { id: "quark-relay", name: "Quark Relay", tag: "Tight sync", hook: "Fast green chains", palette: "arc" },
-    { id: "pulse-foundry", name: "Pulse Foundry", tag: "Hard bounce", hook: "Yellow engine room", palette: "foundry" },
-    { id: "core-spiral", name: "Core Spiral", tag: "Redline runs", hook: "Overdrive training", palette: "spiral" },
-    { id: "atom-choir", name: "Atom Choir", tag: "Wide pads", hook: "Layered harmonic bursts", palette: "choir" },
-    { id: "shield-mirror", name: "Shield Mirror", tag: "Crack the grid", hook: "Shield-cell sweeps", palette: "mirror" },
-    { id: "nova-yard", name: "Nova Yard", tag: "Bomb craft", hook: "Special-piece fireworks", palette: "nova" },
-    { id: "vector-drift", name: "Vector Drift", tag: "Sideways rhythm", hook: "Diagonal cascade traps", palette: "drift" },
-    { id: "signal-reef", name: "Signal Reef", tag: "Liquid neon", hook: "Soft pads, hard hits", palette: "reef" },
-    { id: "chrome-lattice", name: "Chrome Strings", tag: "Sharp beams", hook: "Precision chain scoring", palette: "chrome" },
-    { id: "solar-static", name: "Solar Static", tag: "Hot bloom", hook: "Score pushes and flare goals", palette: "solar" },
-    { id: "dark-circuit", name: "Dark Circuit", tag: "Low pressure", hook: "Tense move economy", palette: "circuit" },
-    { id: "gravity-bloom", name: "Gravity Bloom", tag: "Big cascades", hook: "Stacked chain finales", palette: "bloom" },
-    { id: "overdrive-arc", name: "Overdrive Arc", tag: "Peak drive", hook: "Drive mastery", palette: "overdrive" },
-    { id: "final-harmonic", name: "Final Harmonic", tag: "Full spectrum", hook: "Everything fires at once", palette: "harmonic" }
+  var WORLD_BACKDROPS = [
+    { id: "dusk-horizon", label: "Dusk Horizon", skyTop: "#050818", skyMid: "#1a0a2e", skyLow: "#2a1a3e", skyGlow: "#3a2820", mountains: ["#0a0c1a", "#060814", "#030410"], accent: "#46f4ff", stars: 44, starColors: ["#ffffff", "#aaccff"], particles: "dust", terrain: "mountains" },
+    { id: "midnight-aurora", label: "Midnight Aurora", skyTop: "#030515", skyMid: "#08092e", skyLow: "#0a0a2e", skyGlow: "#061a24", mountains: ["#050510"], accent: "#46f4ff", stars: 62, starColors: ["#ffffff", "#aaccff", "#ffeecc"], particles: "aurora", terrain: "ridge" },
+    { id: "first-light", label: "First Light", skyTop: "#071021", skyMid: "#2a1640", skyLow: "#51324e", skyGlow: "#9a5a28", mountains: ["#15142b", "#0d1024", "#050711"], accent: "#ffaa44", stars: 36, starColors: ["#ffffff", "#ffd9a6"], particles: "mist", terrain: "mountains" },
+    { id: "storm-coast", label: "Storm Coast", skyTop: "#07101a", skyMid: "#182238", skyLow: "#2b2743", skyGlow: "#35324e", mountains: ["#111622", "#090c15", "#03050a"], accent: "#7a6bff", stars: 28, starColors: ["#dbe4ff", "#ffffff"], particles: "rain", terrain: "cliffs" },
+    { id: "desert-stars", label: "Desert Stars", skyTop: "#020715", skyMid: "#0a1430", skyLow: "#2b2140", skyGlow: "#6b3f1f", mountains: ["#17101a", "#0c0910", "#050307"], accent: "#ffd166", stars: 58, starColors: ["#ffffff", "#ffe7ad", "#ffd166"], particles: "dust", terrain: "dunes" },
+    { id: "cherry-blossom", label: "Cherry Blossom", skyTop: "#071126", skyMid: "#1b2450", skyLow: "#50365f", skyGlow: "#7a4a66", mountains: ["#15152a", "#0b0b18", "#05050d"], accent: "#ff4fd8", stars: 38, starColors: ["#ffffff", "#ffd5f5"], particles: "petals", terrain: "trees" },
+    { id: "frozen-lake", label: "Frozen Lake", skyTop: "#02101f", skyMid: "#062743", skyLow: "#12375a", skyGlow: "#1c6370", mountains: ["#0b2334", "#061622", "#02080d"], accent: "#46f4ff", stars: 54, starColors: ["#ffffff", "#c9f7ff", "#aaccff"], particles: "snow", terrain: "pines" },
+    { id: "volcano-edge", label: "Volcano's Edge", skyTop: "#070204", skyMid: "#18070a", skyLow: "#3a1010", skyGlow: "#8a2a12", mountains: ["#1a0708", "#0c0304", "#030101"], accent: "#ff8a3d", stars: 30, starColors: ["#ffe4c7", "#ffffff"], particles: "embers", terrain: "cliffs" },
+    { id: "rose-dusk", label: "Rose Dusk", skyTop: "#040716", skyMid: "#241038", skyLow: "#4a2350", skyGlow: "#6b3a2b", mountains: ["#111226", "#080a18", "#03040b"], accent: "#ff79c6", stars: 46, starColors: ["#ffffff", "#ffd1ea"], particles: "dust", terrain: "mountains" },
+    { id: "polar-aurora", label: "Polar Aurora", skyTop: "#010713", skyMid: "#07172d", skyLow: "#0e2446", skyGlow: "#092e3a", mountains: ["#07121c", "#02060b"], accent: "#65ffd1", stars: 66, starColors: ["#ffffff", "#c8fff3", "#aaccff"], particles: "aurora", terrain: "ridge" },
+    { id: "violet-squall", label: "Violet Squall", skyTop: "#050910", skyMid: "#141b2b", skyLow: "#2a2440", skyGlow: "#403350", mountains: ["#131623", "#080a12", "#020309"], accent: "#9b7cff", stars: 26, starColors: ["#f0f2ff", "#bbc5ff"], particles: "rain", terrain: "cliffs" },
+    { id: "golden-dunes", label: "Golden Dunes", skyTop: "#030616", skyMid: "#0c1836", skyLow: "#34243a", skyGlow: "#8a5420", mountains: ["#201321", "#100912", "#050306"], accent: "#ffd166", stars: 60, starColors: ["#ffffff", "#ffe6a3"], particles: "dust", terrain: "dunes" },
+    { id: "glacier-night", label: "Glacier Night", skyTop: "#01101d", skyMid: "#08233b", skyLow: "#163858", skyGlow: "#2d6f82", mountains: ["#0d2838", "#071722", "#02070d"], accent: "#8cf0ff", stars: 56, starColors: ["#ffffff", "#d7fbff", "#aaccff"], particles: "snow", terrain: "pines" },
+    { id: "ember-caldera", label: "Ember Caldera", skyTop: "#050104", skyMid: "#140509", skyLow: "#33100e", skyGlow: "#a33a14", mountains: ["#1b0706", "#0b0202", "#030101"], accent: "#ff8a3d", stars: 32, starColors: ["#fff0d6", "#ffc68a"], particles: "embers", terrain: "cliffs" },
+    { id: "indigo-sunset", label: "Indigo Sunset", skyTop: "#040719", skyMid: "#170b30", skyLow: "#392044", skyGlow: "#744029", mountains: ["#10142a", "#080b18", "#03040b"], accent: "#46f4ff", stars: 48, starColors: ["#ffffff", "#aac8ff", "#ffe2b8"], particles: "mist", terrain: "mountains" },
+    { id: "deep-aurora", label: "Deep Aurora", skyTop: "#010411", skyMid: "#060b24", skyLow: "#0a1638", skyGlow: "#071f30", mountains: ["#050916"], accent: "#46f4ff", stars: 68, starColors: ["#ffffff", "#aaccff", "#baffea"], particles: "aurora", terrain: "ridge" }
   ];
+
+  var CONSTELLATION_DATA = [
+    {
+      id: "orion",
+      name: "Orion",
+      tag: "The Hunter",
+      hook: "Follow the hunter's belt where the first star finds its path home.",
+      palette: "neon",
+      stars: [
+        { name: "Betelgeuse", magnitude: 0.42 },
+        { name: "Bellatrix", magnitude: 1.64 },
+        { name: "Mintaka", magnitude: 2.23 },
+        { name: "Alnilam", magnitude: 1.69 },
+        { name: "Alnitak", magnitude: 1.74 },
+        { name: "Saiph", magnitude: 2.06 },
+        { name: "Rigel", magnitude: 0.13 }
+      ]
+    },
+    {
+      id: "ursa-major",
+      name: "Ursa Major",
+      tag: "The Great Bear",
+      hook: "Climb the bear's bright ladle across the northern sky.",
+      palette: "pulse",
+      stars: [
+        { name: "Dubhe", magnitude: 1.79 },
+        { name: "Merak", magnitude: 2.37 },
+        { name: "Phecda", magnitude: 2.44 },
+        { name: "Megrez", magnitude: 3.31 },
+        { name: "Alioth", magnitude: 1.76 },
+        { name: "Mizar", magnitude: 2.23 },
+        { name: "Alkaid", magnitude: 1.85 }
+      ]
+    },
+    {
+      id: "cassiopeia",
+      name: "Cassiopeia",
+      tag: "The Queen's W",
+      hook: "Trace the queen's jeweled crown through five turning lights.",
+      palette: "arc",
+      stars: [
+        { name: "Schedar", magnitude: 2.24 },
+        { name: "Caph", magnitude: 2.28 },
+        { name: "Gamma Cas", magnitude: 2.47 },
+        { name: "Ruchbah", magnitude: 2.68 },
+        { name: "Segin", magnitude: 3.35 }
+      ]
+    },
+    {
+      id: "cygnus",
+      name: "Cygnus",
+      tag: "The Swan",
+      hook: "Glide down the Northern Cross on the swan's silver wings.",
+      palette: "foundry",
+      stars: [
+        { name: "Deneb", magnitude: 1.25 },
+        { name: "Sadr", magnitude: 2.23 },
+        { name: "Gienah", magnitude: 2.48 },
+        { name: "Delta Cyg", magnitude: 2.87 },
+        { name: "Albireo", magnitude: 3.05 }
+      ]
+    },
+    {
+      id: "lyra",
+      name: "Lyra",
+      tag: "The Lyre",
+      hook: "Let Vega tune the small harp that sings the star onward.",
+      palette: "spiral",
+      stars: [
+        { name: "Vega", magnitude: 0.03 },
+        { name: "Sheliak", magnitude: 3.52 },
+        { name: "Sulafat", magnitude: 3.24 },
+        { name: "Delta Lyr", magnitude: 4.30 }
+      ]
+    },
+    {
+      id: "draco",
+      name: "Draco",
+      tag: "The Dragon",
+      hook: "Wind through the dragon's coil around the old pole star.",
+      palette: "choir",
+      stars: [
+        { name: "Thuban", magnitude: 3.65 },
+        { name: "Etamin", magnitude: 2.24 },
+        { name: "Rastaban", magnitude: 2.79 },
+        { name: "Eltanin", magnitude: 2.24 },
+        { name: "Grumium", magnitude: 3.75 },
+        { name: "Rastaban", magnitude: 2.79 },
+        { name: "Edasich", magnitude: 3.29 },
+        { name: "Aldib", magnitude: 3.17 }
+      ]
+    },
+    {
+      id: "leo",
+      name: "Leo",
+      tag: "The Lion",
+      hook: "Wake the lion's heart and leap from mane to tail.",
+      palette: "mirror",
+      stars: [
+        { name: "Regulus", magnitude: 1.35 },
+        { name: "Denebola", magnitude: 2.14 },
+        { name: "Algieba", magnitude: 2.08 },
+        { name: "Zosma", magnitude: 2.56 },
+        { name: "Chertan", magnitude: 3.33 },
+        { name: "Adhafera", magnitude: 3.44 }
+      ]
+    },
+    {
+      id: "scorpius",
+      name: "Scorpius",
+      tag: "The Scorpion",
+      hook: "Cross the scorpion's red heart and curling sting.",
+      palette: "nova",
+      stars: [
+        { name: "Antares", magnitude: 1.06 },
+        { name: "Shaula", magnitude: 1.62 },
+        { name: "Sargas", magnitude: 1.86 },
+        { name: "Dschubba", magnitude: 2.29 },
+        { name: "Acrab", magnitude: 2.62 },
+        { name: "Pi Sco", magnitude: 2.89 },
+        { name: "Tau Sco", magnitude: 2.82 },
+        { name: "Iota Sco", magnitude: 3.03 }
+      ]
+    },
+    {
+      id: "taurus",
+      name: "Taurus",
+      tag: "The Bull",
+      hook: "Pass the bull's ember eye and the clustered winter stars.",
+      palette: "drift",
+      stars: [
+        { name: "Aldebaran", magnitude: 0.85 },
+        { name: "Elnath", magnitude: 1.65 },
+        { name: "Alcyone", magnitude: 2.87 },
+        { name: "Hyadum", magnitude: 3.65 },
+        { name: "Ain", magnitude: 3.53 }
+      ]
+    },
+    {
+      id: "andromeda",
+      name: "Andromeda",
+      tag: "The Chained Princess",
+      hook: "Unbind the princess's lights on the road to a distant galaxy.",
+      palette: "reef",
+      stars: [
+        { name: "Alpheratz", magnitude: 2.06 },
+        { name: "Mirach", magnitude: 2.05 },
+        { name: "Almach", magnitude: 2.10 },
+        { name: "Delta And", magnitude: 3.27 },
+        { name: "Mu And", magnitude: 3.86 },
+        { name: "Nu And", magnitude: 4.53 }
+      ]
+    },
+    {
+      id: "perseus",
+      name: "Perseus",
+      tag: "The Hero",
+      hook: "Carry the hero's blade past Algol's watchful pulse.",
+      palette: "chrome",
+      stars: [
+        { name: "Mirfak", magnitude: 1.79 },
+        { name: "Algol", magnitude: 2.12 },
+        { name: "Atik", magnitude: 3.77 },
+        { name: "Zeta Per", magnitude: 2.84 },
+        { name: "Xi Per", magnitude: 4.04 },
+        { name: "Miram", magnitude: 3.77 },
+        { name: "Gamma Per", magnitude: 2.93 }
+      ]
+    },
+    {
+      id: "pegasus",
+      name: "Pegasus",
+      tag: "The Winged Horse",
+      hook: "Ride the great square and launch toward the open sky.",
+      palette: "solar",
+      stars: [
+        { name: "Markab", magnitude: 2.49 },
+        { name: "Scheat", magnitude: 2.42 },
+        { name: "Algenib", magnitude: 2.84 },
+        { name: "Enif", magnitude: 2.38 }
+      ]
+    },
+    {
+      id: "bootes",
+      name: "Bootes",
+      tag: "The Herdsman",
+      hook: "Let Arcturus lead the quiet keeper through spring's arc.",
+      palette: "circuit",
+      stars: [
+        { name: "Arcturus", magnitude: -0.05 },
+        { name: "Izar", magnitude: 2.35 },
+        { name: "Muphrid", magnitude: 2.68 },
+        { name: "Seginus", magnitude: 3.03 },
+        { name: "Nekkar", magnitude: 3.49 }
+      ]
+    },
+    {
+      id: "hercules",
+      name: "Hercules",
+      tag: "The Strong One",
+      hook: "Lift the giant's keystone and press through the trial of stars.",
+      palette: "bloom",
+      stars: [
+        { name: "Rasalgethi", magnitude: 3.48 },
+        { name: "Kornephoros", magnitude: 2.77 },
+        { name: "Zeta Her", magnitude: 2.81 },
+        { name: "Pi Her", magnitude: 3.16 },
+        { name: "Eta Her", magnitude: 3.49 },
+        { name: "Mu Her", magnitude: 3.42 }
+      ]
+    },
+    {
+      id: "sagittarius",
+      name: "Sagittarius",
+      tag: "The Archer",
+      hook: "Aim the teapot's arrow toward the bright core of the Milky Way.",
+      palette: "overdrive",
+      stars: [
+        { name: "Kaus Australis", magnitude: 1.85 },
+        { name: "Nunki", magnitude: 2.05 },
+        { name: "Kaus Media", magnitude: 2.70 },
+        { name: "Kaus Borealis", magnitude: 2.82 },
+        { name: "Ascella", magnitude: 2.60 },
+        { name: "Alnasl", magnitude: 2.99 },
+        { name: "Phi Sgr", magnitude: 3.17 },
+        { name: "Sigma Sgr", magnitude: 2.05 }
+      ]
+    },
+    {
+      id: "canis-major",
+      name: "Canis Major",
+      tag: "The Great Dog",
+      hook: "Run with Sirius, the brightest star, toward the last gate home.",
+      palette: "harmonic",
+      stars: [
+        { name: "Sirius", magnitude: -1.46 },
+        { name: "Adhara", magnitude: 1.50 },
+        { name: "Wezen", magnitude: 1.83 },
+        { name: "Mirzam", magnitude: 1.98 },
+        { name: "Aludra", magnitude: 2.45 }
+      ]
+    },
+    {
+      id: "aries",
+      name: "Aries",
+      tag: "The Ram",
+      hook: "Leap through the ram's quiet horns where spring begins.",
+      palette: "neon",
+      stars: [
+        { name: "Hamal", magnitude: 2.00 },
+        { name: "Sheratan", magnitude: 2.64 },
+        { name: "Mesarthim", magnitude: 3.86 },
+        { name: "Botein", magnitude: 4.35 }
+      ]
+    },
+    {
+      id: "gemini",
+      name: "Gemini",
+      tag: "The Twins",
+      hook: "Join the twin lights and carry one spark between two hearts.",
+      palette: "pulse",
+      stars: [
+        { name: "Pollux", magnitude: 1.14 },
+        { name: "Castor", magnitude: 1.58 },
+        { name: "Alhena", magnitude: 1.93 },
+        { name: "Wasat", magnitude: 3.53 },
+        { name: "Mebsuta", magnitude: 3.06 },
+        { name: "Mekbuda", magnitude: 4.01 }
+      ]
+    },
+    {
+      id: "cancer",
+      name: "Cancer",
+      tag: "The Crab",
+      hook: "Cross the soft shell around the Beehive's hidden glitter.",
+      palette: "arc",
+      stars: [
+        { name: "Acubens", magnitude: 4.25 },
+        { name: "Altarf", magnitude: 3.53 },
+        { name: "Asellus Borealis", magnitude: 4.66 },
+        { name: "Asellus Australis", magnitude: 3.94 },
+        { name: "Tegmine", magnitude: 4.67 }
+      ]
+    },
+    {
+      id: "virgo",
+      name: "Virgo",
+      tag: "The Maiden",
+      hook: "Follow Spica's blue grain through the harvest of stars.",
+      palette: "foundry",
+      stars: [
+        { name: "Spica", magnitude: 0.98 },
+        { name: "Porrima", magnitude: 2.74 },
+        { name: "Vindemiatrix", magnitude: 2.83 },
+        { name: "Heze", magnitude: 3.38 },
+        { name: "Zavijava", magnitude: 3.61 },
+        { name: "Syrma", magnitude: 4.08 }
+      ]
+    },
+    {
+      id: "libra",
+      name: "Libra",
+      tag: "The Scales",
+      hook: "Balance the two pans of dusk until the sky holds still.",
+      palette: "spiral",
+      stars: [
+        { name: "Zubenelgenubi", magnitude: 2.75 },
+        { name: "Zubeneschamali", magnitude: 2.61 },
+        { name: "Brachium", magnitude: 3.29 },
+        { name: "Zuben Elakrab", magnitude: 3.91 },
+        { name: "Upsilon Lib", magnitude: 3.60 }
+      ]
+    },
+    {
+      id: "capricornus",
+      name: "Capricornus",
+      tag: "The Sea-Goat",
+      hook: "Climb the sea-goat's dim stair from tide to mountain light.",
+      palette: "choir",
+      stars: [
+        { name: "Deneb Algedi", magnitude: 2.85 },
+        { name: "Dabih", magnitude: 3.05 },
+        { name: "Algedi", magnitude: 3.58 },
+        { name: "Nashira", magnitude: 3.69 },
+        { name: "Iota Cap", magnitude: 4.28 }
+      ]
+    },
+    {
+      id: "aquarius",
+      name: "Aquarius",
+      tag: "The Water Bearer",
+      hook: "Pour the star river from Sadalsuud to the waiting dark.",
+      palette: "mirror",
+      stars: [
+        { name: "Sadalsuud", magnitude: 2.91 },
+        { name: "Sadalmelik", magnitude: 2.95 },
+        { name: "Skat", magnitude: 3.27 },
+        { name: "Sadachbia", magnitude: 3.85 },
+        { name: "Albali", magnitude: 3.77 },
+        { name: "Ancha", magnitude: 4.16 }
+      ]
+    },
+    {
+      id: "pisces",
+      name: "Pisces",
+      tag: "The Fishes",
+      hook: "Tie the silver cord between two fishes swimming home.",
+      palette: "nova",
+      stars: [
+        { name: "Alrescha", magnitude: 3.82 },
+        { name: "Fumalsamakah", magnitude: 4.49 },
+        { name: "Delta Psc", magnitude: 4.44 },
+        { name: "Epsilon Psc", magnitude: 4.28 },
+        { name: "Omega Psc", magnitude: 4.03 }
+      ]
+    },
+    {
+      id: "ursa-minor",
+      name: "Ursa Minor",
+      tag: "The Little Bear",
+      hook: "Circle the little bear and touch the nail of the north.",
+      palette: "drift",
+      stars: [
+        { name: "Polaris", magnitude: 1.98 },
+        { name: "Kochab", magnitude: 2.08 },
+        { name: "Pherkad", magnitude: 3.05 },
+        { name: "Yildun", magnitude: 4.36 },
+        { name: "Akhfa al Farkadain", magnitude: 4.95 }
+      ]
+    },
+    {
+      id: "cepheus",
+      name: "Cepheus",
+      tag: "The King",
+      hook: "Raise the king's house beside the turning pole.",
+      palette: "reef",
+      stars: [
+        { name: "Alderamin", magnitude: 2.45 },
+        { name: "Alfirk", magnitude: 3.23 },
+        { name: "Errai", magnitude: 3.21 },
+        { name: "Delta Cep", magnitude: 4.07 },
+        { name: "Mu Cep", magnitude: 4.23 }
+      ]
+    },
+    {
+      id: "aquila",
+      name: "Aquila",
+      tag: "The Eagle",
+      hook: "Ride Altair's wingbeat over the summer river.",
+      palette: "chrome",
+      stars: [
+        { name: "Altair", magnitude: 0.77 },
+        { name: "Tarazed", magnitude: 2.72 },
+        { name: "Alshain", magnitude: 3.71 },
+        { name: "Deneb el Okab", magnitude: 2.99 },
+        { name: "Bezek", magnitude: 3.43 }
+      ]
+    },
+    {
+      id: "corona-borealis",
+      name: "Corona Borealis",
+      tag: "The Northern Crown",
+      hook: "Set seven jewels in the crown above the herdsman.",
+      palette: "solar",
+      stars: [
+        { name: "Alphecca", magnitude: 2.22 },
+        { name: "Nusakan", magnitude: 3.66 },
+        { name: "Gamma CrB", magnitude: 3.84 },
+        { name: "Delta CrB", magnitude: 4.63 },
+        { name: "Theta CrB", magnitude: 4.13 }
+      ]
+    },
+    {
+      id: "crux",
+      name: "Crux",
+      tag: "The Southern Cross",
+      hook: "Stand in the small cross that points through southern night.",
+      palette: "circuit",
+      stars: [
+        { name: "Acrux", magnitude: 0.76 },
+        { name: "Mimosa", magnitude: 1.25 },
+        { name: "Gacrux", magnitude: 1.59 },
+        { name: "Imai", magnitude: 2.79 },
+        { name: "Ginan", magnitude: 3.58 }
+      ]
+    },
+    {
+      id: "centaurus",
+      name: "Centaurus",
+      tag: "The Centaur",
+      hook: "Follow the centaur's hooves toward our nearest sun.",
+      palette: "bloom",
+      stars: [
+        { name: "Alpha Centauri", magnitude: -0.27 },
+        { name: "Hadar", magnitude: 0.61 },
+        { name: "Menkent", magnitude: 2.06 },
+        { name: "Muhlifain", magnitude: 2.90 },
+        { name: "Agena", magnitude: 0.61 },
+        { name: "Rigil Kentaurus", magnitude: -0.27 }
+      ]
+    },
+    {
+      id: "carina",
+      name: "Carina",
+      tag: "The Keel",
+      hook: "Sail the keel where Canopus burns over black water.",
+      palette: "overdrive",
+      stars: [
+        { name: "Canopus", magnitude: -0.74 },
+        { name: "Miaplacidus", magnitude: 1.67 },
+        { name: "Avior", magnitude: 1.86 },
+        { name: "Aspidiske", magnitude: 2.21 },
+        { name: "Theta Car", magnitude: 2.76 },
+        { name: "Eta Carinae", magnitude: 4.30 }
+      ]
+    },
+    {
+      id: "vela",
+      name: "Vela",
+      tag: "The Sails",
+      hook: "Fill the torn sails with a warm southern wind.",
+      palette: "harmonic",
+      stars: [
+        { name: "Suhail", magnitude: 1.83 },
+        { name: "Gamma Vel", magnitude: 1.78 },
+        { name: "Delta Vel", magnitude: 1.95 },
+        { name: "Markeb", magnitude: 2.47 },
+        { name: "Alsephina", magnitude: 1.99 }
+      ]
+    },
+    {
+      id: "puppis",
+      name: "Puppis",
+      tag: "The Stern",
+      hook: "Steer the old ship by Naos and the stern lanterns.",
+      palette: "neon",
+      stars: [
+        { name: "Naos", magnitude: 2.21 },
+        { name: "Pi Pup", magnitude: 2.70 },
+        { name: "Rho Pup", magnitude: 2.81 },
+        { name: "Tau Pup", magnitude: 2.94 },
+        { name: "Nu Pup", magnitude: 3.17 }
+      ]
+    },
+    {
+      id: "canis-minor",
+      name: "Canis Minor",
+      tag: "The Little Dog",
+      hook: "Let Procyon run ahead with the dawn in its mouth.",
+      palette: "pulse",
+      stars: [
+        { name: "Procyon", magnitude: 0.34 },
+        { name: "Gomeisa", magnitude: 2.89 },
+        { name: "Gamma CMi", magnitude: 4.33 },
+        { name: "Epsilon CMi", magnitude: 4.99 }
+      ]
+    },
+    {
+      id: "phoenix",
+      name: "Phoenix",
+      tag: "The Firebird",
+      hook: "Rise from the ember nest on wings of southern gold.",
+      palette: "arc",
+      stars: [
+        { name: "Ankaa", magnitude: 2.40 },
+        { name: "Beta Phe", magnitude: 3.32 },
+        { name: "Gamma Phe", magnitude: 3.41 },
+        { name: "Wurren", magnitude: 3.92 },
+        { name: "Zeta Phe", magnitude: 3.94 }
+      ]
+    },
+    {
+      id: "grus",
+      name: "Grus",
+      tag: "The Crane",
+      hook: "Step with the crane through a quiet southern marsh of stars.",
+      palette: "foundry",
+      stars: [
+        { name: "Alnair", magnitude: 1.74 },
+        { name: "Beta Gru", magnitude: 2.07 },
+        { name: "Gamma Gru", magnitude: 3.00 },
+        { name: "Delta Gru", magnitude: 3.97 },
+        { name: "Aldhanab", magnitude: 3.49 }
+      ]
+    },
+    {
+      id: "tucana",
+      name: "Tucana",
+      tag: "The Toucan",
+      hook: "Find the jeweled beak beside the small cloud of stars.",
+      palette: "spiral",
+      stars: [
+        { name: "Alpha Tuc", magnitude: 2.87 },
+        { name: "Gamma Tuc", magnitude: 3.99 },
+        { name: "Zeta Tuc", magnitude: 4.23 },
+        { name: "Beta Tuc", magnitude: 4.37 },
+        { name: "Epsilon Tuc", magnitude: 4.49 }
+      ]
+    },
+    {
+      id: "hydrus",
+      name: "Hydrus",
+      tag: "The Water Snake",
+      hook: "Slip along the little water snake beneath the pole.",
+      palette: "choir",
+      stars: [
+        { name: "Beta Hyi", magnitude: 2.80 },
+        { name: "Alpha Hyi", magnitude: 2.90 },
+        { name: "Gamma Hyi", magnitude: 3.24 },
+        { name: "Delta Hyi", magnitude: 4.09 }
+      ]
+    },
+    {
+      id: "pavo",
+      name: "Pavo",
+      tag: "The Peacock",
+      hook: "Open the peacock's jeweled fan in the deep south.",
+      palette: "mirror",
+      stars: [
+        { name: "Peacock", magnitude: 1.94 },
+        { name: "Beta Pav", magnitude: 3.42 },
+        { name: "Delta Pav", magnitude: 3.56 },
+        { name: "Eta Pav", magnitude: 3.61 },
+        { name: "Xi Pav", magnitude: 4.35 }
+      ]
+    },
+    {
+      id: "indus",
+      name: "Indus",
+      tag: "The River Guide",
+      hook: "Follow the quiet guide at the edge of the southern river.",
+      palette: "nova",
+      stars: [
+        { name: "Alpha Ind", magnitude: 3.11 },
+        { name: "Beta Ind", magnitude: 3.65 },
+        { name: "Theta Ind", magnitude: 4.39 },
+        { name: "Delta Ind", magnitude: 4.40 },
+        { name: "Epsilon Ind", magnitude: 4.69 }
+      ]
+    },
+    {
+      id: "lupus",
+      name: "Lupus",
+      tag: "The Wolf",
+      hook: "Cross the wolf's bright paws under the centaur's guard.",
+      palette: "drift",
+      stars: [
+        { name: "Alpha Lup", magnitude: 2.30 },
+        { name: "Beta Lup", magnitude: 2.68 },
+        { name: "Gamma Lup", magnitude: 2.77 },
+        { name: "Delta Lup", magnitude: 3.22 },
+        { name: "Epsilon Lup", magnitude: 3.37 }
+      ]
+    },
+    {
+      id: "ara",
+      name: "Ara",
+      tag: "The Altar",
+      hook: "Light the altar flame beneath the scorpion's tail.",
+      palette: "reef",
+      stars: [
+        { name: "Beta Ara", magnitude: 2.84 },
+        { name: "Alpha Ara", magnitude: 2.95 },
+        { name: "Zeta Ara", magnitude: 3.13 },
+        { name: "Gamma Ara", magnitude: 3.34 },
+        { name: "Delta Ara", magnitude: 3.60 }
+      ]
+    },
+    {
+      id: "triangulum-australe",
+      name: "Triangulum Australe",
+      tag: "The Southern Triangle",
+      hook: "Draw the southern triangle with three clean strokes of fire.",
+      palette: "chrome",
+      stars: [
+        { name: "Atria", magnitude: 1.91 },
+        { name: "Beta TrA", magnitude: 2.85 },
+        { name: "Gamma TrA", magnitude: 2.87 },
+        { name: "Delta TrA", magnitude: 3.86 }
+      ]
+    },
+    {
+      id: "musca",
+      name: "Musca",
+      tag: "The Fly",
+      hook: "Chase the small fly glittering below the cross.",
+      palette: "solar",
+      stars: [
+        { name: "Alpha Mus", magnitude: 2.69 },
+        { name: "Beta Mus", magnitude: 3.05 },
+        { name: "Delta Mus", magnitude: 3.62 },
+        { name: "Lambda Mus", magnitude: 3.68 },
+        { name: "Gamma Mus", magnitude: 3.84 }
+      ]
+    },
+    {
+      id: "chamaeleon",
+      name: "Chamaeleon",
+      tag: "The Chameleon",
+      hook: "Change colors with the chameleon under the southern pole.",
+      palette: "circuit",
+      stars: [
+        { name: "Alpha Cha", magnitude: 4.05 },
+        { name: "Gamma Cha", magnitude: 4.11 },
+        { name: "Beta Cha", magnitude: 4.24 },
+        { name: "Delta Cha", magnitude: 4.45 }
+      ]
+    },
+    {
+      id: "volans",
+      name: "Volans",
+      tag: "The Flying Fish",
+      hook: "Skim the flying fish over a dark southern sea.",
+      palette: "bloom",
+      stars: [
+        { name: "Beta Vol", magnitude: 3.77 },
+        { name: "Gamma Vol", magnitude: 3.78 },
+        { name: "Zeta Vol", magnitude: 3.93 },
+        { name: "Delta Vol", magnitude: 3.97 },
+        { name: "Alpha Vol", magnitude: 4.00 }
+      ]
+    },
+    {
+      id: "apus",
+      name: "Apus",
+      tag: "The Bird of Paradise",
+      hook: "Follow the bird with no feet into the violet polelight.",
+      palette: "overdrive",
+      stars: [
+        { name: "Alpha Aps", magnitude: 3.83 },
+        { name: "Gamma Aps", magnitude: 3.86 },
+        { name: "Beta Aps", magnitude: 4.24 },
+        { name: "Delta Aps", magnitude: 4.68 }
+      ]
+    },
+    {
+      id: "antlia",
+      name: "Antlia",
+      tag: "The Air Pump",
+      hook: "Breathe a faint machine-star back to life.",
+      palette: "harmonic",
+      stars: [
+        { name: "Alpha Ant", magnitude: 4.25 },
+        { name: "Epsilon Ant", magnitude: 4.51 },
+        { name: "Iota Ant", magnitude: 4.60 },
+        { name: "Theta Ant", magnitude: 4.78 }
+      ]
+    },
+    {
+      id: "caelum",
+      name: "Caelum",
+      tag: "The Chisel",
+      hook: "Carve a tiny spark from the cold dark stone.",
+      palette: "neon",
+      stars: [
+        { name: "Alpha Cae", magnitude: 4.44 },
+        { name: "Gamma Cae", magnitude: 4.55 },
+        { name: "Beta Cae", magnitude: 5.05 }
+      ]
+    },
+    {
+      id: "camelopardalis",
+      name: "Camelopardalis",
+      tag: "The Giraffe",
+      hook: "Climb the long dim neck to a hidden northern lantern.",
+      palette: "pulse",
+      stars: [
+        { name: "Beta Cam", magnitude: 4.03 },
+        { name: "CS Cam", magnitude: 4.21 },
+        { name: "Alpha Cam", magnitude: 4.29 },
+        { name: "BE Cam", magnitude: 4.39 },
+        { name: "Gamma Cam", magnitude: 4.66 }
+      ]
+    },
+    {
+      id: "canes-venatici",
+      name: "Canes Venatici",
+      tag: "The Hunting Dogs",
+      hook: "Unleash the two hounds beneath the Great Bear.",
+      palette: "arc",
+      stars: [
+        { name: "Cor Caroli", magnitude: 2.89 },
+        { name: "Chara", magnitude: 4.26 },
+        { name: "La Superba", magnitude: 5.42 },
+        { name: "AM CVn", magnitude: 5.10 }
+      ]
+    },
+    {
+      id: "circinus",
+      name: "Circinus",
+      tag: "The Compass",
+      hook: "Set the compass point and draw a circle of light.",
+      palette: "foundry",
+      stars: [
+        { name: "Alpha Cir", magnitude: 3.19 },
+        { name: "Beta Cir", magnitude: 4.07 },
+        { name: "Gamma Cir", magnitude: 4.51 },
+        { name: "Delta Cir", magnitude: 5.09 }
+      ]
+    },
+    {
+      id: "columba",
+      name: "Columba",
+      tag: "The Dove",
+      hook: "Carry the dove's small branch over winter water.",
+      palette: "spiral",
+      stars: [
+        { name: "Phact", magnitude: 2.65 },
+        { name: "Wazn", magnitude: 3.12 },
+        { name: "Gamma Col", magnitude: 4.35 },
+        { name: "Delta Col", magnitude: 3.85 },
+        { name: "Epsilon Col", magnitude: 3.86 }
+      ]
+    },
+    {
+      id: "coma-berenices",
+      name: "Coma Berenices",
+      tag: "Berenice's Hair",
+      hook: "Comb the queen's faint hair into a galaxy veil.",
+      palette: "choir",
+      stars: [
+        { name: "Diadem", magnitude: 4.32 },
+        { name: "Beta Com", magnitude: 4.26 },
+        { name: "Gamma Com", magnitude: 4.36 },
+        { name: "FK Com", magnitude: 8.14 }
+      ]
+    },
+    {
+      id: "corona-australis",
+      name: "Corona Australis",
+      tag: "The Southern Crown",
+      hook: "Set the southern crown low in the Milky Way mist.",
+      palette: "mirror",
+      stars: [
+        { name: "Meridiana", magnitude: 4.10 },
+        { name: "Beta CrA", magnitude: 4.11 },
+        { name: "Gamma CrA", magnitude: 4.23 },
+        { name: "Delta CrA", magnitude: 4.57 }
+      ]
+    },
+    {
+      id: "corvus",
+      name: "Corvus",
+      tag: "The Crow",
+      hook: "Let the crow hop from wing to wing above the cup.",
+      palette: "nova",
+      stars: [
+        { name: "Gienah Ghurab", magnitude: 2.59 },
+        { name: "Kraz", magnitude: 2.65 },
+        { name: "Algorab", magnitude: 2.94 },
+        { name: "Minkar", magnitude: 3.02 },
+        { name: "Alchiba", magnitude: 4.02 }
+      ]
+    },
+    {
+      id: "crater",
+      name: "Crater",
+      tag: "The Cup",
+      hook: "Fill the cup with starlight before it spills.",
+      palette: "drift",
+      stars: [
+        { name: "Delta Crt", magnitude: 3.56 },
+        { name: "Alkes", magnitude: 4.08 },
+        { name: "Gamma Crt", magnitude: 4.06 },
+        { name: "Beta Crt", magnitude: 4.46 },
+        { name: "Epsilon Crt", magnitude: 4.83 }
+      ]
+    },
+    {
+      id: "delphinus",
+      name: "Delphinus",
+      tag: "The Dolphin",
+      hook: "Arc with the dolphin through a small diamond sea.",
+      palette: "reef",
+      stars: [
+        { name: "Rotanev", magnitude: 3.63 },
+        { name: "Sualocin", magnitude: 3.77 },
+        { name: "Gamma Del", magnitude: 4.27 },
+        { name: "Delta Del", magnitude: 4.43 },
+        { name: "Deneb Dulfim", magnitude: 4.03 }
+      ]
+    },
+    {
+      id: "dorado",
+      name: "Dorado",
+      tag: "The Goldfish",
+      hook: "Swim past the goldfish toward the cloud of creation.",
+      palette: "chrome",
+      stars: [
+        { name: "Alpha Dor", magnitude: 3.27 },
+        { name: "Beta Dor", magnitude: 3.76 },
+        { name: "Gamma Dor", magnitude: 4.25 },
+        { name: "Delta Dor", magnitude: 4.34 }
+      ]
+    },
+    {
+      id: "equuleus",
+      name: "Equuleus",
+      tag: "The Little Horse",
+      hook: "Trot the little horse across four shy sparks.",
+      palette: "solar",
+      stars: [
+        { name: "Kitalpha", magnitude: 3.92 },
+        { name: "Delta Equ", magnitude: 4.49 },
+        { name: "Gamma Equ", magnitude: 4.70 },
+        { name: "Beta Equ", magnitude: 5.16 }
+      ]
+    },
+    {
+      id: "eridanus",
+      name: "Eridanus",
+      tag: "The River",
+      hook: "Drift down the long river from Cursa to Achernar.",
+      palette: "circuit",
+      stars: [
+        { name: "Achernar", magnitude: 0.46 },
+        { name: "Cursa", magnitude: 2.79 },
+        { name: "Zaurak", magnitude: 2.95 },
+        { name: "Rana", magnitude: 3.54 },
+        { name: "Acamar", magnitude: 2.88 },
+        { name: "Beid", magnitude: 4.04 }
+      ]
+    },
+    {
+      id: "fornax",
+      name: "Fornax",
+      tag: "The Furnace",
+      hook: "Stoke the small furnace until cold dust glows.",
+      palette: "bloom",
+      stars: [
+        { name: "Dalim", magnitude: 3.85 },
+        { name: "Beta For", magnitude: 4.46 },
+        { name: "Nu For", magnitude: 4.69 },
+        { name: "Omega For", magnitude: 4.90 }
+      ]
+    },
+    {
+      id: "horologium",
+      name: "Horologium",
+      tag: "The Clock",
+      hook: "Tick the faint clock through one more midnight.",
+      palette: "overdrive",
+      stars: [
+        { name: "Alpha Hor", magnitude: 3.85 },
+        { name: "Beta Hor", magnitude: 4.98 },
+        { name: "Delta Hor", magnitude: 4.93 },
+        { name: "Iota Hor", magnitude: 5.40 }
+      ]
+    },
+    {
+      id: "hydra",
+      name: "Hydra",
+      tag: "The Water Serpent",
+      hook: "Follow the long serpent from heart to tail.",
+      palette: "harmonic",
+      stars: [
+        { name: "Alphard", magnitude: 1.98 },
+        { name: "Gamma Hya", magnitude: 2.99 },
+        { name: "Zeta Hya", magnitude: 3.10 },
+        { name: "Nu Hya", magnitude: 3.11 },
+        { name: "Pi Hya", magnitude: 3.25 },
+        { name: "Epsilon Hya", magnitude: 3.38 }
+      ]
+    },
+    {
+      id: "lacerta",
+      name: "Lacerta",
+      tag: "The Lizard",
+      hook: "Dart through the lizard's zigzag between bright birds.",
+      palette: "neon",
+      stars: [
+        { name: "Alpha Lac", magnitude: 3.76 },
+        { name: "Beta Lac", magnitude: 4.43 },
+        { name: "EV Lac", magnitude: 10.09 },
+        { name: "Roe Lac", magnitude: 4.88 }
+      ]
+    },
+    {
+      id: "leo-minor",
+      name: "Leo Minor",
+      tag: "The Little Lion",
+      hook: "Pad with the little lion through a sparse northern den.",
+      palette: "pulse",
+      stars: [
+        { name: "Praecipua", magnitude: 3.83 },
+        { name: "Beta LMi", magnitude: 4.20 },
+        { name: "21 LMi", magnitude: 4.49 },
+        { name: "10 LMi", magnitude: 4.55 }
+      ]
+    },
+    {
+      id: "lepus",
+      name: "Lepus",
+      tag: "The Hare",
+      hook: "Race the hare below Orion before dawn catches it.",
+      palette: "arc",
+      stars: [
+        { name: "Arneb", magnitude: 2.58 },
+        { name: "Nihal", magnitude: 2.84 },
+        { name: "Gamma Lep", magnitude: 3.59 },
+        { name: "Delta Lep", magnitude: 3.76 },
+        { name: "Epsilon Lep", magnitude: 3.19 }
+      ]
+    },
+    {
+      id: "lynx",
+      name: "Lynx",
+      tag: "The Lynx",
+      hook: "Use lynx eyes to find the dim path between bears.",
+      palette: "foundry",
+      stars: [
+        { name: "Alpha Lyn", magnitude: 3.14 },
+        { name: "38 Lyn", magnitude: 3.82 },
+        { name: "10 UMa", magnitude: 3.96 },
+        { name: "31 Lyn", magnitude: 4.25 }
+      ]
+    },
+    {
+      id: "mensa",
+      name: "Mensa",
+      tag: "The Table Mountain",
+      hook: "Stand on the table mountain under the southern cloud.",
+      palette: "spiral",
+      stars: [
+        { name: "Alpha Men", magnitude: 5.09 },
+        { name: "Gamma Men", magnitude: 5.19 },
+        { name: "Beta Men", magnitude: 5.31 },
+        { name: "Eta Men", magnitude: 5.47 }
+      ]
+    },
+    {
+      id: "microscopium",
+      name: "Microscopium",
+      tag: "The Microscope",
+      hook: "Magnify a handful of sparks into a tiny universe.",
+      palette: "choir",
+      stars: [
+        { name: "Gamma Mic", magnitude: 4.67 },
+        { name: "Epsilon Mic", magnitude: 4.71 },
+        { name: "Theta Mic", magnitude: 4.82 },
+        { name: "Alpha Mic", magnitude: 4.90 }
+      ]
+    },
+    {
+      id: "monoceros",
+      name: "Monoceros",
+      tag: "The Unicorn",
+      hook: "Follow the unicorn's horn through winter's Milky Way.",
+      palette: "mirror",
+      stars: [
+        { name: "Beta Mon", magnitude: 3.76 },
+        { name: "Alpha Mon", magnitude: 3.94 },
+        { name: "Gamma Mon", magnitude: 3.98 },
+        { name: "Delta Mon", magnitude: 4.15 },
+        { name: "Epsilon Mon", magnitude: 4.39 }
+      ]
+    },
+    {
+      id: "norma",
+      name: "Norma",
+      tag: "The Level",
+      hook: "Square the carpenter's level against the galactic dust.",
+      palette: "nova",
+      stars: [
+        { name: "Gamma2 Nor", magnitude: 4.02 },
+        { name: "Epsilon Nor", magnitude: 4.47 },
+        { name: "Iota1 Nor", magnitude: 4.63 },
+        { name: "Eta Nor", magnitude: 4.65 }
+      ]
+    },
+    {
+      id: "octans",
+      name: "Octans",
+      tag: "The Octant",
+      hook: "Measure the silent pole with an old navigator's arc.",
+      palette: "drift",
+      stars: [
+        { name: "Nu Oct", magnitude: 3.76 },
+        { name: "Beta Oct", magnitude: 4.14 },
+        { name: "Delta Oct", magnitude: 4.32 },
+        { name: "Sigma Oct", magnitude: 5.42 }
+      ]
+    },
+    {
+      id: "ophiuchus",
+      name: "Ophiuchus",
+      tag: "The Serpent Bearer",
+      hook: "Lift the serpent bearer between two coils of night.",
+      palette: "reef",
+      stars: [
+        { name: "Rasalhague", magnitude: 2.07 },
+        { name: "Sabik", magnitude: 2.43 },
+        { name: "Cebalrai", magnitude: 2.76 },
+        { name: "Yed Prior", magnitude: 2.73 },
+        { name: "Yed Posterior", magnitude: 3.24 },
+        { name: "Marfik", magnitude: 3.82 }
+      ]
+    },
+    {
+      id: "pictor",
+      name: "Pictor",
+      tag: "The Painter's Easel",
+      hook: "Paint a new star on the easel's tilted frame.",
+      palette: "chrome",
+      stars: [
+        { name: "Alpha Pic", magnitude: 3.27 },
+        { name: "Beta Pic", magnitude: 3.86 },
+        { name: "Gamma Pic", magnitude: 4.50 },
+        { name: "Delta Pic", magnitude: 4.72 }
+      ]
+    },
+    {
+      id: "piscis-austrinus",
+      name: "Piscis Austrinus",
+      tag: "The Southern Fish",
+      hook: "Drink Fomalhaut's single bright drop from the stream.",
+      palette: "solar",
+      stars: [
+        { name: "Fomalhaut", magnitude: 1.16 },
+        { name: "Epsilon PsA", magnitude: 4.17 },
+        { name: "Delta PsA", magnitude: 4.20 },
+        { name: "Beta PsA", magnitude: 4.29 },
+        { name: "Gamma PsA", magnitude: 4.46 }
+      ]
+    },
+    {
+      id: "pyxis",
+      name: "Pyxis",
+      tag: "The Compass Box",
+      hook: "Open the mariner's compass and choose the homeward mark.",
+      palette: "circuit",
+      stars: [
+        { name: "Alpha Pyx", magnitude: 3.68 },
+        { name: "Beta Pyx", magnitude: 3.97 },
+        { name: "Gamma Pyx", magnitude: 4.02 },
+        { name: "Kappa Pyx", magnitude: 4.62 }
+      ]
+    },
+    {
+      id: "reticulum",
+      name: "Reticulum",
+      tag: "The Net",
+      hook: "Catch the faint sparks in a diamond net.",
+      palette: "bloom",
+      stars: [
+        { name: "Alpha Ret", magnitude: 3.35 },
+        { name: "Beta Ret", magnitude: 3.84 },
+        { name: "Epsilon Ret", magnitude: 4.44 },
+        { name: "Gamma Ret", magnitude: 4.51 }
+      ]
+    },
+    {
+      id: "sagitta",
+      name: "Sagitta",
+      tag: "The Arrow",
+      hook: "Loose the small arrow between eagle and swan.",
+      palette: "overdrive",
+      stars: [
+        { name: "Gamma Sge", magnitude: 3.47 },
+        { name: "Delta Sge", magnitude: 3.68 },
+        { name: "Alpha Sge", magnitude: 4.37 },
+        { name: "Beta Sge", magnitude: 4.38 }
+      ]
+    },
+    {
+      id: "scutum",
+      name: "Scutum",
+      tag: "The Shield",
+      hook: "Raise the shield in the star cloud's bronze glow.",
+      palette: "harmonic",
+      stars: [
+        { name: "Alpha Sct", magnitude: 3.85 },
+        { name: "Beta Sct", magnitude: 4.22 },
+        { name: "Gamma Sct", magnitude: 4.67 },
+        { name: "Delta Sct", magnitude: 4.72 }
+      ]
+    },
+    {
+      id: "serpens",
+      name: "Serpens",
+      tag: "The Serpent",
+      hook: "Thread the divided serpent through the healer's hands.",
+      palette: "neon",
+      stars: [
+        { name: "Unukalhai", magnitude: 2.63 },
+        { name: "Eta Ser", magnitude: 3.26 },
+        { name: "Mu Ser", magnitude: 3.54 },
+        { name: "Beta Ser", magnitude: 3.65 },
+        { name: "Delta Ser", magnitude: 3.80 }
+      ]
+    },
+    {
+      id: "sextans",
+      name: "Sextans",
+      tag: "The Sextant",
+      hook: "Take one last angle from the quiet equator.",
+      palette: "pulse",
+      stars: [
+        { name: "Alpha Sex", magnitude: 4.49 },
+        { name: "Beta Sex", magnitude: 5.07 },
+        { name: "Gamma Sex", magnitude: 5.07 },
+        { name: "Delta Sex", magnitude: 5.19 }
+      ]
+    },
+    {
+      id: "telescopium",
+      name: "Telescopium",
+      tag: "The Telescope",
+      hook: "Aim the telescope beyond the final visible spark.",
+      palette: "arc",
+      stars: [
+        { name: "Alpha Tel", magnitude: 3.49 },
+        { name: "Zeta Tel", magnitude: 4.10 },
+        { name: "Epsilon Tel", magnitude: 4.52 },
+        { name: "Lambda Tel", magnitude: 4.87 }
+      ]
+    },
+    {
+      id: "triangulum",
+      name: "Triangulum",
+      tag: "The Triangle",
+      hook: "Close the little triangle above the fishes.",
+      palette: "foundry",
+      stars: [
+        { name: "Mothallah", magnitude: 3.00 },
+        { name: "Beta Tri", magnitude: 3.00 },
+        { name: "Gamma Tri", magnitude: 4.01 },
+        { name: "Delta Tri", magnitude: 4.84 }
+      ]
+    },
+    {
+      id: "vulpecula",
+      name: "Vulpecula",
+      tag: "The Little Fox",
+      hook: "Let the little fox slip through the summer starfield.",
+      palette: "spiral",
+      stars: [
+        { name: "Anser", magnitude: 4.44 },
+        { name: "23 Vul", magnitude: 4.52 },
+        { name: "13 Vul", magnitude: 4.57 },
+        { name: "31 Vul", magnitude: 4.59 }
+      ]
+    },
+    {
+      id: "auriga",
+      name: "Auriga",
+      tag: "The Charioteer",
+      hook: "Wheel the charioteer past Capella's golden lantern.",
+      palette: "choir",
+      stars: [
+        { name: "Capella", magnitude: 0.08 },
+        { name: "Menkalinan", magnitude: 1.90 },
+        { name: "Mahasim", magnitude: 2.65 },
+        { name: "Hassaleh", magnitude: 2.69 },
+        { name: "Almaaz", magnitude: 3.03 }
+      ]
+    },
+    {
+      id: "cetus",
+      name: "Cetus",
+      tag: "The Sea Monster",
+      hook: "Cross the whale's abyss from Diphda to Mira's pulse.",
+      palette: "mirror",
+      stars: [
+        { name: "Diphda", magnitude: 2.04 },
+        { name: "Menkar", magnitude: 2.54 },
+        { name: "Mira", magnitude: 3.04 },
+        { name: "Baten Kaitos", magnitude: 3.73 },
+        { name: "Kaffaljidhma", magnitude: 3.47 }
+      ]
+    },
+    {
+      id: "sculptor",
+      name: "Sculptor",
+      tag: "The Sculptor",
+      hook: "Shape the last dim marble into a door of stars.",
+      palette: "nova",
+      stars: [
+        { name: "Alpha Scl", magnitude: 4.30 },
+        { name: "Beta Scl", magnitude: 4.37 },
+        { name: "Gamma Scl", magnitude: 4.41 },
+        { name: "Delta Scl", magnitude: 4.59 }
+      ]
+    }
+  ];
+
+  function getConstellationData(episode) {
+    var index = Math.max(0, Math.floor((episode || 1) - 1));
+    return CONSTELLATION_DATA[index] || CONSTELLATION_DATA[0];
+  }
+
+  function getConstellationLevelCount(episode) {
+    var data = getConstellationData(episode);
+    return Math.max(1, data && data.stars ? data.stars.length : 1);
+  }
+
+  function getCampaignEpisodeCount() {
+    return CONSTELLATION_DATA.length;
+  }
+
+  function getCampaignLevelCount() {
+    var total = 0;
+    for (var i = 0; i < CONSTELLATION_DATA.length; i += 1) {
+      total += Math.max(1, CONSTELLATION_DATA[i].stars ? CONSTELLATION_DATA[i].stars.length : 1);
+    }
+    return total;
+  }
+
+  function getEpisodeStartLevel(episode) {
+    var start = 1;
+    var maxEpisode = Math.max(1, Math.min(getCampaignEpisodeCount(), Math.floor(episode || 1)));
+    for (var i = 1; i < maxEpisode; i += 1) start += getConstellationLevelCount(i);
+    return start;
+  }
+
+  function getEpisodeLevelRange(episode) {
+    var start = getEpisodeStartLevel(episode);
+    var count = getConstellationLevelCount(episode);
+    return { start: start, end: start + count - 1, count: count };
+  }
+
+  function getEpisodeForLevelNumber(number) {
+    var target = Math.max(1, Math.floor(number || 1));
+    var start = 1;
+    for (var episode = 1; episode <= getCampaignEpisodeCount(); episode += 1) {
+      var count = getConstellationLevelCount(episode);
+      if (target < start + count) return episode;
+      start += count;
+    }
+    return getCampaignEpisodeCount();
+  }
+
+  function getChapterLevelForNumber(number) {
+    var episode = getEpisodeForLevelNumber(number);
+    return Math.max(1, Math.floor(number || 1) - getEpisodeStartLevel(episode) + 1);
+  }
+
+  function isConstellationFinaleNumber(number) {
+    var episode = getEpisodeForLevelNumber(number);
+    return Math.floor(number || 0) === getEpisodeLevelRange(episode).end;
+  }
+
+  function getConstellationDifficulty(episode, chapterLevel, levelsInEpisode) {
+    var index = Math.max(0, Math.floor((episode || 1) - 1));
+    var local = levelsInEpisode <= 1 ? 0 : (Math.max(1, chapterLevel) - 1) / (levelsInEpisode - 1);
+    if (index < 27) {
+      return 1 + Math.floor((index / 27) * 5) + Math.floor(local * 2);
+    }
+    if (index < 47) {
+      return 6 + Math.floor(((index - 27) / 20) * 5) + Math.floor(local * 2);
+    }
+    return 11 + Math.floor(((index - 47) / Math.max(1, getCampaignEpisodeCount() - 47)) * 7) + Math.floor(local * 3);
+  }
+
+  var LEVEL_BEAT = {
+    ARRIVAL: "arrival",
+    PRACTICE: "practice",
+    TWIST: "twist",
+    TEST: "test",
+    RELIEF: "relief",
+    FINALE: "finale"
+  };
+
+  function getConstellationPacing(episode, levelCount) {
+    var count = Math.max(1, Math.floor(levelCount || getConstellationLevelCount(episode)));
+    if (count === 3) return [LEVEL_BEAT.ARRIVAL, LEVEL_BEAT.TWIST, LEVEL_BEAT.FINALE];
+    if (count === 4) return [LEVEL_BEAT.ARRIVAL, LEVEL_BEAT.PRACTICE, LEVEL_BEAT.TEST, LEVEL_BEAT.FINALE];
+    if (count === 5) return [LEVEL_BEAT.ARRIVAL, LEVEL_BEAT.PRACTICE, LEVEL_BEAT.TWIST, LEVEL_BEAT.RELIEF, LEVEL_BEAT.FINALE];
+    if (count === 6) return [LEVEL_BEAT.ARRIVAL, LEVEL_BEAT.PRACTICE, LEVEL_BEAT.TWIST, LEVEL_BEAT.TEST, LEVEL_BEAT.RELIEF, LEVEL_BEAT.FINALE];
+    return [LEVEL_BEAT.ARRIVAL, LEVEL_BEAT.PRACTICE, LEVEL_BEAT.TWIST, LEVEL_BEAT.TEST, LEVEL_BEAT.RELIEF, LEVEL_BEAT.TWIST, LEVEL_BEAT.TEST, LEVEL_BEAT.FINALE].slice(0, count);
+  }
+
+  function getConstellationArchetype(episode) {
+    if (episode <= 7) return "tutorial";
+    if (episode % 11 === 0) return "relief";
+    if (episode >= 17 && episode % 4 === 1) return "anomaly";
+    if (episode >= 28 && episode % 5 === 0) return "environment";
+    if (episode >= 48 && episode % 3 === 0) return "domino";
+    return ["timing", "signal", "colorLock", "cascade", "specialCombo"][(episode - 1) % 5];
+  }
+
+  var LEVEL_IDEA_LIBRARY = {
+    gate: [
+      { id: "gate-arrival-breathing-bar", hook: "Breathing gate bar", primary: "gate", support: ["scoreRace"], allowedShapes: ["full", "wide-gate"], avoid: ["blackHole", "wormhole", "nebula"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Watch the shutter breathe before spending your best swap." } },
+      { id: "gate-practice-side-pockets", hook: "Side-pocket timing", primary: "gate", support: ["cascade"], allowedShapes: ["full", "corner-bites", "wide-gate"], avoid: ["locks"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Use the open beat to refill the pockets, then cash the center." } },
+      { id: "gate-twist-staggered-choke", hook: "Staggered choke gates", primary: "gate", support: ["spectrum"], allowedShapes: ["hourglass", "wide-gate"], avoid: ["blackHole"], beat: LEVEL_BEAT.TWIST, copy: { coach: "The choke is useful only on open beats. Queue matches above it." } },
+      { id: "gate-test-last-window", hook: "Last-window gate test", primary: "gate", support: ["scoreRace"], allowedShapes: ["wide-gate", "arena"], avoid: ["wormhole"], beat: LEVEL_BEAT.TEST, copy: { coach: "Save one strong move for the open window instead of forcing it early." } },
+      { id: "gate-finale-constellation-lock", hook: "Final gate lock", primary: "gate", support: ["specialCombo"], allowedShapes: ["full", "vault"], avoid: ["nebula"], beat: LEVEL_BEAT.FINALE, copy: { coach: "Finale gate: build a special while the lane is shut, fire it when it opens." } }
+    ],
+    signal: [
+      { id: "signal-arrival-twin-antennas", hook: "Twin antennas", primary: "signal", support: ["collect"], allowedShapes: ["full", "arena"], avoid: ["blackHole"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Feed matches beside the antennas; the packets do the long-distance work." } },
+      { id: "signal-practice-pocket-feed", hook: "Pocket feed signals", primary: "signal", support: ["cascade"], allowedShapes: ["corner-bites", "wide-gate"], avoid: ["gates"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Let cascades refill the signal pockets before you spend the next color." } },
+      { id: "signal-twist-crossfire", hook: "Crossfire packets", primary: "signal", support: ["spectrum"], allowedShapes: ["cross", "arena"], avoid: ["wormhole"], beat: LEVEL_BEAT.TWIST, copy: { coach: "A side match can light both antennas. Look for packet crossfire." } },
+      { id: "signal-test-low-band", hook: "Low-band antenna test", primary: "signal", support: ["locks"], allowedShapes: ["twin-towers", "staircase"], avoid: ["nebula"], beat: LEVEL_BEAT.TEST, copy: { coach: "Work down to the nodes first; top clears won't trigger packets." } }
+    ],
+    spectrum: [
+      { id: "spectrum-arrival-two-color-wall", hook: "Two-color wall", primary: "spectrum", support: ["collect"], allowedShapes: ["full", "arena"], avoid: ["blackHole"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Read the wall colors first. Adjacent matches spend only the shown colors." } },
+      { id: "spectrum-practice-mirror-pairs", hook: "Mirror-color pairs", primary: "spectrum", support: ["gate"], allowedShapes: ["diamond", "soft-diamond"], avoid: ["wormhole"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Crack matching wall colors in pairs so the board opens evenly." } },
+      { id: "spectrum-twist-three-color-tax", hook: "Three-color tax", primary: "spectrum", support: ["scoreRace"], allowedShapes: ["wide-gate", "hourglass"], avoid: ["locks"], beat: LEVEL_BEAT.TWIST, copy: { coach: "Three colors means patience. Don't waste an off-color adjacent clear." } },
+      { id: "spectrum-finale-prism-ring", hook: "Prism ring finale", primary: "spectrum", support: ["specialCombo"], allowedShapes: ["vault", "butterfly"], avoid: ["nebula"], beat: LEVEL_BEAT.FINALE, copy: { coach: "Finale prism: specials open space, but only listed colors finish the walls." } }
+    ],
+    locks: [
+      { id: "locks-arrival-caged-color", hook: "Caged color lesson", primary: "locks", support: ["collect"], allowedShapes: ["full", "arena"], avoid: ["blackHole"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Free cages with their own color; the released pieces join the clear." } },
+      { id: "locks-practice-side-cages", hook: "Side-cage practice", primary: "locks", support: ["cascade"], allowedShapes: ["corner-bites", "staircase"], avoid: ["gates"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Open one side cage, then use the falling refill to open the other." } },
+      { id: "locks-twist-caged-special", hook: "Caged special spark", primary: "locks", support: ["specialCombo"], allowedShapes: ["cross", "twin-towers"], avoid: ["nebula"], beat: LEVEL_BEAT.TWIST, copy: { coach: "One cage is a fuse. Free it only when the blast has targets." } },
+      { id: "locks-test-frozen-lanes", hook: "Frozen lane test", primary: "locks", support: ["spectrum"], allowedShapes: ["hourglass", "vault"], avoid: ["wormhole"], beat: LEVEL_BEAT.TEST, copy: { coach: "The cages define the lane. Solve the unlock color before chasing score." } }
+    ],
+    wires: [
+      { id: "wires-arrival-three-spark", hook: "Three-spark wire", primary: "wires", support: ["specialCombo"], allowedShapes: ["full", "arena"], avoid: ["blackHole"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Fire any wired special; the pulse spends the rest in order." } },
+      { id: "wires-practice-two-step-entry", hook: "Two-step wire entry", primary: "wires", support: ["collect"], allowedShapes: ["wide-gate", "staircase"], avoid: ["nebula"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Choose the entry blast that leaves the second wired piece with targets." } },
+      { id: "wires-twist-delayed-network", hook: "Delayed wire network", primary: "wires", support: ["gate"], allowedShapes: ["cross", "chevron"], avoid: ["wormhole"], beat: LEVEL_BEAT.TWIST, copy: { coach: "The wire fires on the beat. Set up where the second pulse will land." } },
+      { id: "wires-finale-domino-sweep", hook: "Domino sweep finale", primary: "wires", support: ["spectrum"], allowedShapes: ["vault", "butterfly"], avoid: ["blackHole"], beat: LEVEL_BEAT.FINALE, copy: { coach: "Finale wire: start the domino from the side that breaks the most walls." } }
+    ],
+    blackHole: [
+      { id: "blackhole-arrival-center-well", hook: "Center gravity well", primary: "blackHole", support: ["cascade"], allowedShapes: ["full", "arena"], avoid: ["gates"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "The well eats space. Clear beside it, not into it." } },
+      { id: "blackhole-practice-orbit", hook: "Orbit practice", primary: "blackHole", support: ["scoreRace"], allowedShapes: ["diamond", "soft-diamond"], avoid: ["signals"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Use the open orbit around the well for safe cascades." } },
+      { id: "blackhole-twist-twin-wells", hook: "Twin wells", primary: "blackHole", support: ["specialCombo"], allowedShapes: ["hourglass", "cross"], avoid: ["spectrum"], beat: LEVEL_BEAT.TWIST, copy: { coach: "Two wells split the board. Specials reconnect the halves." } },
+      { id: "blackhole-test-tight-orbit", hook: "Tight orbit test", primary: "blackHole", support: ["locks"], allowedShapes: ["fang", "chevron"], avoid: ["wormhole"], beat: LEVEL_BEAT.TEST, copy: { coach: "Plan around the missing center before committing a cascade." } }
+    ],
+    wormhole: [
+      { id: "wormhole-arrival-linked-corners", hook: "Linked corners", primary: "wormhole", support: ["collect"], allowedShapes: ["full", "corner-bites"], avoid: ["gates"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Treat the portals as one lane: drops into one side exit the other." } },
+      { id: "wormhole-practice-cross-board-feed", hook: "Cross-board feed", primary: "wormhole", support: ["cascade"], allowedShapes: ["wide-gate", "staircase"], avoid: ["signals"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Feed the far side through the portal instead of clearing it by hand." } },
+      { id: "wormhole-twist-swap-route", hook: "Portal route twist", primary: "wormhole", support: ["specialCombo"], allowedShapes: ["twin-towers", "wave"], avoid: ["blackHole"], beat: LEVEL_BEAT.TWIST, copy: { coach: "A special near a portal can solve the opposite wing." } },
+      { id: "wormhole-finale-star-bridge", hook: "Star bridge finale", primary: "wormhole", support: ["spectrum"], allowedShapes: ["vault", "butterfly"], avoid: ["nebula"], beat: LEVEL_BEAT.FINALE, copy: { coach: "Finale bridge: route colors through the portal before the board clogs." } }
+    ],
+    nebula: [
+      { id: "nebula-arrival-fog-patch", hook: "Fog patch", primary: "nebula", support: ["cascade"], allowedShapes: ["full", "arena"], avoid: ["gates"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Clear beside fog to reveal the lane before chasing long matches." } },
+      { id: "nebula-practice-hidden-pockets", hook: "Hidden pockets", primary: "nebula", support: ["collect"], allowedShapes: ["corner-bites", "diamond"], avoid: ["signals"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Open fog pockets early; hidden cells become refill routes." } },
+      { id: "nebula-twist-fog-and-wall", hook: "Fog-and-wall twist", primary: "nebula", support: ["spectrum"], allowedShapes: ["soft-diamond", "hourglass"], avoid: ["blackHole"], beat: LEVEL_BEAT.TWIST, copy: { coach: "Reveal the fog around a wall before spending its required colors." } },
+      { id: "nebula-relief-soft-mist", hook: "Soft mist relief", primary: "nebula", support: ["scoreRace"], allowedShapes: ["full", "wave"], avoid: ["locks"], beat: LEVEL_BEAT.RELIEF, copy: { coach: "This is a breather: clear fog patches and let cascades score." } }
+    ],
+    cascade: [
+      { id: "cascade-arrival-open-sky", hook: "Open-sky cascade", primary: "cascade", support: ["scoreRace"], allowedShapes: ["full", "arena"], avoid: ["locks", "blackHole"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Keep the top open and let the sky refill into free chains." } },
+      { id: "cascade-practice-lane-builder", hook: "Lane builder", primary: "cascade", support: ["collect"], allowedShapes: ["staircase", "wave"], avoid: ["gates"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Build one clean lane; the refill will do more work than a forced match." } },
+      { id: "cascade-twist-narrow-funnel", hook: "Narrow funnel", primary: "cascade", support: ["spectrum"], allowedShapes: ["hourglass", "wide-gate"], avoid: ["wormhole"], beat: LEVEL_BEAT.TWIST, copy: { coach: "The funnel is the idea: clear below it and let pieces pour through." } },
+      { id: "cascade-relief-waterfall", hook: "Waterfall relief", primary: "cascade", support: ["scoreRace"], allowedShapes: ["full", "chevron"], avoid: ["locks"], beat: LEVEL_BEAT.RELIEF, copy: { coach: "Breather board: start a waterfall and ride the saved moves." } }
+    ],
+    specialCombo: [
+      { id: "combo-arrival-seeded-pair", hook: "Seeded special pair", primary: "specialCombo", support: ["scoreRace"], allowedShapes: ["full", "arena"], avoid: ["blackHole"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Make one special, then look for the second before firing either." } },
+      { id: "combo-practice-cross-blast", hook: "Cross-blast practice", primary: "specialCombo", support: ["cascade"], allowedShapes: ["cross", "wide-gate"], avoid: ["locks"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Line specials love this board. Aim the cross before you detonate." } },
+      { id: "combo-twist-nova-pocket", hook: "Nova pocket", primary: "specialCombo", support: ["wormhole"], allowedShapes: ["corner-bites", "butterfly"], avoid: ["nebula"], beat: LEVEL_BEAT.TWIST, copy: { coach: "Hold a nova until the pocket fills; empty space wastes the blast." } },
+      { id: "combo-test-fusion-check", hook: "Fusion check", primary: "specialCombo", support: ["spectrum"], allowedShapes: ["vault", "twin-towers"], avoid: ["gates"], beat: LEVEL_BEAT.TEST, copy: { coach: "This test wants a fusion. Build the pair before chasing small clears." } },
+      { id: "combo-finale-comet-burst", hook: "Comet burst finale", primary: "specialCombo", support: ["cascade"], allowedShapes: ["vault", "chevron"], avoid: ["blackHole"], beat: LEVEL_BEAT.FINALE, copy: { coach: "Finale burst: save the biggest special for the constellation's last wall." } }
+    ],
+    scoreRace: [
+      { id: "score-arrival-clean-clock", hook: "Clean clock", primary: "scoreRace", support: ["cascade"], allowedShapes: ["full", "arena"], avoid: ["locks"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "Score race: fast clean matches beat slow perfect plans." } },
+      { id: "score-practice-overdrive-line", hook: "Overdrive line", primary: "scoreRace", support: ["specialCombo"], allowedShapes: ["wide-gate", "staircase"], avoid: ["nebula"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Build drive early; overdrive makes every later clear count harder." } },
+      { id: "score-test-badge-sprint", hook: "Badge sprint", primary: "scoreRace", support: ["gate"], allowedShapes: ["soft-diamond", "full"], avoid: ["blackHole"], beat: LEVEL_BEAT.TEST, copy: { coach: "This is a sprint. Spend moves only where they also make points." } },
+      { id: "score-relief-open-run", hook: "Open run relief", primary: "scoreRace", support: ["cascade"], allowedShapes: ["full", "wave"], avoid: ["locks", "spectrum"], beat: LEVEL_BEAT.RELIEF, copy: { coach: "Breather run: play wide, keep cascades alive, bank stars." } }
+    ],
+    environment: [
+      { id: "environment-arrival-drift-lane", hook: "Drift lane", primary: "environment", support: ["cascade"], allowedShapes: ["full", "wave"], avoid: ["blackHole"], beat: LEVEL_BEAT.ARRIVAL, copy: { coach: "The environment is the puzzle. Clear with the drift instead of against it." } },
+      { id: "environment-practice-night-window", hook: "Night window", primary: "environment", support: ["scoreRace"], allowedShapes: ["arena", "diamond"], avoid: ["nebula"], beat: LEVEL_BEAT.PRACTICE, copy: { coach: "Use the calm window to set up; cash it when the board brightens." } },
+      { id: "environment-twist-rotating-gravity", hook: "Rotating gravity", primary: "environment", support: ["specialCombo"], allowedShapes: ["cross", "chevron"], avoid: ["wormhole"], beat: LEVEL_BEAT.TWIST, copy: { coach: "Think one turn ahead: gravity will change where your setup lands." } },
+      { id: "environment-finale-storm-map", hook: "Storm-map finale", primary: "environment", support: ["spectrum"], allowedShapes: ["vault", "butterfly"], avoid: ["blackHole"], beat: LEVEL_BEAT.FINALE, copy: { coach: "Finale weather: solve the board rhythm before racing the goal." } }
+    ]
+  };
+
+  function getIdeaTypesForArchetype(archetype, episode) {
+    if (archetype === "tutorial") return ["gate", "signal", "spectrum", "locks", "wires"];
+    if (archetype === "relief") return ["scoreRace", "cascade", "nebula"];
+    if (archetype === "anomaly") return ["blackHole", "wormhole", "nebula"];
+    if (archetype === "environment") return ["environment", "nebula", "cascade"];
+    if (archetype === "domino") return ["wires", "locks", "specialCombo"];
+    if (archetype === "timing") return ["gate", "scoreRace"];
+    if (archetype === "signal") return ["signal", "gate"];
+    if (archetype === "colorLock") return ["spectrum", "locks"];
+    if (archetype === "cascade") return ["cascade", "nebula"];
+    if (archetype === "specialCombo") return ["specialCombo", "wires"];
+    return ["cascade", "scoreRace"];
+  }
+
+  function collectIdeaCards(types, beat) {
+    var cards = [];
+    for (var t = 0; t < types.length; t += 1) {
+      var bucket = LEVEL_IDEA_LIBRARY[types[t]] || [];
+      for (var i = 0; i < bucket.length; i += 1) {
+        if (!beat || bucket[i].beat === beat) cards.push(bucket[i]);
+      }
+    }
+    return cards;
+  }
+
+  function getLevelIdeaCard(number, episode, chapterLevel, levelsInEpisode, difficulty) {
+    if (number <= 40) return null;
+    var pacing = getConstellationPacing(episode, levelsInEpisode);
+    var beat = pacing[Math.max(0, Math.min(pacing.length - 1, (chapterLevel || 1) - 1))] || LEVEL_BEAT.PRACTICE;
+    var archetype = getConstellationArchetype(episode);
+    var types = getIdeaTypesForArchetype(archetype, episode);
+    var cards = collectIdeaCards(types, beat);
+    if (cards.length === 0) cards = collectIdeaCards(types, null);
+    if (cards.length === 0) cards = collectIdeaCards(["cascade", "scoreRace"], beat);
+    if (cards.length === 0) return null;
+    return cards[Math.abs(Math.floor((number || 0) + (chapterLevel || 0))) % cards.length];
+  }
+
+  function removeIdeaMechanic(layout, mechanic) {
+    if (!layout || !mechanic) return;
+    if (mechanic === "gate" || mechanic === "gates") layout.gates = [];
+    if (mechanic === "signal" || mechanic === "signals") layout.signals = [];
+    if (mechanic === "spectrum") layout.spectrum = [];
+    if (mechanic === "locks") layout.locks = [];
+    if (mechanic === "wires") layout.wires = [];
+    if (mechanic === "blackHole" || mechanic === "blackHoles") layout.blackHoles = [];
+    if (mechanic === "wormhole" || mechanic === "wormholes") layout.wormholes = [];
+    if (mechanic === "nebula") layout.nebulaCells = [];
+    if (mechanic === "shields" || mechanic === "shield" || mechanic === "pattern") layout.pattern = "none";
+    if (mechanic === "environment") {
+      layout.worldModifier = null;
+      layout.drift = null;
+      layout.dayNight = null;
+      layout.gravityRotation = null;
+    }
+  }
+
+  function applyIdeaToLayout(layout, idea, number, difficulty) {
+    if (!layout || !idea) return layout;
+    if (idea.allowedShapes && idea.allowedShapes.length > 0) {
+      var shapeHash = Math.abs(hashString("neon-lattice-idea-shape:" + number + ":" + idea.id));
+      layout.boardShape = idea.allowedShapes[shapeHash % idea.allowedShapes.length];
+    }
+    if (idea.shieldPattern) layout.pattern = idea.shieldPattern;
+    if (idea.avoid && idea.avoid.length > 0) {
+      for (var i = 0; i < idea.avoid.length; i += 1) removeIdeaMechanic(layout, idea.avoid[i]);
+    }
+    layout.fluxTarget = countFluxCells(layout);
+    if (layout.spectrum && layout.spectrum.length > 0) layout.fluxTarget = layout.spectrum.length;
+    return layout;
+  }
+
+  function createIdeaCoachCopy(number, idea) {
+    if (idea) return idea.hook || (idea.copy && idea.copy.coach) || "Clear this level's signature idea first.";
+    return "Clear goals fast and preserve moves.";
+  }
+
+  var EPISODE_THEMES = CONSTELLATION_DATA.map(function (constellation) {
+    return {
+      id: constellation.id,
+      name: constellation.name,
+      tag: constellation.tag,
+      hook: constellation.hook,
+      palette: constellation.palette
+    };
+  });
   var BPM = 124;
   var TIMING = {
     swapCheck: 74,
@@ -1008,25 +2495,25 @@
     hitStopNovaSweep: 100
   };
   var AUDIO_TUNING = {
-    // ORCHID: darker macro filter for warm, analog feel
-    macroFloorHz: 2200, // macro lowpass cutoff at zero intensity (Hz, 800-6000)
-    macroCeilHz: 11000, // macro lowpass cutoff at full intensity (Hz, 8000-18000)
-    macroEnergyWeight: 0.55, // how much board energy pushes the macro open (0-1)
-    macroDriveWeight: 0.45, // how much visual drive pushes the macro open (0-1)
-    macroOverdriveBoost: 0.25, // flat intensity bonus while overdrive is live (0-0.5)
-    macroCurve: 1.4, // intensity response curve; >1 keeps the low end darker longer (0.5-3)
-    macroGlide: 0.2, // setTargetAtTime smoothing for cutoff moves (seconds, 0.05-0.6)
+    // ORCHID: dark, warm, lo-fi macro filter. Stays muted until high intensity.
+    macroFloorHz: 1200, // ORCHID: very dark at rest — almost muffled, pure warmth
+    macroCeilHz: 7000, // ORCHID: even at peak, never bright — stays warm and analog
+    macroEnergyWeight: 0.40, // stays dark even under high energy
+    macroDriveWeight: 0.33, // minimal drive push on the filter
+    macroOverdriveBoost: 0.15, // tiny overdrive boost
+    macroCurve: 2.0, // ORCHID: very steep — stays dark until intensity is extreme
+    macroGlide: 0.35, // ORCHID: very slow filter transitions — dreamy, never snappy
     duckDepth: 0.35, // fraction of music gain removed at full duck (0-0.8)
     duckAttack: 0.012, // ramp down time into the duck (seconds, 0.005-0.05)
     duckHold: 0.07, // time held at the ducked level (seconds, 0.02-0.2)
     duckRelease: 0.22, // setTargetAtTime constant for recovery to full (seconds, 0.08-0.5)
     duckSmallScale: 0.6, // duck scale for smaller hits like line specials (0-1)
-    // ORCHID: softer, warmer percussion
-    kickSubGain: 0.16, // sub sine layer peak gain per unit amount (0-0.3)
-    kickKnockGain: 0.045, // mid triangle knock layer peak gain; carries the beat on phone speakers (0-0.15)
-    kickKnockHz: 150, // knock layer start frequency, drops an octave over 30ms (Hz, 120-320)
-    kickClickGain: 0.025, // attack click noise gain for transient definition (0-0.1)
-    kickClickHz: 2400, // attack click bandpass center (Hz, 2000-6000)
+    // ORCHID: very soft, round, warm percussion — subby kicks, muted hats
+    kickSubGain: 0.12, // sub sine layer — round and deep, not punchy
+    kickKnockGain: 0.028, // mid knock — barely there, just enough on phone speakers
+    kickKnockHz: 130, // lower knock frequency — warmer
+    kickClickGain: 0.012, // minimal attack click — no digital transient
+    kickClickHz: 1800, // lower click frequency — softer attack
     defaultDelaySteps: 3, // echo delay length in 16th steps when a palette sets no delaySteps; 3 = dotted eighth (1-6)
     delayGlide: 0.05, // setTargetAtTime smoothing when delay retunes to a new BPM (seconds, 0.02-0.2)
     heroSnapSteps: 2, // hero stingers snap to this many 16th steps (1-4)
@@ -1233,8 +2720,10 @@
     shockwaves: 18,
     flyRewards: 14,
     signalPackets: 12,
-    cellFlashes: 80
+    cellFlashes: 80,
+    constellationLines: 14
   };
+  var CONSTELLATION_LINE_TTL = 0.42; // match-constellation line life in seconds; quick fade like cell flashes
   var CELL_FLASH_TTL = 0.42; // footprint-flash life in seconds; a quick bright tint on cleared cells (0.2-0.8)
   var REWARD_DROP = {
     dropChanceChain: 0.2, // chance a cascade chain of 4+ drops a booster token on the board (0-1)
@@ -1249,7 +2738,7 @@
     charge: { glyph: "⚡︎", color: "#ff4fd8" },
     credits: { glyph: "◈", color: "#ffd166" }
   };
-  var LEVEL_COUNT = 240;
+  var LEVEL_COUNT = getCampaignLevelCount();
   var OVERDRIVE_THRESHOLD = 0.72;
   var STAR_REWARDS = buildStarRewards();
   var STREAK_REWARDS = [
@@ -1298,12 +2787,12 @@
         { kind: "collect", type: 0, target: 8 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 4, leftCol: 1, rightCol: 5 }, activeColors: [0, 1, 2] },
-      coach: "Ion pieces are cyan circles. Match three to collect them.",
-      pressure: "Every clear scores. Hunt cyan circles first."
+      coach: "Cyan stars are the first lights. Match three to collect stars.",
+      pressure: "Every clear scores. Hunt cyan stars first."
     },
     {
       number: 2,
-      title: "Prism Current",
+      title: "Nova Current",
       moves: 17,
       scoreTarget: 1900,
       goals: [
@@ -1311,8 +2800,8 @@
         { kind: "collect", type: 1, target: 10 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 4, leftCol: 1, rightCol: 5 }, activeColors: [0, 1, 2] },
-      coach: "Prism pieces are pink triangles. Same swap, new color.",
-      pressure: "Keep swapping. Every match plays a note."
+      coach: "Pink stars join the sky. Same swap, new color.",
+      pressure: "Keep swapping. Every match rings like starlight."
     },
     {
       number: 3,
@@ -1324,8 +2813,8 @@
         { kind: "specials", target: 1 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 5, leftCol: 1, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
-      coach: "Match four to create a beam piece.",
-      pressure: "Make one special, then ride the burst."
+      coach: "Match four to create a star line.",
+      pressure: "Make one star power, then ride the burst."
     },
     {
       number: 4,
@@ -1340,8 +2829,8 @@
       starterSpecials: [
         { row: 4, col: 3, special: "lineH" }
       ],
-      coach: "A beam piece is loaded. Swap it to fire the row.",
-      pressure: "The loaner beam is yours. Spend it anywhere."
+      coach: "A star line is loaded. Swap it to fire across the sky.",
+      pressure: "The loaner star line is yours. Spend it anywhere."
     },
     {
       number: 5,
@@ -1353,8 +2842,8 @@
         { kind: "specials", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
-      coach: "Match five for a nova. Tap it to arm, tap again to fire.",
-      pressure: "Make the five. Tap the nova to arm, tap again to fire the sweep."
+      coach: "Match five for a supernova. Tap it to arm, tap again to fire.",
+      pressure: "Make the five. Tap the supernova to arm, tap again to sweep the sky."
     },
     {
       number: 6,
@@ -1367,8 +2856,8 @@
         { kind: "specials", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
-      coach: "Pulse pieces are gold squares. Build two specials.",
-      pressure: "Beams and novas together. No new tricks."
+      coach: "Gold stars join the sky. Build two star powers.",
+      pressure: "Star lines and supernovas together. No new tricks."
     },
     {
       number: 7,
@@ -1380,7 +2869,7 @@
         { kind: "collect", type: 4, target: 34 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
-      coach: "Core pieces are orange hexes. Clear a big stack of them.",
+      coach: "Orange stars are bright hexes. Clear a big cluster of them.",
       pressure: "Win this take and the booster bar opens."
     },
     {
@@ -1394,7 +2883,7 @@
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "staircase" },
       coach: "Set one clear that drops into another.",
-      pressure: "Chains finish goals with fewer moves."
+      pressure: "Star chains finish goals with fewer moves."
     },
     {
       number: 9,
@@ -1407,8 +2896,8 @@
         { kind: "chain", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", producers: [{ row: 4, col: 4 }] },
-      coach: "The center Producer feeds you a violet Atom every move. Chain them.",
-      pressure: "The Producer keeps making Atoms. Cascade them into chains."
+      coach: "The center Producer feeds you a violet star every move. Chain them.",
+      pressure: "The Producer keeps making violet stars. Cascade them into star chains."
     },
     {
       number: 10,
@@ -1433,8 +2922,8 @@
         { kind: "flux", target: 5 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", blockers: [{ row: 3, col: 2 }, { row: 3, col: 5 }, { row: 4, col: 3 }, { row: 5, col: 2 }, { row: 5, col: 5 }] },
-      coach: "Shields are solid walls. Pieces fall through them. Match right beside a wall to break it open.",
-      pressure: "You can't match a wall. Clear next to it to break it, then the cell opens up."
+      coach: "Meteor shields are solid debris. Stars fall through them. Match right beside debris to break it open.",
+      pressure: "You can't match debris. Clear next to it to break it, then the cell opens up."
     },
     {
       number: 12,
@@ -1447,8 +2936,8 @@
         { kind: "chain", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "cross", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 3 }] },
-      coach: "Break the walls by matching beside them. Chains break more at once.",
-      pressure: "Walls plus chains. Pieces fall through until you break them."
+      coach: "Break meteor walls by matching beside them. Star chains break more at once.",
+      pressure: "Meteor walls plus star chains. Stars fall through until you break them."
     },
     {
       number: 13,
@@ -1465,8 +2954,8 @@
         { row: 6, col: 3, special: "lineH" },
         { row: 6, col: 4, special: "lineV" }
       ],
-      coach: "Fire a beam beside a wall to smash it. Two beams wait on the board.",
-      pressure: "Specials break walls fast. Pieces fall through until then."
+      coach: "Fire a star line beside a meteor wall to smash it. Two star lines wait in the sky.",
+      pressure: "Star powers break meteor walls fast. Stars fall through until then."
     },
     {
       number: 14,
@@ -1478,7 +2967,7 @@
         { kind: "spread", target: 7 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wave", spreaders: [{ row: 2, col: 3 }, { row: 5, col: 4 }] },
-      coach: "The green Creep spreads to a new cell every few moves. Match an infected cell to clear it.",
+      coach: "The Creep (red infection) spreads to a new cell every few moves. Match an infected cell to clear it.",
       pressure: "Clear next to the Creep to contain it. Match it to remove it."
     },
     {
@@ -1492,8 +2981,8 @@
         { kind: "specials", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "vault", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 6, col: 3, strength: 2 }, { row: 7, col: 5 }] },
-      coach: "The finale wall. Break beside the shields. Gold ones take two hits.",
-      pressure: "Break the walls and bank a big finish. Some are reinforced."
+      coach: "The finale meteor wall. Break beside the meteor shields. Gold ones take two hits.",
+      pressure: "Break the meteor walls and bank a big finish. Some are reinforced."
     },
     {
       number: 16,
@@ -1506,7 +2995,7 @@
         { kind: "flux", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "diamond", blockers: [{ row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4 }] },
-      coach: "Mix it all. Break the walls, then collect the gold squares.",
+      coach: "Mix it all. Break the meteor walls, then collect the gold stars.",
       pressure: "Clean take here earns the full booster kit."
     },
     {
@@ -1522,8 +3011,8 @@
       starterSpecials: [
         { row: 3, col: 3, special: "nova" }
       ],
-      coach: "Open board, no walls. Make novas and let the board explode.",
-      pressure: "This is a relief take: score big and enjoy the sweep."
+      coach: "Open sky, no meteor walls. Make supernovas and let the sky explode.",
+      pressure: "This is a relief take: score big and enjoy the stellar sweep."
     },
     {
       number: 18,
@@ -1534,9 +3023,9 @@
         { kind: "score", target: 4700 },
         { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
-      coach: "Match five in an L or T shape to make a Bomb. Bombs clear a wide blast around them.",
-      pressure: "Find the bend, build the blast, then cash it in."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "twin-towers", blockers: [{ row: 2, col: 2 }, { row: 2, col: 5 }, { row: 4, col: 1 }, { row: 4, col: 6 }] },
+      coach: "Match five in an L or T shape to make a comet blast. Use the familiar meteor shields in the twin towers to feel how wide the blast reaches.",
+      pressure: "Find the bend, build the blast, then cash it in against the meteor walls."
     },
     {
       number: 19,
@@ -1549,8 +3038,8 @@
         { kind: "specials", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites" },
-      coach: "Bombs reach into cramped corners. Use one blast to pull Core pieces out of the bites.",
-      pressure: "The corners steal space, so every special has to do real work."
+      coach: "Comet blasts reach through meteor walls. Use one blast to pull orange stars out from behind the debris.",
+      pressure: "The corners steal space, so every star power has to do real work."
     },
     {
       number: 20,
@@ -1563,7 +3052,7 @@
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "hourglass" },
       coach: "The middle is narrow. Build clears at the neck so cascades can reach both halves.",
-      pressure: "The board pinches in the center and every wasted move feels tight."
+      pressure: "The sky pinches in the center and every wasted move feels tight."
     },
     {
       number: 21,
@@ -1576,8 +3065,8 @@
         { kind: "specials", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "cross", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 4, col: 2, strength: 2 }, { row: 4, col: 5, strength: 2 }, { row: 5, col: 3, strength: 2 }, { row: 6, col: 4 }] },
-      coach: "Gold shields take two hits. Bombs crack the whole cluster faster than single matches.",
-      pressure: "The wall is deeper now, and soft clears will not open it in time."
+      coach: "Gold meteor shields take two hits. Comet blasts crack the whole cluster faster than single matches.",
+      pressure: "The meteor wall is deeper now, and soft clears will not open it in time."
     },
     {
       number: 22,
@@ -1588,12 +3077,12 @@
         { kind: "score", target: 5900 },
         { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "vault", blockers: [{ row: 2, col: 3 }, { row: 3, col: 2 }, { row: 3, col: 5 }, { row: 5, col: 3 }] },
       starterSpecials: [
         { row: 3, col: 4, special: "seeker" }
       ],
-      coach: "Match a 2x2 square to make a Seeker. A Seeker flies to the most important target on the board.",
-      pressure: "The first Seeker is loaded for you; fire it and watch where it hunts."
+      coach: "Match a 2x2 square to make a Seeker. In this vault, the Seeker has familiar meteor shields to hunt first.",
+      pressure: "The first Seeker is loaded for you; fire it and watch it choose a meteor wall."
     },
     {
       number: 23,
@@ -1609,8 +3098,8 @@
       starterSpecials: [
         { row: 4, col: 4, special: "seeker" }
       ],
-      coach: "Seekers prefer the hardest shield. Use them to punch the reinforced cells you cannot reach.",
-      pressure: "The corners are missing and the gold shields are calling the shots."
+      coach: "Seekers prefer the hardest meteor shield. Use them to punch the reinforced cells you cannot reach.",
+      pressure: "The corners are missing and the gold meteor shields are calling the shots."
     },
     {
       number: 24,
@@ -1623,7 +3112,7 @@
         { kind: "specials", target: 3 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
-      coach: "Chain three clears in one cascade. Set the gate first, then trigger the move that drops everything through.",
+      coach: "Build a three-link constellation in one cascade. Set the gate first, then trigger the move that drops every star through.",
       pressure: "This is the first real mastery check: high score, narrow lanes, and one huge cascade."
     },
     {
@@ -1636,8 +3125,8 @@
         { kind: "chain", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wave" },
-      coach: "Use the open board to build long matches and let cascades do the scoring work for you.",
-      pressure: "You have plenty of room and moves, so keep the board flowing instead of forcing risky setups."
+      coach: "Use the open sky to build long matches and let cascades do the scoring work for you.",
+      pressure: "You have plenty of room and moves, so keep the sky flowing instead of forcing risky setups."
     },
     {
       number: 26,
@@ -1648,13 +3137,13 @@
         { kind: "score", target: 5600 },
         { kind: "specials", target: 3 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "chevron", blockers: [{ row: 2, col: 2 }, { row: 2, col: 5 }, { row: 5, col: 2 }, { row: 5, col: 5 }] },
       starterSpecials: [
         { row: 4, col: 3, special: "lineH" },
         { row: 4, col: 4, special: "nova" }
       ],
-      coach: "Swap the seeded Line and Nova together to discover a fusion, then create one more special to finish the lesson.",
-      pressure: "The target is light, but the level expects you to use the gift instead of ignoring it."
+      coach: "Swap the seeded star line and supernova together to discover a fusion, then use the chevron meteor shields as a familiar target for the blast.",
+      pressure: "The target is light, but the level expects you to use the gift instead of ignoring the meteor walls."
     },
     {
       number: 27,
@@ -1670,7 +3159,7 @@
       starterSpecials: [
         { row: 3, col: 4, special: "seeker" }
       ],
-      coach: "Use the starter Seeker after the producer has fed the board so it can pick off valuable pieces for your collection goal.",
+      coach: "Use the starter Seeker after the producer has fed the sky so it can pick off valuable stars for your collection goal.",
       pressure: "The bitten corners reduce space, so every special should help open the center."
     },
     {
@@ -1684,8 +3173,8 @@
         { kind: "flux", target: 8 }
       ],
       layout: { pattern: "none", strength: 1, fluxTarget: 8, boardShape: "fang", blockers: [{ row: 2, col: 4 }, { row: 3, col: 5, strength: 2 }, { row: 4, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 5 }], spreaders: [{ row: 0, col: 5 }, { row: 7, col: 3 }] },
-      coach: "Clear creep before it spreads too far, but keep chipping the shields so the board does not lock around the middle.",
-      pressure: "If you chase only one threat, the other will take over the board."
+      coach: "Light creep before it spreads too far, but keep chipping the meteor shields so the sky does not lock around the middle.",
+      pressure: "If you chase only one threat, the other will take over the sky."
     },
     {
       number: 29,
@@ -1701,7 +3190,7 @@
         { row: 6, col: 3, special: "lineH" },
         { row: 6, col: 4, special: "bomb" }
       ],
-      coach: "Fuse the seeded Line and Bomb to fire a three-row and three-column blast, then build one more special from the opened board.",
+      coach: "Fuse the seeded star line and comet blast to fire a three-row and three-column burst, then build one more star power from the opened sky.",
       pressure: "The move count is fair, but missing the combo leaves a much smaller scoring window."
     },
     {
@@ -1719,7 +3208,7 @@
       starterSpecials: [
         { row: 3, col: 4, special: "lineV" }
       ],
-      coach: "Use vertical blasts and cascades through the gate to break shields, collect Pulse pieces, and keep your chain alive.",
+      coach: "Use vertical blasts and cascades through the gate to break meteor shields, collect Comet stars, and keep your constellation alive.",
       pressure: "This finale gives few spare moves, so every swap needs to advance more than one goal."
     },
     {
@@ -1732,7 +3221,7 @@
         { kind: "collect", type: 5, target: 14 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "staircase" },
-      coach: "Relax back into an open board and make clean matches while watching for Atom clusters.",
+      coach: "Relax back into an open sky and make clean matches while watching for Galaxy clusters.",
       pressure: "The goal is gentle, but loose play can still waste the relief level."
     },
     {
@@ -1745,7 +3234,7 @@
         { kind: "overdrive", target: 1 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "vault" },
-      coach: "Make rapid consecutive matches to fill the pulse meter, then trigger Overdrive once it is ready.",
+      coach: "Make rapid consecutive matches to fill the stellar drive meter, then trigger Overdrive once it is ready.",
       pressure: "You have room to experiment, but long pauses will slow your Overdrive charge."
     },
     {
@@ -1779,8 +3268,8 @@
       starterSpecials: [
         { row: 3, col: 3, special: "seeker" }
       ],
-      coach: "Fire the seeker early so it can pick off the most dangerous obstacle, then keep matching beside shields before the creep spreads.",
-      pressure: "Every slow move lets the spreaders claim more lanes and bury the shield targets."
+      coach: "Fire the seeker early so it can pick off the most dangerous obstacle, then keep matching beside meteor shields before the creep spreads.",
+      pressure: "Every slow move lets the spreaders claim more lanes and bury the meteor shield targets."
     },
     {
       number: 35,
@@ -1797,7 +3286,7 @@
         { row: 7, col: 5, special: "lineV" }
       ],
       coach: "This is a breather: build wide matches, combine specials when they meet, and enjoy the oversized score bursts.",
-      pressure: "You have plenty of moves, but the celebration only lands if you actually make the board sparkle."
+      pressure: "You have plenty of moves, but the celebration only lands if you actually make the sky sparkle."
     },
     {
       number: 36,
@@ -1813,7 +3302,7 @@
         { row: 4, col: 3, special: "bomb" },
         { row: 4, col: 4, special: "nova" }
       ],
-      coach: "Fuse the bomb with the nova to turn the board's most common color into bombs, then detonate the chain before it scatters.",
+      coach: "Fuse the bomb with the nova to turn the sky's most common color into bombs, then detonate the constellation before it scatters.",
       pressure: "The combo gives you a huge spike, but the score target expects you to cash it in cleanly."
     },
     {
@@ -1826,8 +3315,8 @@
         { kind: "flux", target: 14 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 14, boardShape: "diamond", blockers: [{ row: 1, col: 3, strength: 2 }, { row: 1, col: 4, strength: 2 }, { row: 2, col: 2 }, { row: 2, col: 5 }, { row: 3, col: 1, strength: 2 }, { row: 3, col: 6, strength: 2 }, { row: 4, col: 1, strength: 2 }, { row: 4, col: 6, strength: 2 }, { row: 5, col: 2 }, { row: 5, col: 5 }, { row: 6, col: 3, strength: 2 }, { row: 6, col: 4, strength: 2 }] },
-      coach: "On a diamond board, work from the middle outward so every match touches shields and opens more playable cells.",
-      pressure: "Reinforced shields will survive careless blasts, and the shaped board gives you fewer recovery swaps."
+      coach: "On a diamond sky, work from the middle outward so every match touches meteor shields and opens more playable cells.",
+      pressure: "Reinforced meteor shields will survive careless blasts, and the shaped sky gives you fewer recovery swaps."
     },
     {
       number: 38,
@@ -1843,8 +3332,8 @@
       starterSpecials: [
         { row: 3, col: 3, special: "lineV" }
       ],
-      coach: "Use the hourglass neck to force cascades, and clear the lower spreaders before the producer-fed board gets too crowded.",
-      pressure: "You need two real chain reactions while the board keeps changing underneath you."
+      coach: "Use the hourglass neck to force cascades, and light the lower spreaders before the producer-fed sky gets too crowded.",
+      pressure: "You need two real constellation reactions while the sky keeps changing underneath you."
     },
     {
       number: 39,
@@ -1858,7 +3347,7 @@
       starterSpecials: [
         { row: 3, col: 5, special: "bomb" }
       ],
-      coach: "Treat every move like a setup move: save the bomb until it can trigger a cascade instead of spending it for a small clear.",
+      coach: "Treat every move like a setup move: save the bomb until it can trigger a cascade instead of spending it for a small light.",
       pressure: "The target is tuned just above a normal finish, so one inefficient swap leaves you staring at SO CLOSE."
     },
     {
@@ -1877,8 +3366,8 @@
         { row: 0, col: 3, special: "seeker" },
         { row: 7, col: 4, special: "bomb" }
       ],
-      coach: "This gate asks for everything: break shields with targeted specials, collect Atom pieces during cascades, and reserve combos for the final score push.",
-      pressure: "Track 3 only opens if you balance objectives instead of chasing one goal at a time."
+      coach: "This gate asks for everything: break meteor shields with targeted star powers, collect Galaxy stars during cascades, and reserve combos for the final score push.",
+      pressure: "Constellation 3 only opens if you balance objectives instead of chasing one goal at a time."
     }
   ];
   // Boosters teach by gifting: end-of-level grants at 7/9/12/16 only,
@@ -1921,13 +3410,125 @@
   var MAX_CASCADE_CHAIN = 12;
   var CONTINUE_MOVES = 5;
   var CONTINUE_COST = 80;
+  var CONTINUE_COST_ESCALATION = [80, 140, 220, 360]; // escalating cost per continue in same level
+  var SUPER_STREAK_THRESHOLD = 10; // consecutive wins to activate Super Supernova
+  var STAR_FUEL_PER_LEVEL = 1; // earned per level win, spent on constellation tasks
+
+  // ── IAP SCAFFOLD ──────────────────────────────────────────────────
+  // Platform-agnostic in-app purchase system. In browser dev mode, purchases
+  // are mock (instant grant, no payment). On iOS/Android via Capacitor, the
+  // platform storeKit/ billing client handles the transaction. The game code
+  // only needs product IDs + a callback. See CapacitorPlugin section below.
+  var IAP_PRODUCTS = [
+    { id: "coin_small",  stardust: 0,  credits: 100,  price: "$0.99",  tier: 1 },
+    { id: "coin_medium", stardust: 0,  credits: 550,  price: "$4.99",  tier: 2 },
+    { id: "coin_large",  stardust: 0,  credits: 1200, price: "$9.99",  tier: 3 },
+    { id: "coin_xl",     stardust: 0,  credits: 2800, price: "$19.99", tier: 4 },
+    { id: "stardust_small", stardust: 50,  credits: 0,   price: "$2.99",  tier: 1 },
+    { id: "stardust_large", stardust: 150, credits: 500, price: "$9.99",  tier: 3 }
+  ];
+
+  // Returns true when running inside Capacitor (native iOS/Android).
+  // When false, IAPs are mock-granted instantly for dev testing.
+  function iapIsNative() {
+    return typeof window !== "undefined" && typeof window.Capacitor !== "undefined";
+  }
+
+  // Process an IAP purchase. In browser: mock grant. On native: the platform
+  // plugin handles the transaction, then calls this on success.
+  function processIAP(productId) {
+    var product = IAP_PRODUCTS.find(function (p) { return p.id === productId; });
+    if (!product) return;
+    campaignSave.wallet = normalizeWallet(campaignSave.wallet);
+    if (product.credits) campaignSave.wallet.credits += product.credits;
+    if (product.stardust) campaignSave.wallet.stardust += product.stardust;
+    campaignSave.purchases[productId] = (campaignSave.purchases[productId] || 0) + 1;
+    writeCampaignSave();
+    addCallout(product.id.replace("_", " ").toUpperCase() + " PURCHASED", "#ffd166", 22);
+    updateHud();
+  }
+
+  // ── STAR FUEL (Metagame Renovation Currency) ──────────────────────
+  // Earned 1 per level win. Spent on constellation tasks (lighting nebulae,
+  // repairing star bridges, clearing cosmic debris). Each constellation has
+  // 3-5 tasks. Complete all tasks to fully ignite the constellation and
+  // unlock an area chest (coins + boosters + constellation card).
+  function grantStarFuel(amount) {
+    var value = Math.max(0, Math.floor(amount) || 0);
+    if (value <= 0) return;
+    campaignSave.renovation = normalizeRenovationState(campaignSave.renovation);
+    campaignSave.renovation.starFuel += value;
+  }
+
+  function spendStarFuel(amount) {
+    var value = Math.max(0, Math.floor(amount) || 0);
+    campaignSave.renovation = normalizeRenovationState(campaignSave.renovation);
+    if (campaignSave.renovation.starFuel < value) return false;
+    campaignSave.renovation.starFuel -= value;
+    return true;
+  }
+
+  function normalizeRenovationState(state) {
+    if (!state) return { starFuel: 0, constellations: {} };
+    return {
+      starFuel: Math.max(0, Math.floor(Number(state.starFuel) || 0)),
+      constellations: state.constellations || {}
+    };
+  }
+
+  // Get renovation progress for a constellation (by episode index).
+  function getConstellationRenovation(episode) {
+    campaignSave.renovation = normalizeRenovationState(campaignSave.renovation);
+    var key = String(episode);
+    if (!campaignSave.renovation.constellations[key]) {
+      campaignSave.renovation.constellations[key] = {
+        tasksCompleted: 0,
+        totalTasks: 4, // default: 4 tasks per constellation
+        ignited: false
+      };
+    }
+    return campaignSave.renovation.constellations[key];
+  }
+
+  // Mark a constellation task complete. When all tasks done, ignite constellation.
+  function completeRenovationTask(episode) {
+    var reno = getConstellationRenovation(episode);
+    reno.tasksCompleted = Math.min(reno.totalTasks, reno.tasksCompleted + 1);
+    if (reno.tasksCompleted >= reno.totalTasks && !reno.ignited) {
+      reno.ignited = true;
+      // Area chest reward: coins + boosters
+      grantCredits(200);
+      grantRewardBundle({ hammer: 1, shuffle: 1, charge: 1 });
+      addCallout("CONSTELLATION IGNITED", "#4fc3f7", 28);
+      addCallout("+200 COINS + BOOSTER KIT", "#ffd166", 18);
+      addShockwave(centerBoardX(), centerBoardY(), "#ffd166", view.cell * 0.3, view.boardSize * 0.4, 0.4, 12);
+      // Force map rebuild so ignition shows.
+      mapBuilt = false;
+    }
+    writeCampaignSave();
+  }
+
+  // ── SUPER SUPERNOVA (Win Streak Super Special) ─────────────────────
+  // After SUPER_STREAK_THRESHOLD consecutive wins, the Supernova special
+  // gets supercharged: clears row + column + 3-tile radius (normal = row+col only).
+  // Resets on any loss. Equivalent to Royal Match's Super Light Ball.
+  function isSuperSupernovaActive() {
+    return (campaignSave.winStreak || 0) >= SUPER_STREAK_THRESHOLD;
+  }
   var STORE_ITEMS = [
     { id: "starter", title: "Starter Pack", subtitle: "3 Hammer, 3 Shuffle, 2 Charge", tag: "First-session value", mockPrice: "$0.99", singleClaim: true, rewards: { hammer: 3, shuffle: 3, charge: 2 }, credits: 120 },
     { id: "neon-kit", title: "Neon Kit", subtitle: "2 of each booster, 260 credits", tag: "Mock bundle SKU", mockPrice: "$2.99", singleClaim: true, rewards: { hammer: 2, shuffle: 2, charge: 2 }, credits: 260 },
     { id: "hammer-pack", title: "Hammer Pack", subtitle: "5 Hammer boosters", tag: "Break target pieces", creditCost: 120, rewards: { hammer: 5, shuffle: 0, charge: 0 } },
     { id: "shuffle-pack", title: "Shuffle Pack", subtitle: "4 Shuffle boosters", tag: "Fix bad boards", creditCost: 110, rewards: { hammer: 0, shuffle: 4, charge: 0 } },
     { id: "charge-pack", title: "Charge Pack", subtitle: "3 Charge boosters", tag: "Force overdrive", creditCost: 160, rewards: { hammer: 0, shuffle: 0, charge: 3 } },
-    { id: "continue", title: "Continue", subtitle: "+5 moves on the current level", tag: "Save failed runs", creditCost: CONTINUE_COST, continueMoves: CONTINUE_MOVES }
+    { id: "continue", title: "Continue", subtitle: "+5 moves on the current level", tag: "Save failed runs", creditCost: CONTINUE_COST, continueMoves: CONTINUE_MOVES },
+    // ── IAP coin bundles (real-money purchases via Capacitor storeKit) ──
+    { id: "iap_coin_small",  title: "Pocket of Coins",  subtitle: "100 Star Coins",       tag: "IAP $0.99",  iap: true, productId: "coin_small" },
+    { id: "iap_coin_medium", title: "Sack of Coins",    subtitle: "550 Star Coins + 10% bonus", tag: "IAP $4.99",  iap: true, productId: "coin_medium" },
+    { id: "iap_coin_large",  title: "Chest of Coins",   subtitle: "1,200 Star Coins + 20% bonus", tag: "IAP $9.99",  iap: true, productId: "coin_large" },
+    { id: "iap_coin_xl",     title: "Vault of Coins",   subtitle: "2,800 Star Coins + 40% bonus", tag: "IAP $19.99", iap: true, productId: "coin_xl" },
+    { id: "iap_stardust_s",  title: "Stardust Shard",   subtitle: "50 Stardust",          tag: "IAP $2.99",  iap: true, productId: "stardust_small" },
+    { id: "iap_stardust_l",  title: "Stardust Cluster",  subtitle: "150 Stardust + 500 Coins", tag: "IAP $9.99",  iap: true, productId: "stardust_large" }
   ];
 
   var view = {
@@ -1937,7 +3538,14 @@
     boardX: 0,
     boardY: 0,
     boardSize: 0,
-    cell: 0
+    cell: 0,
+    // When gridExtent shrinks the active area, these offsets center the active
+    // grid within the full 8×8 frame. Drawing code adds these to boardX/Y
+    // when positioning pieces, mask outlines, and cell-based effects. The
+    // board frame rectangle itself does NOT use these — it stays centered
+    // on screen at the full 8×8 size.
+    gridOffsetX: 0,
+    gridOffsetY: 0
   };
 
   var board = [];
@@ -1948,6 +3556,11 @@
   var currentGridExtent = null;
   var tileCharges = [];
   var tileWobble = []; // JUICE PASS: per-cell wobble decay when shields take a hit
+  // Phase 2 stellar anomalies: Black Holes (gravity wells), Wormholes
+  // (linked portals), and Nebula cells (fog overlays that hide piece color).
+  var blackHoles = [];
+  var wormholes = [];
+  var nebulaCells = [];
   // Beat Gates: masked cells that toggle open/closed per MOVE (never per
   // second — the campaign never races time). Closed = solid wall: holds no
   // piece, blocks falls and matches. Visuals strobe on the beat clock.
@@ -1982,7 +3595,7 @@
   var spreaderMoveCount = 0;
   var SPREAD_EVERY = 3; // moves between spread ticks
   var SPREAD_CAP = 9; // hard ceiling on live infections (softlock guard)
-  var SPREAD_COLOR = "#c8ff2e"; // acid lime, distinct from Quark green #8cff6b
+  var SPREAD_COLOR = "#ff3d6e"; // toxic red-pink — distinct from Nova (#ff4fd8) and Core Star (#ff8a3d)
   // Spectrum Shields: shield cells that need adjacent matches of specific
   // colors. The bracket silhouette stays; a colored arc ring names the
   // colors and extinguishes segment by segment.
@@ -2005,20 +3618,11 @@
   // right here at load, before later var statements execute).
   // Every mask keeps the top two rows playable (feel lock) and leaves at
   // least 44 active cells so goals stay tunable. core-diamond is the
-  // level-240 one-off and stays out of the rotation pool.
+  // final campaign level one-off and stays out of the rotation pool.
   var BOARD_SHAPE_POOL = ["full", "corner-bites", "wide-gate", "diamond", "soft-diamond", "hourglass", "cross", "twin-towers", "staircase", "arena", "fang", "wave", "butterfly", "chevron", "vault"];
-  // Finale set pieces: each 15th level gets a signature board, escalating
-  // from the early vocabulary to the theatrical cuts, and the campaign
-  // ends on the one-off core-diamond. Level 15 lives in the 1-16 presets
-  // (authored "full" board) and level 30 sits in the early rotation
-  // (already "wide-gate"); both entries here document the assignment and
-  // feed the no-repeat rule.
-  var FINALE_BOARD_SHAPES = {
-    15: "full", 30: "wide-gate", 45: "corner-bites", 60: "diamond",
-    75: "soft-diamond", 90: "hourglass", 105: "vault", 120: "twin-towers",
-    135: "staircase", 150: "wave", 165: "butterfly", 180: "chevron",
-    195: "fang", 210: "cross", 225: "arena", 240: "core-diamond"
-  };
+  // Finale set pieces: the last star of every constellation gets a signature
+  // board. The final campaign level remains the one-off core-diamond.
+  var FINALE_BOARD_SHAPE_POOL = ["full", "wide-gate", "corner-bites", "diamond", "soft-diamond", "hourglass", "vault", "twin-towers", "staircase", "wave", "butterfly", "chevron", "fang", "cross", "arena"];
   var boardShapeCache = {};
   var campaign = buildCampaign(LEVEL_COUNT);
   var campaignSave = readCampaignSave();
@@ -2035,6 +3639,15 @@
   var rays = [];
   var floaters = [];
   var cellFlashes = []; // footprint flashes marking the exact cells a special/fusion clears
+  var constellationLines = []; // faint match trails that connect cleared stars like constellations
+  // Phase 3 environmental modifiers (off by default; enabled by level.layout).
+  var environmentTurnCount = 0;
+  var lastEnvironmentProcessedMove = 0;
+  var gravityDirection = "down";
+  var gravityRotationPulse = 0;
+  var driftPulse = 0;
+  var dayNightPulse = 0;
+  var lastNightState = false;
   var calloutQueue = [];
   var activeCallout = null;
   // Layer-growth payoff (presentation only): a read-only mirror of the voices the
@@ -2065,6 +3678,11 @@
   var shockwaves = [];
   var vectorField = buildVectorField(92);
   var atmosphereMotes = buildAtmosphereMotes(120);
+  var starfield = [];
+  var backdropParticles = [];
+  var backdropMountainLayers = [];
+  var currentWorldIndex = 0;
+  var backdropSeed = 0;
   var stageBgGradient = null;
   var vignetteGradient = null;
   var washCyan = null;
@@ -2090,6 +3708,8 @@
   var lastSharePayload = null;
   var shareScoreCountFrame = 0;
   var failLockUntil = 0;
+  var starHopTimer = 0;
+  var starHopFinish = null;
   // True from the moment a result/fail card is scheduled until it opens or is
   // closed. Blocks board taps in the pre-card window so a stray tap can't
   // restart a lost level (skipping the fail card + Continue offer) or advance
@@ -2104,6 +3724,18 @@
   var resetProgressArmedUntil = 0;
   var resetProgressTimer = 0;
   var levelState = "playing";
+
+  function syncMissionPlayingClass() {
+    var isPlaying = levelState === "playing";
+    if (missionPanel) {
+      if (isPlaying) missionPanel.classList.add("is-playing");
+      else missionPanel.classList.remove("is-playing");
+    }
+    if (hudPanel) {
+      if (isPlaying) hudPanel.classList.add("is-playing");
+      else hudPanel.classList.remove("is-playing");
+    }
+  }
   var levelStats = createLevelStats();
   var activeBooster = null;
   var selected = null;
@@ -2132,6 +3764,8 @@
   var beatPulse = 0;
   var energy = 0.12;
   var drive = 0;
+  var lastMoveSurgeActive = false;
+  var lastViableMoveCount = 0;
   var overdrivePulse = 0;
   var meterHotActive = false;
   var overdriveExitPulse = 0;
@@ -2256,139 +3890,110 @@
 
   function buildCampaign(count) {
     var levels = [];
+    var maxCount = Math.max(1, count || getCampaignLevelCount());
     // Sawtooth: difficulty climbs across each 10-level decade, peaks at
     // cycle positions 7 (HARD) and 8 (SUPER HARD), relief at 9. Starts
     // after the level-20 intro runway so the first session never spikes.
     var sawtoothMoves = [2, 2, 1, 1, 1, 0, 0, -4, -5, 3];
     var sawtoothScore = [0.85, 0.9, 0.95, 1, 1.02, 1.05, 1.08, 1.2, 1.28, 0.8];
-    for (var index = 0; index < count; index += 1) {
-      var number = index + 1;
-      var episode = Math.floor(index / 15) + 1;
-      var chapterLevel = (index % 15) + 1;
+    for (var episodeIndex = 0; episodeIndex < CONSTELLATION_DATA.length && levels.length < maxCount; episodeIndex += 1) {
+      var episode = episodeIndex + 1;
       var theme = getEpisodeTheme(episode);
-      var difficulty = 1 + Math.floor(index / 18);
-      var preset = getFirstSessionPreset(number);
-      var layout = preset ? cloneLevelLayout(preset.layout) : createLevelLayout(number, difficulty);
-      var baseMoves = 28 - Math.min(7, Math.floor(index / 32)) + (number % 4);
-      var moves = preset ? preset.moves : Math.max(17, baseMoves + (layout.pattern === "none" && !(layout.gates && layout.gates.length > 0) ? 0 : 2));
-      var scoreTarget = preset ? preset.scoreTarget : createScoreTarget(number);
-      var badge = "";
-      if (!preset && number > 20) {
-        var cyclePos = (number - 1) % 10;
-        moves = Math.max(16, moves + sawtoothMoves[cyclePos]);
-        // Badge score multipliers taper by band: the base curve sits
-        // closer to achieved scores past L100, so late badges need less
-        // extra target. Values fitted against the simulate-difficulty
-        // greedy score distributions to land the 40-70% win band.
-        var scoreMult = sawtoothScore[cyclePos];
-        if (isBadgePosition(number)) {
-          // The 38-69 badge cluster measured dead (100% random and/or
-          // greedy wins) at 1.6/1.7 while 78-99 sat in band, so the
-          // sub-100 band splits at 70 with a hotter early tier.
-          if (cyclePos === 7) scoreMult = number <= 70 ? 2.1 : number <= 100 ? 1.6 : number <= 170 ? 1.3 : 1.1;
-          if (cyclePos === 8) scoreMult = number <= 70 ? 2.3 : number <= 100 ? 1.7 : number <= 170 ? 1.38 : 1.22;
-          // Per-level overrides fitted from targeted 6-attempt
-          // simulate-difficulty runs: these seeds sit far enough off
-          // their band's median that the shared multiplier alone cannot
-          // land the 40-70% greedy win band. 108 and 149 are seeds where
-          // random cascade scoring rivals greedy collect-chasing, so any
-          // target that lifts greedy to 50%+ also lifts random to 67%+
-          // (BADGE-SOFT); their fitted values sit mid-plateau on the
-          // random/greedy tie instead.
-          var badgeSpotMults = { 38: 2.8, 49: 2.45, 58: 2.28, 59: 2.7, 69: 2.1, 108: 1.45, 109: 1.55, 118: 1.4, 138: 1.6, 149: 1.49, 178: 1.18, 189: 1.33, 209: 1.14, 239: 1.15 };
-          if (badgeSpotMults[number]) scoreMult = badgeSpotMults[number];
+      var constellation = getConstellationData(episode);
+      var stars = constellation && constellation.stars ? constellation.stars : [];
+      var episodeLevels = Math.max(1, stars.length);
+      for (var starIndex = 0; starIndex < episodeLevels && levels.length < maxCount; starIndex += 1) {
+        var index = levels.length;
+        var number = index + 1;
+        var chapterLevel = starIndex + 1;
+        var star = stars[starIndex] || null;
+        var difficulty = getConstellationDifficulty(episode, chapterLevel, episodeLevels);
+        var preset = getFirstSessionPreset(number);
+        var layout = preset ? cloneLevelLayout(preset.layout) : createLevelLayout(number, difficulty);
+        var beatPlan = getConstellationPacing(episode, episodeLevels);
+        var beat = preset ? null : (beatPlan[Math.max(0, Math.min(beatPlan.length - 1, chapterLevel - 1))] || LEVEL_BEAT.PRACTICE);
+        var idea = preset ? null : getLevelIdeaCard(number, episode, chapterLevel, episodeLevels, difficulty);
+        if (!preset) layout = applyIdeaToLayout(layout, idea, number, difficulty);
+        var baseMoves = 28 - Math.min(7, Math.floor(difficulty / 3)) + (number % 4);
+        // Move economy curve: tighten moves in late constellations.
+        // Royal Match: 30-38 early → 23-27 late. Our base (28-7+3 = 24-31)
+        // already trends down. Add a per-episode tightening belt to push
+        // late game toward 23-25 on average.
+        if (episodeIndex >= 27) baseMoves -= Math.min(3, Math.floor((episodeIndex - 27) / 10));
+        if (episodeIndex >= 47) baseMoves -= Math.min(2, Math.floor((episodeIndex - 47) / 15));
+        var moves = preset ? preset.moves : Math.max(16, baseMoves + (layout.pattern === "none" && !(layout.gates && layout.gates.length > 0) ? 0 : 2));
+        var scoreTarget = preset ? preset.scoreTarget : createScoreTarget(number);
+        var badge = "";
+        if (!preset && number > 20) {
+          var cyclePos = (number - 1) % 10;
+          moves = Math.max(15, moves + sawtoothMoves[cyclePos]);
+          var scoreMult = sawtoothScore[cyclePos];
+          if (isBadgePosition(number)) {
+            if (cyclePos === 7) scoreMult = episodeIndex < 27 ? 1.75 : episodeIndex < 47 ? 1.55 : 1.35;
+            if (cyclePos === 8) scoreMult = episodeIndex < 27 ? 1.95 : episodeIndex < 47 ? 1.7 : 1.5;
+            var badgeSpotMults = { 38: 2.8, 49: 2.45, 58: 2.28, 59: 2.7, 69: 2.1, 108: 1.45, 109: 1.55, 118: 1.4, 138: 1.6, 149: 1.49, 178: 1.18, 189: 1.33, 209: 1.14, 239: 1.15 };
+            if (badgeSpotMults[number]) scoreMult = badgeSpotMults[number];
+          }
+          scoreTarget = Math.floor(scoreTarget * scoreMult);
+          // Difficulty labels: cycle positions 7-8 are the peak difficulty
+          // in each 10-level decade. Label them for ALL levels, not just 35+.
+          if (cyclePos === 7) badge = "HARD";
+          if (cyclePos === 8) badge = "SUPER HARD";
         }
-        scoreTarget = Math.floor(scoreTarget * scoreMult);
-        // First HARD label lands at 35; the decade rhythm follows.
-        if (number >= 35 && cyclePos === 7) badge = "HARD";
-        if (number >= 35 && cyclePos === 8) badge = "SUPER HARD";
-      }
-      if (number === 35) {
-        badge = "HARD";
-        moves = Math.max(16, moves - 4);
-        // 1.95 left random-policy wins at 100%; 2.55 puts the bar past
-        // the measured random full-run ceiling (~25k over 29 moves)
-        // while greedy's stronger cascades keep it in the win band.
-        scoreTarget = Math.floor(scoreTarget * 2.55);
-      }
-      if (number === 38 || number === 39) {
-        // First badge pair after the L35 debut measured dead (100%
-        // random AND greedy wins): they carry 27 moves against the
-        // badge cluster's 24-25, so trim the surplus to put the HARD
-        // and SUPER HARD labels back to work.
-        moves = Math.max(16, moves - 3);
-      }
-      if (number === 36) {
-        // Easy cooldown right after the first HARD level.
-        moves += 2;
-        scoreTarget = Math.floor(scoreTarget * 0.85);
-      }
-      if (number === 41) {
-        // Beat Gates debut: toy framing with a move surplus and a soft
-        // score bar so the showcase lands 95-100% wins.
-        moves += 4;
-        scoreTarget = Math.floor(scoreTarget * 0.8);
-      }
-      if (number === 51 || number === 61) {
-        // Signal Nodes / Spectrum Shields debuts: same toy framing as 41
-        // so the solo showcases land 95-100% wins. Spectrum gets a bigger
-        // surplus: color-specific feeds can starve on a cold board.
-        moves += number === 61 ? 6 : 4;
-        scoreTarget = Math.floor(scoreTarget * 0.8);
-      }
-      if (number === 71 || number === 81) {
-        // Phase Locks / Fuse Wires debuts: toy framing again. Cages meter
-        // the board (they block falls), so 71 gets the bigger surplus;
-        // 81's wired chain pays for itself once any entry fires.
-        moves += number === 71 ? 5 : 4;
-        scoreTarget = Math.floor(scoreTarget * 0.8);
-      }
-      if (number === 225) {
-        // Arena finale set piece: the open-center ring holds 48 cells
-        // (versus 62 on the corner-bites board the score curve was fitted
-        // against), which cut greedy cascade scores ~25% and walled the
-        // level in simulate-difficulty. Ease the bar to match the rim's
-        // real throughput.
-        moves += 2;
-        scoreTarget = Math.floor(scoreTarget * 0.68);
-      }
-      var goals = preset ? cloneLevelGoals(preset.goals) : createLevelGoals(number, difficulty, scoreTarget, layout);
-      if (!preset && layout.fluxTarget > 0) {
-        var clampedFlux = Math.min(layout.fluxTarget, Math.floor(moves * 2));
-        layout.fluxTarget = clampedFlux;
-        // Passive shield clearing runs well under one cell per move, so
-        // flux goals stay beneath that ceiling to stay winnable.
-        goals.forEach(function (goal) {
-          if (goal.kind === "flux") goal.target = Math.min(goal.target, clampedFlux, Math.floor(moves * 0.4));
+        if (number === 35) {
+          badge = "HARD";
+          moves = Math.max(16, moves - 4);
+          scoreTarget = Math.floor(scoreTarget * 2.55);
+        }
+        if (number === 38 || number === 39) moves = Math.max(16, moves - 3);
+        if (number === 36) {
+          moves += 2;
+          scoreTarget = Math.floor(scoreTarget * 0.85);
+        }
+        if (number === 41) { moves += 4; scoreTarget = Math.floor(scoreTarget * 0.8); }
+        if (number === 51 || number === 61) { moves += number === 61 ? 6 : 4; scoreTarget = Math.floor(scoreTarget * 0.8); }
+        if (number === 71 || number === 81) { moves += number === 71 ? 5 : 4; scoreTarget = Math.floor(scoreTarget * 0.8); }
+        if (number === LEVEL_COUNT) {
+          moves += 2;
+          scoreTarget = Math.floor(scoreTarget * 0.68);
+        }
+        var goals = preset ? cloneLevelGoals(preset.goals) : createLevelGoals(number, difficulty, scoreTarget, layout);
+        if (!preset && layout.fluxTarget > 0) {
+          var clampedFlux = Math.min(layout.fluxTarget, Math.floor(moves * 2));
+          layout.fluxTarget = clampedFlux;
+          goals.forEach(function (goal) {
+            if (goal.kind === "flux") goal.target = Math.min(goal.target, clampedFlux, Math.floor(moves * 0.4));
+          });
+        }
+        var modifiers = createLevelModifiers(number, difficulty, getLevelDropBias(number, goals));
+        levels.push({
+          id: number,
+          title: preset ? preset.title : (star ? star.name : theme.name + " " + chapterLevel),
+          sectorTitle: "Constellation " + pad2(episode) + ": " + theme.name,
+          episodeTheme: theme.id,
+          tagline: theme.tag,
+          clipHook: theme.hook,
+          musicPalette: theme.palette,
+          seed: hashString("neon-lattice-level:" + number),
+          episode: episode,
+          chapterLevel: chapterLevel,
+          episodeLevelCount: episodeLevels,
+          constellationIndex: episodeIndex,
+          starName: star ? star.name : "Star " + chapterLevel,
+          starMagnitude: star ? star.magnitude : null,
+          beat: beat,
+          ideaId: idea ? idea.id : null,
+          moves: moves,
+          badge: badge,
+          coach: preset ? preset.coach : createIdeaCoachCopy(number, idea),
+          pressure: preset ? preset.pressure : createPressureCopy(number, difficulty, layout),
+          goals: goals,
+          layout: layout,
+          starterSpecials: preset ? cloneStarterSpecials(preset.starterSpecials) : createStarterSpecials(number),
+          starTargets: [ scoreTarget, Math.floor(scoreTarget * 1.35), Math.floor(scoreTarget * 1.75) ],
+          modifiers: modifiers
         });
       }
-
-      var modifiers = createLevelModifiers(number, difficulty, getLevelDropBias(number, goals));
-
-      levels.push({
-        id: number,
-        title: preset ? preset.title : theme.name + " " + chapterLevel,
-        sectorTitle: "Track " + pad2(episode) + ": " + theme.name,
-        episodeTheme: theme.id,
-        tagline: theme.tag,
-        clipHook: theme.hook,
-        musicPalette: theme.palette,
-        seed: hashString("neon-lattice-level:" + number),
-        episode: episode,
-        moves: moves,
-        badge: badge,
-        coach: preset ? preset.coach : createCoachCopy(number),
-        pressure: preset ? preset.pressure : createPressureCopy(number, difficulty, layout),
-        goals: goals,
-        layout: layout,
-        starterSpecials: preset ? cloneStarterSpecials(preset.starterSpecials) : createStarterSpecials(number),
-        starTargets: [
-          scoreTarget,
-          Math.floor(scoreTarget * 1.35),
-          Math.floor(scoreTarget * 1.75)
-        ],
-        modifiers: modifiers
-      });
     }
     return levels;
   }
@@ -2492,6 +4097,15 @@
       blockers: (layout.blockers || []).map(function (cell) {
         return { row: cell.row, col: cell.col, strength: cell.strength };
       }),
+      blackHoles: (layout.blackHoles || []).map(function (cell) {
+        return { row: cell.row, col: cell.col };
+      }),
+      wormholes: (layout.wormholes || []).map(function (pair) {
+        return { rowA: pair.rowA, colA: pair.colA, rowB: pair.rowB, colB: pair.colB };
+      }),
+      nebulaCells: (layout.nebulaCells || []).map(function (cell) {
+        return { row: cell.row, col: cell.col, fogLevel: cell.fogLevel || 1 };
+      }),
       spectrum: (layout.spectrum || []).map(function (entry) {
         return { row: entry.row, col: entry.col, colors: (entry.colors || []).slice() };
       }),
@@ -2504,7 +4118,11 @@
         });
       }),
       gridExtent: layout.gridExtent ? { topRow: layout.gridExtent.topRow, bottomRow: layout.gridExtent.bottomRow, leftCol: layout.gridExtent.leftCol, rightCol: layout.gridExtent.rightCol } : null,
-      activeColors: Array.isArray(layout.activeColors) ? layout.activeColors.slice() : null
+      activeColors: Array.isArray(layout.activeColors) ? layout.activeColors.slice() : null,
+      worldModifier: layout.worldModifier || null,
+      drift: layout.drift ? { direction: layout.drift.direction, frequency: layout.drift.frequency || 1 } : null,
+      dayNight: layout.dayNight ? { cycleLength: layout.dayNight.cycleLength || 5, nightDuration: layout.dayNight.nightDuration || 3 } : null,
+      gravityRotation: layout.gravityRotation ? { frequency: layout.gravityRotation.frequency || 8 } : null
     };
   }
 
@@ -2520,8 +4138,15 @@
   }
 
   function getEpisodeTheme(episode) {
+    var data = getConstellationData(episode);
     var index = Math.max(0, Math.floor((episode || 1) - 1));
-    return EPISODE_THEMES[index % EPISODE_THEMES.length] || EPISODE_THEMES[0];
+    return EPISODE_THEMES[index] || (data ? {
+      id: data.id,
+      name: data.name,
+      tag: data.tag,
+      hook: data.hook,
+      palette: data.palette
+    } : EPISODE_THEMES[0]);
   }
 
   function getLevelEpisodeTheme(level) {
@@ -2536,9 +4161,29 @@
     return getLevelEpisodeTheme(currentLevel);
   }
 
+  function getBackdropIndexForLevel(level) {
+    var episode = level && level.episode ? level.episode : 1;
+    return Math.max(0, Math.floor(episode - 1)) % WORLD_BACKDROPS.length;
+  }
+
+  function getCurrentWorldBackdrop() {
+    return WORLD_BACKDROPS[currentWorldIndex % WORLD_BACKDROPS.length] || WORLD_BACKDROPS[0];
+  }
+
+  function getCurrentWorldAccent() {
+    return (getCurrentWorldBackdrop() || WORLD_BACKDROPS[0]).accent || "#46f4ff";
+  }
+
+  function setWorldBackdropForLevel(level) {
+    currentWorldIndex = getBackdropIndexForLevel(level);
+    var id = level && level.id ? level.id : 1;
+    backdropSeed = hashString("shooting-star-backdrop:" + currentWorldIndex + ":" + id);
+    regenerateBackdropArt(backdropSeed);
+  }
+
   function isFinaleLevel(level) {
-    // Every 15th level is the track's Finale; framing only, no rule changes.
-    return Boolean(level && level.id % 15 === 0);
+    // The last star in each variable-length constellation is its Finale.
+    return Boolean(level && level.chapterLevel === level.episodeLevelCount);
   }
 
   function getLevelDisplayTitle(level) {
@@ -2667,6 +4312,33 @@
     return goals;
   }
 
+  function applyEnvironmentalModifierLayout(layout, number) {
+    // Phase 3 constellation-tier modifiers. They are opt-in and live on the
+    // layout so generated/preset levels without these properties stay unchanged.
+    var episode = Math.floor((number - 1) / 15) + 1;
+    var chapter = ((number - 1) % 15) + 1;
+    var theme = getEpisodeTheme(episode);
+    var themeId = theme && theme.id ? theme.id : "";
+    var driftWorlds = { "cygnus": true, "ursa-major": true, "cassiopeia": true, "draco": true, "ursa-minor": true, "cepheus": true, "corona-borealis": true };
+    var dayNightWorlds = { "crux": true, "scorpius": true, "sagittarius": true, "centaurus": true, "carina": true, "vela": true, "puppis": true };
+    var gravityWorlds = { "octans": true, "andromeda": true };
+    if (driftWorlds[themeId]) {
+      // Northern sky: the board glides one cell after each turn.
+      var driftDirs = ["left", "down", "right", "up"];
+      layout.worldModifier = "drift";
+      layout.drift = { direction: driftDirs[(chapter - 1) % driftDirs.length], frequency: 1 };
+    } else if (dayNightWorlds[themeId]) {
+      // Southern constellations: alternating day/night scoring windows.
+      layout.worldModifier = "dayNight";
+      layout.dayNight = { cycleLength: 5, nightDuration: 3 };
+    } else if (gravityWorlds[themeId]) {
+      // Deep-sky/polar constellations: gravity rotates around the board mid-level.
+      layout.worldModifier = "gravityRotation";
+      layout.gravityRotation = { frequency: 8 };
+    }
+    return layout;
+  }
+
   function createLevelLayout(number, difficulty) {
     // Presets cover 1-16. From 17 the shield patterns rotate; strength 2
     // debuts at 21 as that decade's new thing (double shields).
@@ -2702,6 +4374,10 @@
     var wires = createFuseWireNetworks(number);
     var dominoDebut = (locks.length > 0 || wires.length > 0) && number <= 83;
     if (dominoDebut && spectrum.length === 0) pattern = "none";
+    var blackHoleCells = createBlackHoleCells(number);
+    var wormholePairs = createWormholePairs(number);
+    var nebulaLayoutCells = createNebulaCells(number);
+    if (blackHoleCells.length > 0 || wormholePairs.length > 0 || nebulaLayoutCells.length > 0) pattern = "none";
 
     var strength = number > 150 ? 3 : number >= 21 ? 2 : 1;
     var gateTiming = createBeatGateTiming(number, gates);
@@ -2717,7 +4393,10 @@
       signals: signals,
       spectrum: spectrum,
       locks: locks,
-      wires: wires
+      wires: wires,
+      blackHoles: blackHoleCells,
+      wormholes: wormholePairs,
+      nebulaCells: nebulaLayoutCells
     };
     layout.fluxTarget = countFluxCells(layout);
     if (spectrum.length > 0) layout.fluxTarget = spectrum.length;
@@ -2731,7 +4410,7 @@
     // (0,6) to reach it (that board's goal is chain, not flux).
     if (number === 21 || number === 37) layout.blockerExclude = [{ row: 3, col: 3 }];
     if (number === 22) layout.blockerExclude = [{ row: 0, col: 6 }];
-    return layout;
+    return applyEnvironmentalModifierLayout(layout, number);
   }
 
   function isSignalLevel(number) {
@@ -2910,6 +4589,57 @@
     ]];
   }
 
+  function isBlackHoleLevel(number) {
+    if (number < 91) return false;
+    if (number <= 93) return true;
+    return number % 12 === 7;
+  }
+
+  function createBlackHoleCells(number) {
+    if (!isBlackHoleLevel(number)) return [];
+    if (number === 91) return [{ row: 4, col: 3 }];
+    if (number === 92) return [{ row: 3, col: 4 }];
+    if (number === 93) return [{ row: 4, col: 2 }, { row: 4, col: 5 }];
+    var variant = Math.floor(number / 12) % 3;
+    if (variant === 0) return [{ row: 3, col: 3 }];
+    if (variant === 1) return [{ row: 4, col: 4 }];
+    return [{ row: 3, col: 2 }, { row: 5, col: 5 }];
+  }
+
+  function isWormholeLevel(number) {
+    if (number < 101) return false;
+    if (number <= 103) return true;
+    return number % 12 === 8;
+  }
+
+  function createWormholePairs(number) {
+    if (!isWormholeLevel(number)) return [];
+    if (number === 101) return [{ rowA: 2, colA: 2, rowB: 5, colB: 5 }];
+    if (number === 102) return [{ rowA: 2, colA: 5, rowB: 5, colB: 2 }];
+    if (number === 103) return [{ rowA: 3, colA: 1, rowB: 4, colB: 6 }];
+    var variant = Math.floor(number / 12) % 3;
+    if (variant === 0) return [{ rowA: 2, colA: 1, rowB: 5, colB: 6 }];
+    if (variant === 1) return [{ rowA: 2, colA: 6, rowB: 6, colB: 2 }];
+    return [{ rowA: 3, colA: 2, rowB: 5, colB: 5 }];
+  }
+
+  function isNebulaLevel(number) {
+    if (number < 111) return false;
+    if (number <= 113) return true;
+    return number % 12 === 9;
+  }
+
+  function createNebulaCells(number) {
+    if (!isNebulaLevel(number)) return [];
+    if (number === 111) return [{ row: 3, col: 3 }, { row: 3, col: 4 }];
+    if (number === 112) return [{ row: 2, col: 2 }, { row: 4, col: 4 }, { row: 5, col: 3 }];
+    if (number === 113) return [{ row: 2, col: 5 }, { row: 4, col: 2 }, { row: 5, col: 5 }];
+    var variant = Math.floor(number / 12) % 3;
+    if (variant === 0) return [{ row: 2, col: 3 }, { row: 4, col: 4 }];
+    if (variant === 1) return [{ row: 3, col: 2 }, { row: 3, col: 5 }, { row: 5, col: 4 }];
+    return [{ row: 2, col: 4 }, { row: 4, col: 3 }, { row: 5, col: 5 }];
+  }
+
   function isBeatGateLevel(number) {
     // L41 solo showcase, 42-43 pair gates with one older element, then
     // one gate level per decade (x6) so no two consecutive levels share
@@ -2958,7 +4688,7 @@
     });
   }
 
-  // BOARD_SHAPE_POOL / FINALE_BOARD_SHAPES / boardShapeCache are declared
+  // BOARD_SHAPE_POOL / FINALE_BOARD_SHAPE_POOL / boardShapeCache are declared
   // above the buildCampaign call (load order), near the other level state.
   function createBoardShape(number, difficulty) {
     // Pure function of the level number: determinism is a feel lock, so
@@ -2975,7 +4705,11 @@
   // badge levels keep their legacy cut.
   function getPinnedBoardShape(number) {
     if (number <= 40) return null;
-    if (FINALE_BOARD_SHAPES[number]) return FINALE_BOARD_SHAPES[number];
+    if (isConstellationFinaleNumber(number)) {
+      if (number === LEVEL_COUNT) return "core-diamond";
+      var episode = getEpisodeForLevelNumber(number);
+      return FINALE_BOARD_SHAPE_POOL[(episode - 1) % FINALE_BOARD_SHAPE_POOL.length];
+    }
     if (isBadgePosition(number)) {
       var legacyShapes = ["corner-bites", "wide-gate", "diamond", "soft-diamond", "full"];
       return legacyShapes[number % legacyShapes.length];
@@ -3027,7 +4761,7 @@
 
   function createCoachCopy(number) {
     if (number === 21) return "Double Shields are reinforced walls. Two hits each: crack, then smash.";
-    if (number === 31) return "New board cut. Watch the drop lanes.";
+    if (number === 31) return "New sky cut. Watch the drop lanes.";
     if (number === 41) return "Beat Gates ride the song. Closed gates block swaps and falls.";
     if (isBeatGateLevel(number)) return "Count the gate pips. Land key swaps on open bars.";
     if (number === 51) return "Signal Nodes hear nearby matches. Each one fires a packet.";
@@ -3039,9 +4773,9 @@
     if (getAuthoredDominoKind(number) === "locks") return "Caged pieces can't move. Free them with their own color.";
     if (getAuthoredDominoKind(number) === "locked-special") return "One caged special waits. Its color match sets it off.";
     if (getAuthoredDominoKind(number) === "wires") return "Follow the wire. One detonation spends the whole network.";
-    if (number === 32) return "Fill the string frame. High drive doubles score.";
+    if (number === 32) return "Fill the constellation frame. High stellar drive doubles score.";
     if (number > 100 && number % 12 === 8) return "Make two specials, then swap them together.";
-    if (number % 15 === 0) return "Final sector gate. Chase clean cascades.";
+    if (isConstellationFinaleNumber(number)) return "Final constellation gate. Chase clean cascades.";
     if (number % 6 === 4 && number > 32) return "Overdrive levels reward aggressive clears.";
     if (number % 6 === 2) return "Specials break dense boards fast.";
     return "Clear goals fast and preserve moves.";
@@ -3056,7 +4790,7 @@
     if (layout && layout.locks && layout.locks.length > 0) return "Cages block swaps and falls. The freeing match is the puzzle.";
     if (getAuthoredDominoKind(number) === "locked-special") return "One caged special. The freeing match detonates the region.";
     if (layout && layout.spectrum && layout.spectrum.length > 0) return "Each wall shows the colors that crack it. Spend scarce colors where they count.";
-    if (number % 15 === 0) return "Gate level. Saved moves become the share blast.";
+    if (isConstellationFinaleNumber(number)) return "Constellation finale. Saved moves become the share blast.";
     if (number > 100 && number % 12 === 8) return "Swap special into special. Bigger blast, clearer goal.";
     if (layout && layout.pattern !== "none") return "Shields add pressure. Smash the walls to clear them.";
     if (number % 6 === 2) return "Specials save moves and create bigger music hits.";
@@ -3174,7 +4908,7 @@
       return row >= 5 || (col >= 2 && col <= 5);
     }
     if (shape === "core-diamond") {
-      // Level-240 one-off: full board with a carved center diamond.
+      // Final campaign one-off: full board with a carved center diamond.
       return Math.abs(row - 4.5) + Math.abs(col - 3.5) > 2;
     }
     return true;
@@ -3190,8 +4924,48 @@
     applySpectrumShields(level && level.layout ? level.layout : null);
     applyProducers(level && level.layout ? level.layout : null);
     applySpreaders(level && level.layout ? level.layout : null);
+    applyStellarAnomalies(level && level.layout ? level.layout : null);
+    anomalyIntroStartTime = 0; // Reset intro badge timer for new level
     applyFluxBlockers(level);
     resetPhaseAndFuseState();
+  }
+
+  function getLevelEnvironmentLayout() {
+    return currentLevel && currentLevel.layout ? currentLevel.layout : null;
+  }
+
+  function getGravityVector(direction) {
+    if (direction === "up") return { row: -1, col: 0 };
+    if (direction === "left") return { row: 0, col: -1 };
+    if (direction === "right") return { row: 0, col: 1 };
+    return { row: 1, col: 0 };
+  }
+
+  function rotateGravityDirection(direction) {
+    if (direction === "down") return "left";
+    if (direction === "left") return "up";
+    if (direction === "up") return "right";
+    return "down";
+  }
+
+  function isNightActive() {
+    var layout = getLevelEnvironmentLayout();
+    var config = layout && layout.dayNight;
+    if (!config) return false;
+    var cycleLength = Math.max(1, config.cycleLength || 5);
+    var nightDuration = Math.max(0, Math.min(cycleLength, config.nightDuration || 3));
+    return (environmentTurnCount % cycleLength) >= (cycleLength - nightDuration);
+  }
+
+  function getBonusScoreMultiplier(cells) {
+    if (!cells || cells.length === 0) return 1;
+    var total = 0;
+    for (var i = 0; i < cells.length; i += 1) {
+      var cell = cells[i];
+      var gem = board[cell.row] && board[cell.row][cell.col];
+      total += gem && gem.scoreMultiplier ? gem.scoreMultiplier : 1;
+    }
+    return Math.max(1, total / cells.length);
   }
 
   function applyFluxBlockers(level) {
@@ -3365,8 +5139,8 @@
       gem.spin = (gem.spin || 0) + 0.4;
       producer.flashAt = now;
       producer.beamTo = { row: target.row, col: target.col, at: now };
-      var tx = view.boardX + target.col * view.cell + view.cell / 2;
-      var ty = view.boardY + target.row * view.cell + view.cell / 2;
+      var tx = view.boardX + view.gridOffsetX + target.col * view.cell + view.cell / 2;
+      var ty = view.boardY + view.gridOffsetY + target.row * view.cell + view.cell / 2;
       addShockwave(tx, ty, TYPES[type].color, view.cell * 0.08, view.cell * 0.5, 0.2, 5);
       emitted = true;
     });
@@ -3390,6 +5164,52 @@
       // Infected cells keep their gem (you clear the infection by matching it).
       spreaderList.push({ row: cell.row, col: cell.col, born: 0, spawnAt: 0, contained: false });
     });
+  }
+
+  function applyStellarAnomalies(layout) {
+    blackHoles = [];
+    wormholes = [];
+    nebulaCells = [];
+    (layout && layout.blackHoles ? layout.blackHoles : []).forEach(function (cell) {
+      if (!isValidAnomalyCell(cell.row, cell.col)) return;
+      blackHoles.push({ row: cell.row, col: cell.col, turnsActive: 0, chargesLeft: 3, flashAt: 0 });
+      if (board[cell.row]) board[cell.row][cell.col] = null;
+    });
+    (layout && layout.wormholes ? layout.wormholes : []).forEach(function (pair) {
+      if (!isValidAnomalyCell(pair.rowA, pair.colA) || !isValidAnomalyCell(pair.rowB, pair.colB)) return;
+      if (pair.rowA === pair.rowB && pair.colA === pair.colB) return;
+      wormholes.push({ rowA: pair.rowA, colA: pair.colA, rowB: pair.rowB, colB: pair.colB, flashAt: 0 });
+      if (board[pair.rowA]) board[pair.rowA][pair.colA] = null;
+      if (board[pair.rowB]) board[pair.rowB][pair.colB] = null;
+    });
+    (layout && layout.nebulaCells ? layout.nebulaCells : []).forEach(function (cell) {
+      if (!isValidAnomalyCell(cell.row, cell.col)) return;
+      nebulaCells.push({ row: cell.row, col: cell.col, fogLevel: Math.max(0.05, Math.min(1, cell.fogLevel || 1)), flashAt: 0 });
+    });
+  }
+
+  function isValidAnomalyCell(row, col) {
+    return row >= 0 && row < GRID && col >= 0 && col < GRID && isCellActive(row, col) && !isBeatGateCell(row, col);
+  }
+
+  function isBlackHoleCell(row, col) {
+    for (var i = 0; i < blackHoles.length; i += 1) {
+      if (blackHoles[i].row === row && blackHoles[i].col === col) return true;
+    }
+    return false;
+  }
+
+  function getWormholeAt(row, col) {
+    for (var i = 0; i < wormholes.length; i += 1) {
+      var pair = wormholes[i];
+      if (pair.rowA === row && pair.colA === col) return { pair: pair, exit: { row: pair.rowB, col: pair.colB } };
+      if (pair.rowB === row && pair.colB === col) return { pair: pair, exit: { row: pair.rowA, col: pair.colA } };
+    }
+    return null;
+  }
+
+  function isWormholeCell(row, col) {
+    return Boolean(getWormholeAt(row, col));
   }
 
   function pickSpreadTarget(sp) {
@@ -3454,8 +5274,8 @@
         if (!target) return;
         spreaderMap[target.row + ":" + target.col] = true;
         newborns.push(target);
-        var x = view.boardX + target.col * view.cell + view.cell / 2;
-        var y = view.boardY + target.row * view.cell + view.cell / 2;
+        var x = view.boardX + view.gridOffsetX + target.col * view.cell + view.cell / 2;
+        var y = view.boardY + view.gridOffsetY + target.row * view.cell + view.cell / 2;
         addShockwave(x, y, SPREAD_COLOR, view.cell * 0.06, view.cell * 0.42, 0.18, 4);
       });
       newborns.forEach(function (t) {
@@ -3476,8 +5296,8 @@
         return !(s.row === cell.row && s.col === cell.col);
       });
       levelStats.spreadCleared += 1;
-      var x = view.boardX + cell.col * view.cell + view.cell / 2;
-      var y = view.boardY + cell.row * view.cell + view.cell / 2;
+      var x = view.boardX + view.gridOffsetX + cell.col * view.cell + view.cell / 2;
+      var y = view.boardY + view.gridOffsetY + cell.row * view.cell + view.cell / 2;
       addShockwave(x, y, SPREAD_COLOR, view.cell * 0.12, view.cell * 0.72, 0.24, 6);
       // JUICE PASS: fly a piece to the spread goal chip on clear.
       if (gameMode === MODE_CAMPAIGN && levelState === "playing" && currentLevel && currentLevel.goals) {
@@ -3650,6 +5470,8 @@
         winStreak: Math.max(0, parsed.winStreak || 0),
         wallet: normalizeWallet(parsed.wallet),
         purchases: normalizePurchases(parsed.purchases),
+        renovation: normalizeRenovationState(parsed.renovation),
+        continueCount: Math.max(0, Number(parsed.continueCount) || 0),
         hums: normalizeHums(parsed.hums)
       };
     } catch (error) {
@@ -3673,6 +5495,8 @@
       winStreak: 0, // PROGRESSION: consecutive-win booster escalation (RM Butler's Gift)
       wallet: normalizeWallet(null),
       purchases: {},
+      renovation: normalizeRenovationState(null),
+      continueCount: 0, // escalating continue cost tracker (resets per level)
       hums: {}
     };
   }
@@ -3722,8 +5546,10 @@
 
   function normalizeWallet(wallet) {
     var credits = wallet && Number.isFinite(Number(wallet.credits)) ? Number(wallet.credits) : 250;
+    var stardust = wallet && Number.isFinite(Number(wallet.stardust)) ? Number(wallet.stardust) : 0;
     return {
-      credits: Math.max(0, credits)
+      credits: Math.max(0, credits),
+      stardust: Math.max(0, stardust)
     };
   }
 
@@ -4341,24 +6167,26 @@
     var usableWidth = view.width < 600 ? Math.max(300, view.width - 12) : Math.max(280, view.width - 28);
     view.boardSize = Math.floor(Math.min(usableWidth, usableHeight) * boardScale);
     view.boardSize = Math.max(minBoardSize, Math.min(view.boardSize, 690));
-    // When gridExtent is set (tutorial levels), the active area is smaller
-    // than 8x8. Size the cell to fit the effective grid within the same
-    // board area, so a 5x5 board uses larger cells (not a tiny 5x5 in a
-    // corner of the 8x8 frame).
-    var effCols = GRID, effRows = GRID;
-    if (currentGridExtent) {
-      effCols = currentGridExtent.rightCol - currentGridExtent.leftCol + 1;
-      effRows = currentGridExtent.bottomRow - currentGridExtent.topRow + 1;
-    }
-    var effMax = Math.max(effCols, effRows);
-    view.cell = view.boardSize / effMax;
-    // Shrink boardSize to match the effective grid (frame hugs the active area).
-    view.boardSize = view.cell * effMax;
-    // Center the effective grid. boardX maps col=leftCol to the frame's left edge.
+    // Always size cells to the full 8×8 grid, even when gridExtent shrinks the
+    // active area for tutorial levels. The board frame stays the same size; a
+    // 5×5 extent just has more breathing room, not larger pieces.
+    view.cell = view.boardSize / GRID;
+    // Board frame stays centered on screen at the full 8×8 size.
+    view.boardX = (view.width - view.boardSize) / 2;
+    view.boardY = topReserve + (usableHeight - view.boardSize) / 2;
+    // Center the active grid WITHIN the frame. The active area spans from
+    // geLeft to geRight+1 (in cell units); its pixel center is at
+    // (geLeft + geRight + 1) / 2. The frame center is at GRID / 2 = 4.
+    // The difference, in pixels, is the offset applied to all cell content.
     var geLeft = currentGridExtent ? currentGridExtent.leftCol : 0;
     var geTop = currentGridExtent ? currentGridExtent.topRow : 0;
-    view.boardX = (view.width - view.boardSize) / 2 - geLeft * view.cell;
-    view.boardY = topReserve + (usableHeight - view.boardSize) / 2 - geTop * view.cell;
+    var geRight = currentGridExtent ? currentGridExtent.rightCol : GRID - 1;
+    var geBottom = currentGridExtent ? currentGridExtent.bottomRow : GRID - 1;
+    var activeCenterCol = (geLeft + geRight + 1) / 2;
+    var activeCenterRow = (geTop + geBottom + 1) / 2;
+    var frameCenter = GRID / 2;
+    view.gridOffsetX = (frameCenter - activeCenterCol) * view.cell;
+    view.gridOffsetY = (frameCenter - activeCenterRow) * view.cell;
 
     rebuildStageGradients();
     setTargets();
@@ -4413,8 +6241,8 @@
 
   function setTargets() {
     forEachGem(function (gem, row, col) {
-      gem.tx = view.boardX + col * view.cell + view.cell / 2;
-      gem.ty = view.boardY + row * view.cell + view.cell / 2;
+      gem.tx = view.boardX + view.gridOffsetX + col * view.cell + view.cell / 2;
+      gem.ty = view.boardY + view.gridOffsetY + row * view.cell + view.cell / 2;
       if (!Number.isFinite(gem.x)) gem.x = gem.tx;
       if (!Number.isFinite(gem.y)) gem.y = gem.ty;
     });
@@ -4448,11 +6276,16 @@
     closeSettings();
     currentLevelIndex = Math.max(0, Math.min(campaign.length - 1, index));
     currentLevel = campaign[currentLevelIndex];
+    campaignSave.continueCount = 0; // reset escalating continue cost on new level
+    setWorldBackdropForLevel(currentLevel);
     currentLevelAttempt = isSplashOpen() ? peekLevelAttempt(currentLevel.id) : registerLevelAttempt(currentLevel.id);
     boardRng = createSeededRandom(getCampaignRunSeed(currentLevel, currentLevelAttempt));
     board = [];
     tileCharges = [];
-      tileWobble = [];
+    tileWobble = [];
+    blackHoles = [];
+    wormholes = [];
+    nebulaCells = [];
     score = 0;
     combo = 0;
     movesLeft = currentLevel.moves;
@@ -4460,6 +6293,20 @@
     movesLeft += fails >= 5 ? 3 : fails >= 3 ? 2 : 0;
     // Hum payoff (perk): a woken Hum grants +1 move on its own track's levels.
     if (isHumAwake(getHumIdForLevel(currentLevel))) movesLeft += 1;
+    // BONUS / VICTORY LAP: first level of a new constellation after a finale.
+    // Grant +5 bonus moves and flag the badge. Royal Match "breather pacing"
+    // pattern — a generous level right after a constellation transition.
+    var isBonusLevel = false;
+    if (currentLevelIndex > 0) {
+      var prevLevel = campaign[currentLevelIndex - 1];
+      if (prevLevel && isConstellationFinaleNumber(prevLevel.id) && !isConstellationFinaleNumber(currentLevel.id)) {
+        isBonusLevel = true;
+        movesLeft += 5;
+        if (!currentLevel.badge) currentLevel.badge = "BONUS";
+        addCallout("BONUS LEVEL", "#4fc3f7", 22);
+        addCallout("+5 MOVES", "#ffd166", 16);
+      }
+    }
     mercyBias = fails >= 3 ? 0.18 : 0;
     pulse = 1;
     pulseBank = 0;
@@ -4469,7 +6316,15 @@
     dailyNewBest = false;
     rushSurgeCooldown = 0;
     hudClock = 0;
+    environmentTurnCount = 0;
+    lastEnvironmentProcessedMove = 0;
+    gravityDirection = "down";
+    gravityRotationPulse = 0;
+    driftPulse = 0;
+    dayNightPulse = 0;
+    lastNightState = false;
     levelState = "playing";
+    syncMissionPlayingClass();
     levelStats = createLevelStats();
     resetGrantLedger();
     activeBooster = null;
@@ -4484,6 +6339,7 @@
     rays = [];
     floaters = [];
     cellFlashes = [];
+    constellationLines = [];
     calloutQueue = [];
     activeCallout = null;
     celebration = null;
@@ -4498,6 +6354,8 @@
     var carryEnergyPrev = energy;
     energy = 0.12;
     drive = 0;
+    lastMoveSurgeActive = false;
+    lastViableMoveCount = 0;
     overdrivePulse = 0;
     meterHotActive = false;
     overdriveExitPulse = 0;
@@ -4516,8 +6374,9 @@
     audio.levelMotif = computeLevelMotif(currentLevel);
     // Felt-not-heard per-level timbre drift, keyed off the same level seed.
     audio.levelDrift = computeLevelDrift(currentLevel);
-    var motifChapter = ((currentLevel.id - 1) % 15) + 1;
-    var motifTier = motifChapter <= 5 ? 0 : motifChapter <= 10 ? 1 : 2;
+    var motifChapter = currentLevel.chapterLevel || getChapterLevelForNumber(currentLevel.id);
+    var motifSpan = currentLevel.episodeLevelCount || 15;
+    var motifTier = motifChapter <= Math.ceil(motifSpan / 3) ? 0 : motifChapter <= Math.ceil((motifSpan * 2) / 3) ? 1 : 2;
     audio.layers.push({ motif: audio.levelMotif.motif, wave: getMusicPalette().leadWave, gain: AUDIO_TUNING.motifGainByTier[motifTier], pan: 0, filter: 3800, expiresAt: 1e9, persistent: true });
     // Polyloop bed (Eno layers): three persistent loops at coprime bar counts
     // (5/7/11 bars); with the 2-bar pad the full bed realigns only every ~770
@@ -4571,8 +6430,8 @@
     applyLevelStarterSpecials(currentLevel);
     applyPhaseLocks(currentLevel);
     applyFuseWires(currentLevel);
-    // A cage can eat the only legal move: re-guarantee one after locking.
-    if (phaseLockList.length > 0 && !hasAnyMove()) forcePlayableMove();
+    // A cage or anomaly can eat the only legal move: re-guarantee one after locking/clearing portals.
+    if ((phaseLockList.length > 0 || blackHoles.length > 0 || wormholes.length > 0) && !hasAnyMove()) forcePlayableMove();
     novaPrimerSwap = null;
     novaPrimerGem = null;
     if (currentLevel.id === 5) plantNovaPrimer();
@@ -4598,7 +6457,10 @@
     boardRng = Math.random;
     board = [];
     tileCharges = [];
-      tileWobble = [];
+    tileWobble = [];
+    blackHoles = [];
+    wormholes = [];
+    nebulaCells = [];
     score = 0;
     combo = 0;
     movesLeft = 0;
@@ -4610,7 +6472,15 @@
     dailyNewBest = false;
     rushSurgeCooldown = 0;
     hudClock = 0;
+    environmentTurnCount = 0;
+    lastEnvironmentProcessedMove = 0;
+    gravityDirection = "down";
+    gravityRotationPulse = 0;
+    driftPulse = 0;
+    dayNightPulse = 0;
+    lastNightState = false;
     levelState = "playing";
+    syncMissionPlayingClass();
     levelStats = createLevelStats();
     resetGrantLedger();
     activeBooster = null;
@@ -4625,6 +6495,7 @@
     rays = [];
     floaters = [];
     cellFlashes = [];
+    constellationLines = [];
     calloutQueue = [];
     activeCallout = null;
     celebration = null;
@@ -4669,7 +6540,10 @@
     boardRng = createSeededRandom(dailySeed);
     board = [];
     tileCharges = [];
-      tileWobble = [];
+    tileWobble = [];
+    blackHoles = [];
+    wormholes = [];
+    nebulaCells = [];
     score = 0;
     combo = 0;
     movesLeft = 0;
@@ -4681,7 +6555,15 @@
     dailyNewBest = false;
     rushSurgeCooldown = 0;
     hudClock = 0;
+    environmentTurnCount = 0;
+    lastEnvironmentProcessedMove = 0;
+    gravityDirection = "down";
+    gravityRotationPulse = 0;
+    driftPulse = 0;
+    dayNightPulse = 0;
+    lastNightState = false;
     levelState = "playing";
+    syncMissionPlayingClass();
     levelStats = createLevelStats();
     resetGrantLedger();
     activeBooster = null;
@@ -4696,6 +6578,7 @@
     rays = [];
     floaters = [];
     cellFlashes = [];
+    constellationLines = [];
     calloutQueue = [];
     activeCallout = null;
     celebration = null;
@@ -4785,8 +6668,8 @@
 
   // Debut level for each one-time mechanic tip. A tip queued on its debut level
   // but never shown (a skip/jump past it, or a fast guided level) must not leak
-  // forward and mask a later level's teaching — the L5 nova primer was showing
-  // the L1 "Ion pieces are cyan circles" swap tip this way.
+  // forward and mask a later level's teaching — the L5 supernova primer was showing
+  // the L1 "Pulsar pieces are cyan circles" swap tip this way.
   var TIP_DEBUT_LEVEL = { swap: 1, special: 3, chain: 8, booster: 8, flux: 11, movePressure: 14, gate: 15, overdrive: 32 };
 
   function queueLevelCoachTips(levelId) {
@@ -4924,14 +6807,22 @@
   }
 
   function createGem(type, row, col, falling) {
-    var tx = view.boardX + col * view.cell + view.cell / 2;
-    var ty = view.boardY + row * view.cell + view.cell / 2;
+    var tx = view.boardX + view.gridOffsetX + col * view.cell + view.cell / 2;
+    var ty = view.boardY + view.gridOffsetY + row * view.cell + view.cell / 2;
+    var spawnX = tx;
+    var spawnY = ty;
+    if (falling) {
+      if (gravityDirection === "up") spawnY = view.boardY + view.gridOffsetY + (GRID + (GRID - row + 1)) * view.cell;
+      else if (gravityDirection === "left") spawnX = view.boardX + view.gridOffsetX + (GRID + (GRID - col + 1)) * view.cell;
+      else if (gravityDirection === "right") spawnX = view.boardX + view.gridOffsetX - (GRID - col + 1) * view.cell;
+      else spawnY = view.boardY + view.gridOffsetY - (GRID - row + 1) * view.cell;
+    }
     return {
       type: type,
       row: row,
       col: col,
-      x: tx,
-      y: falling ? view.boardY - (GRID - row + 1) * view.cell : ty,
+      x: spawnX,
+      y: spawnY,
       tx: tx,
       ty: ty,
       scale: falling ? 0.78 : 1,
@@ -4939,7 +6830,8 @@
       pop: 0,
       birth: falling ? 1 : 0,
       trail: falling ? 0.45 : 0,
-      special: null
+      special: null,
+      scoreMultiplier: isNightActive() ? 2 : 1
     };
   }
 
@@ -4970,7 +6862,7 @@
     if (!level || !level.id) return TYPES.length;
     // Per-level override: layout.activeColors forces an exact color set.
     if (level.layout && Array.isArray(level.layout.activeColors)) return level.layout.activeColors.length;
-    var track = Math.floor((level.id - 1) / 15);
+    var track = Math.max(0, (level.episode || getEpisodeForLevelNumber(level.id)) - 1);
     var count = ACTIVE_COLORS_BY_TRACK[Math.min(track, ACTIVE_COLORS_BY_TRACK.length - 1)];
     return Math.max(3, Math.min(TYPES.length, count)); // never below 3 -- a match-3 needs headroom
   }
@@ -5076,8 +6968,9 @@
   }
 
   function isPlayableGemCell(row, col) {
-    // Caged pieces are off-limits: pattern forcing must never rewrite them.
-    return isCellActive(row, col) && !isPhaseLocked(row, col) && Boolean(board[row] && board[row][col]);
+    // Caged pieces and anomaly portal/well cells are off-limits: pattern forcing
+    // must never rewrite them or make a required move through a no-swap cell.
+    return isCellActive(row, col) && !isPhaseLocked(row, col) && !isWormholeCell(row, col) && !isBlackHoleCell(row, col) && Boolean(board[row] && board[row][col]);
   }
 
   function tryPlayablePattern(candidate) {
@@ -5294,8 +7187,8 @@
 
   function getCellFromPoint(clientX, clientY, edgeSnap) {
     var point = getCanvasPoint(clientX, clientY);
-    var localX = point.x - view.boardX;
-    var localY = point.y - view.boardY;
+    var localX = point.x - view.boardX - view.gridOffsetX;
+    var localY = point.y - view.boardY - view.gridOffsetY;
     var col = Math.floor(localX / view.cell);
     var row = Math.floor(localY / view.cell);
     if (row < 0 || row >= GRID || col < 0 || col >= GRID) return edgeSnap ? getNearestActiveCellFromPoint(point.x, point.y) : null;
@@ -5431,6 +7324,8 @@
 
   function wouldMatchAfterSwap(a, b) {
     if (!isCellActive(a.row, a.col) || !isCellActive(b.row, b.col)) return false;
+    if (isWormholeCell(a.row, a.col) || isWormholeCell(b.row, b.col)) return false;
+    if (isBlackHoleCell(a.row, a.col) || isBlackHoleCell(b.row, b.col)) return false;
     if (isPhaseLocked(a.row, a.col) || isPhaseLocked(b.row, b.col)) return false;
     if (!board[a.row] || !board[b.row] || !board[a.row][a.col] || !board[b.row][b.col]) return false;
     if (hasSpecialComboAt(a, b)) return true;
@@ -5577,6 +7472,12 @@
     resetSwapHint();
     var cell = getCellFromPoint(event.clientX, event.clientY, true);
     if (!cell || levelState !== "playing") return;
+    if (isWormholeCell(cell.row, cell.col) || isBlackHoleCell(cell.row, cell.col)) {
+      flashAnomalyAt(cell);
+      playReject();
+      vibrate("reject");
+      return;
+    }
     if (guidedMove && !isGuidedCell(cell)) return;
     pointerStart = cell;
     pointerStartPoint = { x: event.clientX, y: event.clientY };
@@ -5970,6 +7871,13 @@
       vibrate("reject");
       return;
     }
+    if (isWormholeCell(a.row, a.col) || isWormholeCell(b.row, b.col) || isBlackHoleCell(a.row, a.col) || isBlackHoleCell(b.row, b.col)) {
+      flashAnomalyAt(a);
+      flashAnomalyAt(b);
+      playReject();
+      vibrate("reject");
+      return;
+    }
     if (!board[a.row] || !board[b.row] || !board[a.row][a.col] || !board[b.row][b.col]) return;
     if (guidedMove) {
       if (!isGuidedPair(a, b)) return;
@@ -6075,7 +7983,7 @@
 
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
-    var multiplier = wasOverdrive ? 2 : 1;
+    var multiplier = (wasOverdrive ? 2 : 1) * getBonusScoreMultiplier(clearCells);
     var comboScore = Math.floor((clearCells.length * 145 + specialHits.length * 220) * multiplier);
 
     // Name the fusion through the single-anchor callout and flash its whole
@@ -6247,9 +8155,10 @@
   }
 
   function processMatches(chain, anchors) {
+    if (chain > 1) processSettledEnvironment(chain);
     if (chain > MAX_CASCADE_CHAIN) {
       combo = Math.max(combo, MAX_CASCADE_CHAIN);
-      addCallout("CHAIN STABILIZED", "#46f4ff", 18);
+      addCallout("CONSTELLATION STABLE", "#46f4ff", 18);
       reshuffleBoard();
       endAnimation();
       resolveLevelOutcome();
@@ -6272,6 +8181,8 @@
       return;
     }
 
+    lastViableMoveCount += 1;
+
     var clearMap = cellsToMap(matches);
     var specialSpawn = chooseSpecialSpawn(matchData.groups, anchors);
     var specialHits = collectSpecialHits(matches, specialSpawn);
@@ -6285,15 +8196,23 @@
     });
     var types = collectMatchedTypes(clearCells);
     var wasOverdrive = drive >= 0.72;
-    var multiplier = wasOverdrive ? 2 : 1;
+    var multiplier = (wasOverdrive ? 2 : 1) * getBonusScoreMultiplier(clearCells);
     var matchScore = Math.floor(clearCells.length * 90 * chain * multiplier * getCascadeBonus());
 
     combo = Math.max(combo, chain);
     recordMatchProgress(clearCells, chain, specialHits, specialSpawn);
     score += matchScore;
+    var surgeMultiplier = isLastMoveSurgeActive() ? 2 : 1;
+    if (surgeMultiplier > 1 && !lastMoveSurgeActive) {
+      lastMoveSurgeActive = true;
+      addCallout("SURGE", "#ffd166", 20);
+      vibrate("overdrive");
+    } else if (surgeMultiplier === 1) {
+      lastMoveSurgeActive = false;
+    }
     flash = Math.min(1, flash + 0.26 + chain * 0.1);
     energy = Math.min(1, energy + clearCells.length * 0.018 + chain * 0.11);
-    drive = Math.min(1, drive + clearCells.length * 0.014 + chain * 0.052 + specialHits.length * 0.09);
+    drive = Math.min(1, drive + (clearCells.length * 0.014 + chain * 0.052 + specialHits.length * 0.09) * surgeMultiplier);
     var rushTriggeredOverdrive = refillRushPulse(clearCells, chain, specialHits, wasOverdrive);
     recordClipMoment(clearCells, chain, specialHits.length, Boolean(specialSpawn), matchScore, wasOverdrive || drive >= OVERDRIVE_THRESHOLD);
     recordDailyMissionProgress("clear", clearCells.length);
@@ -6398,7 +8317,7 @@
 
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
-    var multiplier = wasOverdrive ? 2 : 1;
+    var multiplier = (wasOverdrive ? 2 : 1) * getBonusScoreMultiplier(clearCells);
     var releaseScore = Math.floor((clearCells.length * 128 + specialHits.length * 210 + 900) * multiplier);
 
     combo = Math.max(combo, 5);
@@ -6559,8 +8478,8 @@
         levelStats.collected[gem.type] = (levelStats.collected[gem.type] || 0) + 1;
         // JUICE PASS: fly the collected piece to the goal chip.
         if (collectGoalsByType[gem.type] && gameMode === MODE_CAMPAIGN && levelState === "playing") {
-          var cx = view.boardX + cell.col * view.cell + view.cell / 2;
-          var cy = view.boardY + cell.row * view.cell + view.cell / 2;
+          var cx = view.boardX + view.gridOffsetX + cell.col * view.cell + view.cell / 2;
+          var cy = view.boardY + view.gridOffsetY + cell.row * view.cell + view.cell / 2;
           (function (fx, fy, ft, fi) {
             runLater(fi * 50, function () { flyGemToGoalChip(fx, fy, ft, "collect"); });
           })(cx, cy, gem.type, flyIndex);
@@ -6573,6 +8492,8 @@
     hitSpectrumShields(cells);
     damageFluxTiles(cells, specialHits.length > 0 ? 2 : 1);
     clearSpreaders(cells);
+    hitBlackHoles(cells);
+    clearNebulaFog(cells);
   }
 
   function emitSignalPackets(cells) {
@@ -6596,8 +8517,8 @@
       delayMs = Math.max(0, (fireAt - audio.ctx.currentTime) * 1000);
       playSignalPacket(fireAt);
     }
-    var fromX = view.boardX + node.col * view.cell + view.cell / 2;
-    var fromY = view.boardY + node.row * view.cell + view.cell / 2 - view.cell * 0.14;
+    var fromX = view.boardX + view.gridOffsetX + node.col * view.cell + view.cell / 2;
+    var fromY = view.boardY + view.gridOffsetY + node.row * view.cell + view.cell / 2 - view.cell * 0.14;
     runLater(delayMs, function () {
       node.flashAt = performance.now();
       var chipEl = goalRailEl ? goalRailEl.querySelector(".goal-chip--signal") : null;
@@ -6664,8 +8585,8 @@
         if (index === -1) return;
         shield.remaining.splice(index, 1);
         shield.segmentFlash[gem.type] = performance.now();
-        var x = view.boardX + shield.col * view.cell + view.cell / 2;
-        var y = view.boardY + shield.row * view.cell + view.cell / 2;
+        var x = view.boardX + view.gridOffsetX + shield.col * view.cell + view.cell / 2;
+        var y = view.boardY + view.gridOffsetY + shield.row * view.cell + view.cell / 2;
         addShockwave(x, y, TYPES[gem.type].color, view.cell * 0.1, view.cell * 0.55, 0.2, 5);
         playSpectrumSegment(gem.type);
       });
@@ -6673,8 +8594,8 @@
         shield.brokeAt = performance.now();
         // The shield goal reuses the flux counter: one break per shield.
         levelStats.fluxCleared += 1;
-        var bx = view.boardX + shield.col * view.cell + view.cell / 2;
-        var by = view.boardY + shield.row * view.cell + view.cell / 2;
+        var bx = view.boardX + view.gridOffsetX + shield.col * view.cell + view.cell / 2;
+        var by = view.boardY + view.gridOffsetY + shield.row * view.cell + view.cell / 2;
         addShockwave(bx, by, "#ff4fd8", view.cell * 0.12, view.cell * 0.85, 0.26, 8);
         playSpectrumBreak();
       }
@@ -6736,8 +8657,8 @@
   }
 
   function addCageShatterBurst(lock, gem) {
-    var x = view.boardX + lock.col * view.cell + view.cell / 2;
-    var y = view.boardY + lock.row * view.cell + view.cell / 2;
+    var x = view.boardX + view.gridOffsetX + lock.col * view.cell + view.cell / 2;
+    var y = view.boardY + view.gridOffsetY + lock.row * view.cell + view.cell / 2;
     var color = gem ? TYPES[gem.type].color : "#7a6bff";
     // Glitch shatter: square vector chips on jittered diagonals.
     var count = scaledEffectCount(30, 10);
@@ -6853,8 +8774,8 @@
       var next = Math.max(0, current - amount);
       levelStats.fluxCleared += current - next;
       tileCharges[r][c] = next;
-      var x = view.boardX + c * view.cell + view.cell / 2;
-      var y = view.boardY + r * view.cell + view.cell / 2;
+      var x = view.boardX + view.gridOffsetX + c * view.cell + view.cell / 2;
+      var y = view.boardY + view.gridOffsetY + r * view.cell + view.cell / 2;
       if (next === 0) {
         // Broken: the wall opens. Un-mask the cell so the next collapse fills it.
         boardMask[r][c] = isCellActiveForShape(currentBoardShape || "full", r, c);
@@ -6889,6 +8810,74 @@
     }
   }
 
+  function hitBlackHoles(cells) {
+    if (blackHoles.length === 0 || cells.length === 0) return;
+    var now = performance.now();
+    var remaining = [];
+    blackHoles.forEach(function (hole) {
+      var adjacentHit = cells.some(function (cell) {
+        return Math.abs(cell.row - hole.row) + Math.abs(cell.col - hole.col) === 1;
+      });
+      if (adjacentHit) {
+        hole.chargesLeft -= 1;
+        hole.flashAt = now;
+        var center = getBoardCellCenter(hole);
+        addShockwave(center.x, center.y, "#8b5cff", view.cell * 0.08, view.cell * 0.72, 0.22, 7);
+        if (hole.chargesLeft <= 0) {
+          burstBlackHole(hole);
+          return;
+        }
+      }
+      remaining.push(hole);
+    });
+    blackHoles = remaining;
+  }
+
+  function clearNebulaFog(cells) {
+    if (nebulaCells.length === 0 || cells.length === 0) return;
+    var now = performance.now();
+    var remaining = [];
+    nebulaCells.forEach(function (fog) {
+      var adjacentHit = cells.some(function (cell) {
+        return Math.abs(cell.row - fog.row) + Math.abs(cell.col - fog.col) === 1;
+      });
+      if (adjacentHit) {
+        fog.fogLevel = Math.max(0, fog.fogLevel - 0.34);
+        fog.flashAt = now;
+        var center = getBoardCellCenter(fog);
+        addShockwave(center.x, center.y, "#46f4ff", view.cell * 0.06, view.cell * 0.5, 0.18, 5);
+      }
+      if (fog.fogLevel > 0.01) remaining.push(fog);
+      else revealNebulaCell(fog);
+    });
+    nebulaCells = remaining;
+  }
+
+  function burstBlackHole(hole) {
+    var center = getBoardCellCenter(hole);
+    addCallout("BLACK HOLE SEALED", "#8b5cff", 18);
+    addShockwave(center.x, center.y, "#ffffff", view.cell * 0.08, view.cell * 1.05, 0.26, 10);
+    addShockwave(center.x, center.y, "#8b5cff", view.cell * 0.16, view.cell * 1.45, 0.34, 12);
+    flash = Math.min(1, flash + 0.12);
+    vibrate("special");
+  }
+
+  function revealNebulaCell(fog) {
+    var center = getBoardCellCenter(fog);
+    addShockwave(center.x, center.y, "#ff4fd8", view.cell * 0.08, view.cell * 0.7, 0.2, 6);
+  }
+
+  function flashAnomalyAt(cell) {
+    if (!cell) return;
+    var now = performance.now();
+    blackHoles.forEach(function (hole) {
+      if (hole.row === cell.row && hole.col === cell.col) hole.flashAt = now;
+    });
+    wormholes.forEach(function (pair) {
+      if ((pair.rowA === cell.row && pair.colA === cell.col) || (pair.rowB === cell.row && pair.colB === cell.col)) pair.flashAt = now;
+    });
+  }
+
   function resolveLevelOutcome() {
     if (levelState !== "playing") return;
     if (isPulseMode()) return;
@@ -6920,6 +8909,20 @@
     });
   }
 
+  function getGoalProgressRatio() {
+    if (!currentLevel || !currentLevel.goals || currentLevel.goals.length === 0) return 0;
+    var totalProgress = 0;
+    currentLevel.goals.forEach(function (goal) {
+      var target = goal.target || 0;
+      totalProgress += target > 0 ? Math.min(1, getGoalValue(goal) / target) : 1;
+    });
+    return totalProgress / currentLevel.goals.length;
+  }
+
+  function isLastMoveSurgeActive() {
+    return gameMode === MODE_CAMPAIGN && movesLeft <= 3 && getGoalProgressRatio() >= 0.7;
+  }
+
   function getGoalValue(goal) {
     if (goal.kind === "score") return score;
     if (goal.kind === "collect") return levelStats.collected[goal.type] || 0;
@@ -6935,6 +8938,10 @@
 
   function completeLevel() {
     levelState = "won";
+    blackHoles = [];
+    wormholes = [];
+    nebulaCells = [];
+    syncMissionPlayingClass();
     pendingSwap = null;
     var savedMoves = movesLeft;
     if (savedMoves > 0) score += savedMoves * 200;
@@ -6952,6 +8959,21 @@
     // PROGRESSION: Consecutive-win booster escalation (RM Butler's Gift pattern).
     // Win streak resets on any loss. Rewards escalate at 3/5/7+ consecutive wins.
     campaignSave.winStreak = (campaignSave.winStreak || 0) + 1;
+    campaignSave.continueCount = 0; // reset escalating continue cost on win
+
+    // STAR FUEL: earned per level win, spent on constellation renovation tasks.
+    grantStarFuel(STAR_FUEL_PER_LEVEL);
+
+    // Super Supernova activation callout (Royal Match Super Light Ball pattern).
+    if (campaignSave.winStreak === SUPER_STREAK_THRESHOLD) {
+      addCallout("SUPER SUPERNOVA ACTIVE", "#4fc3f7", 30);
+      addShockwave(centerBoardX(), centerBoardY(), "#4fc3f7", view.cell * 0.3, view.boardSize * 0.5, 0.4, 12);
+    }
+
+    // Constellation renovation: mark one task complete for the current episode.
+    var currentEpisode = getEpisodeForLevelNumber(currentLevel.id);
+    if (currentEpisode) completeRenovationTask(currentEpisode);
+
     if (campaignSave.winStreak >= 7) {
       grantRewardBundle({ hammer: 1, shuffle: 1, charge: 1 });
       recordGrant("Win Streak " + campaignSave.winStreak, "+1 each booster");
@@ -7089,7 +9111,7 @@
   }
 
   // Level-clear celebration: center-board text pops staged one per beat,
-  // nothing simultaneous. LEVEL CLEAR, then each earned star, then ENCORE +N
+  // nothing simultaneous. CONSTELLATION COMPLETE, then each earned star, then ENCORE +N
   // (skipped at 0 saved moves). Pops bypass the callout queue so match
   // callouts cannot interleave; the queue is parked during the sequence and
   // flushed at the end. Returns the total sequence length in ms so the
@@ -7104,19 +9126,26 @@
     activeCallout = null;
     calloutQueue = [];
     // Fast-expire in-flight score floaters so they don't render through the
-    // LEVEL CLEAR title (e.g. a nova sweep winning with +NNNN still airborne).
+    // CONSTELLATION COMPLETE title (e.g. a nova sweep winning with +NNNN still airborne).
     for (var f = 0; f < floaters.length; f += 1) {
       if (floaters[f].life > 0.25) floaters[f].life = 0.25;
     }
     celebration = { starTotal: stars, starsLanded: 0, pops: [], fading: false };
 
-    stages.forEach(function (stage, index) {
-      runLater(startMs + index * beatMs, function () {
-        popCelebrationStage(stage.kind, savedMoves, stars, index, stages.length);
-      });
+    runLater(startMs, function () {
+      popCelebrationStage("title", savedMoves, stars, 0, stages.length);
     });
-
+    for (var starIndex = 0; starIndex < stars; starIndex += 1) {
+      (function (index) {
+        runLater(startMs + index * 150, function () {
+          popCelebrationStage("star", savedMoves, stars, index + 1, stages.length);
+        });
+      })(starIndex);
+    }
     if (savedMoves > 0) {
+      runLater(startMs + 450, function () {
+        popCelebrationStage("encore", savedMoves, stars, stages.length - 1, stages.length);
+      });
       recordClipFinale(savedMoves, stars);
       var blastCount = Math.min(14, Math.max(3, savedMoves));
       for (var i = 0; i < blastCount; i += 1) {
@@ -7124,14 +9153,14 @@
       }
     }
 
-    var totalMs = Math.round(startMs + (stages.length - 1) * beatMs + beatMs * 1.5);
-    // Hold the card long enough for the Hum wake ritual (~3 beats) so the result
-    // card never opens over the born-from-light sequence. Applies to the Finale
-    // wake and the early first wake alike (holdForWake).
+    var totalMs = Math.round(startMs + 600);
+    // Hold the card long enough for the Hum wake ritual so the result card never
+    // opens over the born-from-light sequence. Applies to the Finale wake and the
+    // early first wake alike (holdForWake).
     if (gameMode === MODE_CAMPAIGN && (holdForWake || isFinaleLevel(currentLevel))) {
-      totalMs = Math.max(totalMs, Math.round(startMs + beatMs * 3.2));
+      totalMs = Math.max(totalMs, Math.round(startMs + 1200));
     }
-    runLater(Math.max(0, totalMs - Math.round(beatMs * 0.4)), endLevelClearCelebration);
+    runLater(Math.max(0, totalMs), endLevelClearCelebration);
     return totalMs;
   }
 
@@ -7139,7 +9168,7 @@
     if (!celebration || celebration.fading) return;
     var pop = { kind: kind, age: 0, scale: 0.5, alpha: 1 };
     if (kind === "title") {
-      pop.text = "LEVEL CLEAR";
+      pop.text = "CONSTELLATION COMPLETE";
       pop.color = "#8cff6b";
     } else if (kind === "star") {
       pop.index = celebration.starsLanded;
@@ -7178,6 +9207,51 @@
     calloutQueue = []; // flush callouts parked during the sequence
   }
 
+  function playStarHop(callback, constellationComplete) {
+    if (!starHop) {
+      if (callback) callback();
+      return;
+    }
+    window.clearTimeout(starHopTimer);
+    if (starHopFinish) {
+      starHopFinish(false);
+      starHopFinish = null;
+    }
+
+    var duration = constellationComplete ? 2500 : 1500;
+    var done = false;
+    starHop.setAttribute("aria-hidden", "false");
+    starHop.classList.remove("is-active");
+    starHop.classList.remove("is-constellation");
+    // Restart the CSS animation even when two clears happen in quick succession.
+    void starHop.offsetWidth;
+    if (constellationComplete) starHop.classList.add("is-constellation");
+    starHop.classList.add("is-active");
+
+    starHopFinish = function (runCallback) {
+      if (done) return;
+      done = true;
+      window.clearTimeout(starHopTimer);
+      starHop.classList.remove("is-active");
+      starHop.classList.remove("is-constellation");
+      starHop.setAttribute("aria-hidden", "true");
+      starHopFinish = null;
+      if (runCallback !== false && callback) callback();
+    };
+    starHopTimer = window.setTimeout(function () {
+      if (starHopFinish) starHopFinish(true);
+    }, duration);
+  }
+
+  function skipStarHop(event) {
+    if (!starHopFinish) return;
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    starHopFinish(true);
+  }
+
   function scheduleFinaleBurst(index, total, savedMoves, stars, startMs, beatMs, stageCount) {
     // Blasts land on the 16th grid between the beat-aligned text pops:
     // skip every 4th 16th (the pop beats) so bursts punctuate, not compete.
@@ -7185,14 +9259,14 @@
     for (var sixteenth = 1; slots.length < total && sixteenth <= stageCount * 4 + 2; sixteenth += 1) {
       if (sixteenth % 4 !== 0) slots.push(sixteenth);
     }
-    runLater(Math.round(startMs + slots[index % slots.length] * (beatMs / 4)), function () {
+    runLater(Math.round(startMs + slots[index % slots.length] * 60), function () {
       var row = (index * 3 + stars + currentLevel.id) % GRID;
       var col = (index * 5 + savedMoves + currentLevel.id) % GRID;
       var gem = board[row] && board[row][col];
       var typeIndex = gem ? gem.type : (index + currentLevel.id) % TYPES.length;
       var color = TYPES[typeIndex].color;
-      var x = view.boardX + col * view.cell + view.cell / 2;
-      var y = view.boardY + row * view.cell + view.cell / 2;
+      var x = view.boardX + view.gridOffsetX + col * view.cell + view.cell / 2;
+      var y = view.boardY + view.gridOffsetY + row * view.cell + view.cell / 2;
       var radius = view.cell * (1.1 + index / Math.max(1, total) * 1.25);
 
       flash = Math.min(1, flash + 0.12);
@@ -7264,7 +9338,7 @@
     var delta = stars - savedStars;
     if (savedStars === 0) grantFirstClearReward(currentLevel.id);
     if (savedStars === 0 && currentLevel.id > 10 && !FIRST_CLEAR_REWARDS[currentLevel.id]) {
-      var drip = currentLevel.id % 15 === 0 ? 40 : 15;
+      var drip = isFinaleLevel(currentLevel) ? 40 : 15;
       grantCredits(drip);
       recordGrant("First clear", "+" + drip + " Credits");
       flyRewardBundle(centerBoardX(), centerBoardY(), null, drip);
@@ -7681,10 +9755,15 @@
     audio.failRamp = getCampaignArrangement();
     if (audio.failRamp) audio.failRamp.step = audio.step;
     levelState = "lost";
+    blackHoles = [];
+    wormholes = [];
+    nebulaCells = [];
+    syncMissionPlayingClass();
     pendingSwap = null;
     recordWaveformEvent("flatline");
     campaignSave.failStreaks[currentLevel.id] = (campaignSave.failStreaks[currentLevel.id] || 0) + 1;
     campaignSave.winStreak = 0; // PROGRESSION: reset consecutive-win escalation on loss
+    campaignSave.continueCount = 0; // reset escalating continue cost on loss
     audio.director.failPressure = 1;
     writeCampaignSave();
     flash = Math.min(1, flash + 0.2);
@@ -7697,17 +9776,18 @@
     addCallout(canAffordContinue() ? "CONTINUE +5" : "NEW TAKE", "#ffd166", 18);
     playLevelFail();
     updateHud();
-    // Hold the tap-to-restart lock through the full card delay so no board tap
-    // can restart the level before the fail card (and its Continue +5 offer) is
-    // on screen. shareCardPending covers the same window; this is the timing
-    // backstop that matches the 900ms scheduleShareCard delay below.
-    failLockUntil = performance.now() + 900;
-    scheduleShareCard(buildFailPayload(), 900);
+    // Hold the tap-to-restart lock briefly so the fail callouts can land before
+    // the fail card (and its Continue +5 offer) is on screen. shareCardPending
+    // covers the same window; this is the timing backstop that matches the 400ms
+    // scheduleShareCard delay below.
+    failLockUntil = performance.now() + 400;
+    scheduleShareCard(buildFailPayload(), 400);
   }
 
   function endRush() {
     if (!isPulseMode() || levelState !== "playing") return;
     levelState = "lost";
+    syncMissionPlayingClass();
     recordWaveformEvent("flatline");
     pulse = 0;
     drive = 0;
@@ -7738,7 +9818,7 @@
   }
 
   function calculateCampaignEventPoints(savedMoves, stars) {
-    var sectorGateBonus = currentLevel.id % 15 === 0 ? 30 : 0;
+    var sectorGateBonus = isFinaleLevel(currentLevel) ? 30 : 0;
     return (
       stars * 28 +
       Math.max(0, savedMoves) * 5 +
@@ -7937,6 +10017,18 @@
       playCascadeBloom(chain);
     }
 
+    // CASCADE VFX: visual bloom for chain 4+
+    if (chain >= 4 && gameMode === MODE_CAMPAIGN) {
+      var bloomColor = chain >= 5 ? "#ffd166" : "#46f4ff";
+      addShockwave(center.x, center.y, bloomColor, view.cell * 0.15, view.boardSize * (0.28 + chain * 0.04), 0.32 + chain * 0.02, chain >= 5 ? 12 : 6, 0.06);
+      if (chain >= 5) {
+        setTimeout(function () {
+          addShockwave(center.x, center.y, "#ffffff", view.cell * 0.1, view.boardSize * 0.22, 0.26, 0, 0.04);
+        }, 80);
+        bumpShake(0.06, true);
+      }
+    }
+
     // JUICE PASS: on big clears, fly the score to the total.
     if ((chain >= 3 || cells.length >= 5) && points >= 100 && gameMode === MODE_CAMPAIGN) {
       flyScoreToTotal(center.x, center.y, points);
@@ -7955,8 +10047,8 @@
     var totalY = 0;
     cells.forEach(function (cell) {
       var gem = board[cell.row] && board[cell.row][cell.col];
-      totalX += gem ? gem.x : view.boardX + cell.col * view.cell + view.cell / 2;
-      totalY += gem ? gem.y : view.boardY + cell.row * view.cell + view.cell / 2;
+      totalX += gem ? gem.x : view.boardX + view.gridOffsetX + cell.col * view.cell + view.cell / 2;
+      totalY += gem ? gem.y : view.boardY + view.gridOffsetY + cell.row * view.cell + view.cell / 2;
     });
     return {
       x: totalX / cells.length,
@@ -8012,7 +10104,7 @@
   function isSectorRevealActive() {
     for (var i = 0; i < floaters.length; i += 1) {
       var text = floaters[i].text || "";
-      if (text.indexOf("TRACK ") === 0 || text.indexOf("NEW FREQUENCY") === 0) return true;
+      if (text.indexOf("CONSTELLATION ") === 0 || text.indexOf("NEW CONSTELLATION") === 0) return true;
     }
     return false;
   }
@@ -8056,11 +10148,34 @@
     if (cellFlashes.length > limit) cellFlashes.splice(0, cellFlashes.length - limit);
   }
 
+  function addConstellationLines(cells, color) {
+    if (!cells || cells.length < 2 || fxScale() <= 0.2) return;
+    var ordered = [];
+    for (var i = 0; i < cells.length; i += 1) {
+      var c = cells[i];
+      if (!c || !isCellActive(c.row, c.col)) continue;
+      var gem = board[c.row] && board[c.row][c.col];
+      if (!color && gem) color = TYPES[gem.type].color;
+      ordered.push({ row: c.row, col: c.col });
+    }
+    if (ordered.length < 2) return;
+    ordered.sort(function (a, b) {
+      return a.row === b.row ? a.col - b.col : a.row - b.row;
+    });
+    constellationLines.push({ cells: ordered, color: color || "#ffffff", born: performance.now() * 0.001, life: CONSTELLATION_LINE_TTL, ttl: CONSTELLATION_LINE_TTL });
+    var limit = effectLimit("constellationLines");
+    if (constellationLines.length > limit) constellationLines.splice(0, constellationLines.length - limit);
+  }
+
   // Names a fired special through the single-anchor callout queue (same queue as
   // OVERDRIVE, so it never overlaps another named callout) and flashes the exact
   // beam/sweep footprint. Called per detonation from activateSpecial.
   function announceSpecialClear(special, cells, color) {
-    var label = special === "lineH" ? "ROW CLEAR" : special === "lineV" ? "COLUMN CLEAR" : "COLOR CLEAR";
+    var label = special === "lineH" ? "STAR LINE" :
+      special === "lineV" ? "STAR LINE" :
+      special === "bomb" ? "SUPERNOVA" :
+      special === "seeker" ? "COMET" :
+      "CONSTELLATION";
     addCallout(label, "#ffffff", special === "nova" ? 22 : 18);
     addCellFlash(cells, color);
   }
@@ -8122,12 +10237,13 @@
   // in-key fall (playOverdriveEnd), and a short badge contraction (overdriveExitPulse).
   function triggerOverdriveExit() {
     overdriveExitPulse = 1;
-    addCallout("OVERDRIVE ENDED", "#7fdfff", 20);
+    addCallout("STELLAR FADE", "#7fdfff", 20);
     playOverdriveEnd();
   }
 
   function reshuffleBoard() {
     combo = 0;
+    lastViableMoveCount = 0;
     armedSpecial = null;
     flash = Math.min(1, flash + 0.3);
     bumpShake(0.18);
@@ -8517,8 +10633,8 @@
   function addSeekerTracer(from, to, color) {
     beams.push({
       special: "seeker",
-      x: view.boardX + from.col * view.cell + view.cell / 2,
-      y: view.boardY + from.row * view.cell + view.cell / 2,
+      x: view.boardX + view.gridOffsetX + from.col * view.cell + view.cell / 2,
+      y: view.boardY + view.gridOffsetY + from.row * view.cell + view.cell / 2,
       angle: Math.atan2(
         (to.row - from.row) * view.cell,
         (to.col - from.col) * view.cell
@@ -8531,8 +10647,8 @@
       delay: 0
     });
     addShockwave(
-      view.boardX + to.col * view.cell + view.cell / 2,
-      view.boardY + to.row * view.cell + view.cell / 2,
+      view.boardX + view.gridOffsetX + to.col * view.cell + view.cell / 2,
+      view.boardY + view.gridOffsetY + to.row * view.cell + view.cell / 2,
       color, view.cell * 0.2, view.cell * 1.2, 0.3, 10
     );
   }
@@ -8603,8 +10719,8 @@
     addSpecialBeam(hit.special, cell.row, cell.col, TYPES[gem.type].color);
     addSpecialDetonation(hit.special, cell.row, cell.col, TYPES[gem.type].color, chain);
     playSpecialActivate(hit.special, gem.type, chain);
-    flash = Math.min(1, flash + (hit.special === "nova" ? 0.56 : hit.special === "bomb" ? 0.4 : 0.24));
-    bumpShake(hit.special === "nova" ? 0.44 : hit.special === "bomb" ? 0.32 : 0.22);
+    flash = Math.min(1, flash + (hit.special === "nova" ? 0.68 : hit.special === "bomb" ? 0.50 : hit.special === "seeker" ? 0.38 : 0.34));
+    bumpShake(hit.special === "nova" ? 0.44 : hit.special === "bomb" ? 0.38 : hit.special === "seeker" ? 0.28 : 0.24, true);
     if (hit.special === "nova") {
       // Solo nova is the biggest non-fusion beat: longer stop than the old
       // 3x3 pop (TIMING.hitStopNova), still under hitStopFusion.
@@ -8637,7 +10753,7 @@
       var bombFlash = [];
       for (var br = Math.max(0, cell.row - 2); br <= Math.min(GRID - 1, cell.row + 2); br += 1) {
         for (var bc = Math.max(0, cell.col - 2); bc <= Math.min(GRID - 1, cell.col + 2); bc += 1) {
-          markSpecialCandidate(br, bc, clearMap, queue, visited);
+          markSpecialCandidateDeep(br, bc, clearMap, queue, visited);
           bombFlash.push({ row: br, col: bc });
         }
       }
@@ -8663,8 +10779,14 @@
       return;
     }
 
-    // Solo nova: board-wide color sweep. Every piece of the nova's own
-    // color detonates with it, beams radiating out over ~2 beats.
+    // Nova: board-wide color sweep — wide but SHALLOW. Does not penetrate
+    // shields or blockers. Use Nova for board resets when one color clutters
+    // the grid; use Bomb for cracking fortifications.
+    //
+    // SUPER SUPERNOVA: When winStreak >= 10, the Nova gets supercharged.
+    // In addition to the color sweep, it clears a 3-tile radius around the
+    // detonation cell, penetrating shields (deep). Royal Match's Super
+    // Light Ball pattern — rewards sustained winning.
     markSpecialCandidate(cell.row, cell.col, clearMap, queue, visited);
     var sweptCells = [];
     for (var r = 0; r < GRID; r += 1) {
@@ -8675,6 +10797,20 @@
         markSpecialCandidate(r, c, clearMap, queue, visited);
         sweptCells.push({ row: r, col: c });
       }
+    }
+    // Super Supernova: 3-tile radius deep blast around detonation cell.
+    if (isSuperSupernovaActive()) {
+      addCallout("SUPER SUPERNOVA", "#4fc3f7", 24);
+      addShockwave(centerBoardX(), centerBoardY(), "#4fc3f7", view.cell * 0.4, view.boardSize * 0.7, 0.5, 18);
+      for (var sr = Math.max(0, cell.row - 3); sr <= Math.min(GRID - 1, cell.row + 3); sr += 1) {
+        for (var sc = Math.max(0, cell.col - 3); sc <= Math.min(GRID - 1, cell.col + 3); sc += 1) {
+          if (sr === cell.row && sc === cell.col) continue;
+          markSpecialCandidateDeep(sr, sc, clearMap, queue, visited);
+          sweptCells.push({ row: sr, col: sc });
+        }
+      }
+      flash = Math.min(1, flash + 0.3);
+      bumpShake(0.6, true);
     }
     addNovaSweepVfx(cell, sweptCells, TYPES[gem.type].color);
     announceSpecialClear("nova", [{ row: cell.row, col: cell.col }].concat(sweptCells), TYPES[gem.type].color);
@@ -8692,6 +10828,43 @@
     var gem = board[row] && board[row][col];
     if (!gem || !gem.special) return;
 
+    var key = row + ":" + col;
+    if (!visited[key]) {
+      queue.push({
+        cell: { row: row, col: col },
+        special: gem.special,
+        type: gem.type
+      });
+    }
+  }
+
+  function markSpecialCandidateDeep(row, col, clearMap, queue, visited) {
+    if (row < 0 || row >= GRID || col < 0 || col >= GRID) return;
+    if (isBeatGateClosed(row, col)) return;
+
+    // Damage shields/blockers — the Bomb penetrates fortifications.
+    if (tileCharges[row] && tileCharges[row][col] > 0) {
+      tileCharges[row][col] -= 1;
+      if (tileCharges[row][col] <= 0) {
+        tileCharges[row][col] = 0;
+        // Visual feedback: wobble the broken shield.
+        if (tileWobble[row]) tileWobble[row][col] = 1;
+      }
+      // Still mark the cell for clearing even if shield was just damaged (not destroyed).
+      // This is what makes the Bomb "deep" — it chews through the shield.
+      markCell(clearMap, row, col);
+      return;
+    }
+
+    // For non-shield cells, behave like the normal function.
+    var lock = phaseLockMap[row + ":" + col];
+    if (lock) {
+      shatterPhaseLock(lock, board[row] && board[row][col]);
+      return;
+    }
+    markCell(clearMap, row, col);
+    var gem = board[row] && board[row][col];
+    if (!gem || !gem.special) return;
     var key = row + ":" + col;
     if (!visited[key]) {
       queue.push({
@@ -8895,6 +11068,7 @@
 
   function burstMatches(matches, chain) {
     var center = averageCellPosition(matches);
+    addConstellationLines(matches);
     matches.forEach(function (cell) {
       var gem = board[cell.row][cell.col];
       if (!gem) return;
@@ -8991,8 +11165,8 @@
   }
 
   function addSpecialBeam(special, row, col, color) {
-    var cx = view.boardX + col * view.cell + view.cell / 2;
-    var cy = view.boardY + row * view.cell + view.cell / 2;
+    var cx = view.boardX + view.gridOffsetX + col * view.cell + view.cell / 2;
+    var cy = view.boardY + view.gridOffsetY + row * view.cell + view.cell / 2;
     var beam = {
       special: special,
       x: cx,
@@ -9010,8 +11184,8 @@
 
   function addNovaSweepVfx(origin, cells, color) {
     if (cells.length === 0) return;
-    var ox = view.boardX + origin.col * view.cell + view.cell / 2;
-    var oy = view.boardY + origin.row * view.cell + view.cell / 2;
+    var ox = view.boardX + view.gridOffsetX + origin.col * view.cell + view.cell / 2;
+    var oy = view.boardY + view.gridOffsetY + origin.row * view.cell + view.cell / 2;
     // Radiate outward: near targets fire first, the whole sweep spanning
     // ~2 beats of the track. Beam count rides the FX budget so low-end
     // devices draw a thinned but same-shape sweep.
@@ -9030,8 +11204,8 @@
         special: "sweep",
         x: ox,
         y: oy,
-        tx: view.boardX + cell.col * view.cell + view.cell / 2,
-        ty: view.boardY + cell.row * view.cell + view.cell / 2,
+        tx: view.boardX + view.gridOffsetX + cell.col * view.cell + view.cell / 2,
+        ty: view.boardY + view.gridOffsetY + cell.row * view.cell + view.cell / 2,
         row: cell.row,
         col: cell.col,
         color: color,
@@ -9045,16 +11219,19 @@
   }
 
   function addSpecialDetonation(special, row, col, color, chain) {
-    var cx = view.boardX + col * view.cell + view.cell / 2;
-    var cy = view.boardY + row * view.cell + view.cell / 2;
+    var cx = view.boardX + view.gridOffsetX + col * view.cell + view.cell / 2;
+    var cy = view.boardY + view.gridOffsetY + row * view.cell + view.cell / 2;
     var nova = special === "nova";
-    var count = nova ? scaledEffectCount(90, 24) : scaledEffectCount(48, 14);
-    var spread = nova ? view.cell * 16 : view.cell * 11;
+    var bomb = special === "bomb";
+    var seeker = special === "seeker";
+    var line = special === "lineH" || special === "lineV";
+    var count = nova ? scaledEffectCount(90, 24) : bomb ? scaledEffectCount(72, 20) : seeker ? scaledEffectCount(56, 16) : scaledEffectCount(48, 14);
+    var spread = nova ? view.cell * 16 : bomb ? view.cell * 14 : seeker ? view.cell * 10 : view.cell * 11;
     for (var i = 0; i < count; i += 1) {
       var angle = (Math.PI * 2 * i) / count + Math.random() * 0.18;
       var speed = spread * (0.5 + Math.random() * 0.7) + chain * 24;
-      var span = nova ? 0.7 + Math.random() * 0.4 : 0.38 + Math.random() * 0.28;
-      var shard = nova && i % 5 === 0;
+      var span = nova ? 0.7 + Math.random() * 0.4 : bomb ? 0.5 + Math.random() * 0.3 : 0.38 + Math.random() * 0.28;
+      var shard = (nova && i % 5 === 0) || (bomb && i % 7 === 0);
       particles.push({
         x: cx,
         y: cy,
@@ -9071,8 +11248,19 @@
         spin: shard ? -10 + Math.random() * 20 : 0
       });
     }
-    addShockwave(cx, cy, "#ffffff", view.cell * 0.2, view.boardSize * 0.5, 0.6, 0, 0.09);
-    addImpactRays(cx, cy, color, special === "nova" ? chain + 3 : chain + 1, special === "nova");
+    // Special-specific shockwave envelopes
+    if (nova) {
+      addShockwave(cx, cy, "#ffffff", view.cell * 0.2, view.boardSize * 0.72, 0.62, 24, 0.09);
+      addShockwave(cx, cy, color, view.cell * 0.15, view.boardSize * 0.5, 0.5, 0, 0.07);
+    } else if (bomb) {
+      addShockwave(cx, cy, "#ffffff", view.cell * 0.2, view.cell * 3.4, 0.44, 18, 0.09);
+      addShockwave(cx, cy, color, view.cell * 0.15, view.cell * 2.6, 0.38, 0, 0.07);
+    } else if (line) {
+      addShockwave(cx, cy, "#ffffff", view.cell * 0.2, view.boardSize * 0.38, 0.34, 8, 0.09);
+    } else {
+      addShockwave(cx, cy, "#ffffff", view.cell * 0.2, view.boardSize * 0.5, 0.6, 0, 0.09);
+    }
+    addImpactRays(cx, cy, color, nova ? chain + 3 : bomb ? chain + 2 : chain + 1, nova);
     trimEffects();
   }
 
@@ -9145,53 +11333,317 @@
   }
 
   function collapseBoard(chain) {
-    // Closed beat gates and phase-locked cages are solid walls: they
-    // split each column into segments. Gems compact within their segment
-    // and only the top segment refills from the spawn edge; cells starved
-    // below a wall stay empty until the gate reopens or the cage breaks.
-    // With no walls every column is one fed segment: the original
-    // behavior. A cage keeps its gem; a closed gate holds no piece.
-    for (var col = 0; col < GRID; col += 1) {
-      var segTop = 0;
-      for (var boundary = 0; boundary <= GRID; boundary += 1) {
-        var gateWall = boundary < GRID && isBeatGateClosed(boundary, col);
-        var cageWall = boundary < GRID && isPhaseLocked(boundary, col);
-        if (boundary < GRID && !gateWall && !cageWall) continue;
-        collapseColumnSegment(col, segTop, boundary - 1, chain, segTop === 0);
-        if (gateWall) board[boundary][col] = null;
-        segTop = boundary + 1;
-      }
+    if (gravityDirection === "up") {
+      for (var colUp = 0; colUp < GRID; colUp += 1) collapseVerticalLine(colUp, 0, -1, chain);
+    } else if (gravityDirection === "left") {
+      for (var rowLeft = 0; rowLeft < GRID; rowLeft += 1) collapseHorizontalLine(rowLeft, 0, -1, chain);
+    } else if (gravityDirection === "right") {
+      for (var rowRight = 0; rowRight < GRID; rowRight += 1) collapseHorizontalLine(rowRight, GRID - 1, 1, chain);
+    } else {
+      for (var colDown = 0; colDown < GRID; colDown += 1) collapseVerticalLine(colDown, GRID - 1, 1, chain);
     }
+    applyWormholeTeleports();
     setTargets();
   }
 
-  function collapseColumnSegment(col, fromRow, toRow, chain, feed) {
-    var stack = [];
-    for (var row = toRow; row >= fromRow; row -= 1) {
-      if (!isCellActive(row, col)) continue;
-      var gem = board[row][col];
-      if (gem) stack.push(gem);
-    }
+  function isGravityWall(row, col) {
+    return isBeatGateClosed(row, col) || isPhaseLocked(row, col);
+  }
 
-    for (var fillRow = toRow; fillRow >= fromRow; fillRow -= 1) {
-      if (!isCellActive(fillRow, col)) {
-        board[fillRow][col] = null;
+  function collapseVerticalLine(col, sinkRow, directionSign, chain) {
+    var row = sinkRow;
+    while (row >= 0 && row < GRID) {
+      if (isGravityWall(row, col)) {
+        if (isBeatGateClosed(row, col)) board[row][col] = null;
+        row -= directionSign;
         continue;
       }
-      var next = stack.shift();
-      if (!next && feed) {
-        next = createGem(pickDropType(fillRow, col), fillRow, col, true);
-        next.y -= chain * view.cell * 0.4;
+      var start = row;
+      while (row >= 0 && row < GRID && !isGravityWall(row, col)) row -= directionSign;
+      collapseVerticalSegment(col, start, row + directionSign, directionSign, chain, row < 0 || row >= GRID);
+    }
+  }
+
+  function collapseVerticalSegment(col, sinkEnd, sourceEnd, directionSign, chain, feed) {
+    var stack = [];
+    var row = sinkEnd;
+    while (true) {
+      if (isCellActive(row, col)) {
+        var gem = board[row][col];
+        if (gem) stack.push(gem);
       }
-      if (!next) {
-        board[fillRow][col] = null;
+      if (row === sourceEnd) break;
+      row -= directionSign;
+    }
+    row = sinkEnd;
+    while (true) {
+      if (!isCellActive(row, col)) {
+        board[row][col] = null;
+      } else {
+        var next = stack.shift();
+        if (!next && feed) {
+          next = createGem(pickDropType(row, col), row, col, true);
+          next.y -= directionSign * chain * view.cell * 0.4;
+        }
+        if (!next) {
+          board[row][col] = null;
+        } else {
+          board[row][col] = next;
+          next.row = row;
+          next.col = col;
+          next.pop = Math.max(next.pop, 0.1);
+          next.trail = Math.max(next.trail || 0, 0.32 + chain * 0.03);
+        }
+      }
+      if (row === sourceEnd) break;
+      row -= directionSign;
+    }
+  }
+
+  function collapseHorizontalLine(row, sinkCol, directionSign, chain) {
+    var col = sinkCol;
+    while (col >= 0 && col < GRID) {
+      if (isGravityWall(row, col)) {
+        if (isBeatGateClosed(row, col)) board[row][col] = null;
+        col -= directionSign;
         continue;
       }
-      board[fillRow][col] = next;
-      next.row = fillRow;
-      next.col = col;
-      next.pop = Math.max(next.pop, 0.1);
-      next.trail = Math.max(next.trail || 0, 0.32 + chain * 0.03);
+      var start = col;
+      while (col >= 0 && col < GRID && !isGravityWall(row, col)) col -= directionSign;
+      collapseHorizontalSegment(row, start, col + directionSign, directionSign, chain, col < 0 || col >= GRID);
+    }
+  }
+
+  function collapseHorizontalSegment(row, sinkEnd, sourceEnd, directionSign, chain, feed) {
+    var stack = [];
+    var col = sinkEnd;
+    while (true) {
+      if (isCellActive(row, col)) {
+        var gem = board[row][col];
+        if (gem) stack.push(gem);
+      }
+      if (col === sourceEnd) break;
+      col -= directionSign;
+    }
+    col = sinkEnd;
+    while (true) {
+      if (!isCellActive(row, col)) {
+        board[row][col] = null;
+      } else {
+        var next = stack.shift();
+        if (!next && feed) {
+          next = createGem(pickDropType(row, col), row, col, true);
+          next.x -= directionSign * chain * view.cell * 0.4;
+        }
+        if (!next) {
+          board[row][col] = null;
+        } else {
+          board[row][col] = next;
+          next.row = row;
+          next.col = col;
+          next.pop = Math.max(next.pop, 0.1);
+          next.trail = Math.max(next.trail || 0, 0.32 + chain * 0.03);
+        }
+      }
+      if (col === sourceEnd) break;
+      col -= directionSign;
+    }
+  }
+
+  function applyWormholeTeleports() {
+    if (wormholes.length === 0) return false;
+    var moved = false;
+    var now = performance.now();
+    wormholes.forEach(function (pair) {
+      if (teleportWormholeEndpoint(pair, pair.rowA, pair.colA, pair.rowB, pair.colB, now)) {
+        moved = true;
+        return;
+      }
+      moved = teleportWormholeEndpoint(pair, pair.rowB, pair.colB, pair.rowA, pair.colA, now) || moved;
+    });
+    return moved;
+  }
+
+  function teleportWormholeEndpoint(pair, row, col, exitRow, exitCol, now) {
+    if (!isCellActive(row, col) || !isCellActive(exitRow, exitCol)) return false;
+    var gem = board[row] && board[row][col];
+    if (!gem || gem.locked) return false;
+    var exitGem = board[exitRow] && board[exitRow][exitCol];
+    board[exitRow][exitCol] = gem;
+    board[row][col] = exitGem || null;
+    gem.row = exitRow;
+    gem.col = exitCol;
+    gem.pop = Math.max(gem.pop, 0.18);
+    gem.trail = Math.max(gem.trail || 0, 0.42);
+    if (exitGem) {
+      exitGem.row = row;
+      exitGem.col = col;
+      exitGem.pop = Math.max(exitGem.pop, 0.12);
+      exitGem.trail = Math.max(exitGem.trail || 0, 0.32);
+    }
+    pair.flashAt = now;
+    var a = getBoardCellCenter({ row: row, col: col });
+    var b = getBoardCellCenter({ row: exitRow, col: exitCol });
+    addShockwave(a.x, a.y, "#7a6bff", view.cell * 0.06, view.cell * 0.48, 0.16, 5);
+    addShockwave(b.x, b.y, "#46f4ff", view.cell * 0.08, view.cell * 0.58, 0.2, 6);
+    return true;
+  }
+
+  function processStellarAnomalyTurn(chain) {
+    if (wormholes.length > 0 && applyWormholeTeleports()) setTargets();
+    if (blackHoles.length === 0) return;
+    var consumed = [];
+    blackHoles.forEach(function (hole) {
+      hole.turnsActive += 1;
+      hole.flashAt = performance.now();
+      pullBlackHoleNeighbor(hole, consumed);
+      if (hole.turnsActive % 3 === 0) consumeBlackHoleAdjacency(hole, consumed);
+    });
+    if (consumed.length > 0) {
+      burstMatches(consumed, Math.max(1, chain || 1));
+      collapseBoard(Math.max(1, chain || 1));
+    } else {
+      setTargets();
+    }
+  }
+
+  function pullBlackHoleNeighbor(hole, consumed) {
+    if (!board[hole.row]) return;
+    if (board[hole.row][hole.col]) consumeCellIntoBlackHole(hole, hole.row, hole.col, consumed);
+    var offsets = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (var i = 0; i < offsets.length; i += 1) {
+      var row = hole.row + offsets[i][0];
+      var col = hole.col + offsets[i][1];
+      if (!isCellActive(row, col) || isPhaseLocked(row, col) || isWormholeCell(row, col)) continue;
+      var gem = board[row] && board[row][col];
+      if (!gem) continue;
+      board[row][col] = null;
+      board[hole.row][hole.col] = gem;
+      gem.row = hole.row;
+      gem.col = hole.col;
+      gem.trail = Math.max(gem.trail || 0, 0.6);
+      consumeCellIntoBlackHole(hole, hole.row, hole.col, consumed);
+      return;
+    }
+  }
+
+  function consumeBlackHoleAdjacency(hole, consumed) {
+    var offsets = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (var i = 0; i < offsets.length; i += 1) {
+      var row = hole.row + offsets[i][0];
+      var col = hole.col + offsets[i][1];
+      if (!isCellActive(row, col) || isPhaseLocked(row, col) || isWormholeCell(row, col)) continue;
+      if (board[row] && board[row][col]) consumeCellIntoBlackHole(hole, row, col, consumed);
+    }
+  }
+
+  function consumeCellIntoBlackHole(hole, row, col, consumed) {
+    var gem = board[row] && board[row][col];
+    if (!gem) return;
+    board[row][col] = null;
+    consumed.push({ row: row, col: col });
+    var center = getBoardCellCenter({ row: hole.row, col: hole.col });
+    addShockwave(center.x, center.y, TYPES[gem.type] ? TYPES[gem.type].color : "#8b5cff", view.cell * 0.06, view.cell * 0.55, 0.16, 5);
+  }
+
+  function processSettledEnvironment(chain) {
+    if (gameMode !== MODE_CAMPAIGN || levelState !== "playing" || !currentLevel || !levelStats) return;
+    if (levelStats.movesMade <= 0 || lastEnvironmentProcessedMove >= levelStats.movesMade) return;
+    lastEnvironmentProcessedMove = levelStats.movesMade;
+    environmentTurnCount = levelStats.movesMade;
+    processStellarAnomalyTurn(chain);
+    if (!currentLevel.layout || !currentLevel.layout.worldModifier) return;
+    var nowNight = isNightActive();
+    if (currentLevel.layout.dayNight && nowNight !== lastNightState) {
+      dayNightPulse = 1;
+      addCallout(nowNight ? "NIGHT FALLS" : "DAYBREAK", nowNight ? "#ffd166" : "#46f4ff", 18);
+    }
+    lastNightState = nowNight;
+    if (currentLevel.layout.gravityRotation) {
+      var frequency = Math.max(1, currentLevel.layout.gravityRotation.frequency || 8);
+      if (environmentTurnCount > 0 && environmentTurnCount % frequency === 0) {
+        gravityDirection = rotateGravityDirection(gravityDirection);
+        gravityRotationPulse = 1;
+        addCallout("GRAVITY " + gravityDirection.toUpperCase(), "#ffd166", 19);
+        collapseBoard(chain || 1);
+      }
+    }
+    if (currentLevel.layout.drift) {
+      var driftFrequency = Math.max(1, currentLevel.layout.drift.frequency || 1);
+      if (environmentTurnCount % driftFrequency === 0) applyBoardDrift(currentLevel.layout.drift.direction || "left");
+    }
+  }
+
+  function applyBoardDrift(direction) {
+    if (direction === "up" || direction === "down") applyBoardDriftColumns(direction);
+    else applyBoardDriftRows(direction);
+    driftPulse = 1;
+    setTargets();
+  }
+
+  function isDriftBlocked(row, col) {
+    return !isCellActive(row, col) || isBeatGateClosed(row, col) || isPhaseLocked(row, col);
+  }
+
+  function applyBoardDriftRows(direction) {
+    var forward = direction === "right";
+    for (var row = 0; row < GRID; row += 1) {
+      var col = 0;
+      while (col < GRID) {
+        while (col < GRID && isDriftBlocked(row, col)) col += 1;
+        var start = col;
+        while (col < GRID && !isDriftBlocked(row, col)) col += 1;
+        driftRowSegment(row, start, col - 1, forward);
+      }
+    }
+  }
+
+  function driftRowSegment(row, start, end, forward) {
+    if (end - start < 1) return;
+    var gems = [];
+    for (var col = start; col <= end; col += 1) gems.push(board[row][col]);
+    var shifted = forward ? [gems[gems.length - 1]].concat(gems.slice(0, gems.length - 1)) : gems.slice(1).concat([gems[0]]);
+    for (var i = 0; i < shifted.length; i += 1) {
+      var gem = shifted[i];
+      var targetCol = start + i;
+      board[row][targetCol] = gem;
+      if (gem) {
+        gem.row = row;
+        gem.col = targetCol;
+        gem.pop = Math.max(gem.pop, 0.08);
+        gem.trail = Math.max(gem.trail || 0, 0.28);
+      }
+    }
+  }
+
+  function applyBoardDriftColumns(direction) {
+    var forward = direction === "down";
+    for (var col = 0; col < GRID; col += 1) {
+      var row = 0;
+      while (row < GRID) {
+        while (row < GRID && isDriftBlocked(row, col)) row += 1;
+        var start = row;
+        while (row < GRID && !isDriftBlocked(row, col)) row += 1;
+        driftColumnSegment(col, start, row - 1, forward);
+      }
+    }
+  }
+
+  function driftColumnSegment(col, start, end, forward) {
+    if (end - start < 1) return;
+    var gems = [];
+    for (var row = start; row <= end; row += 1) gems.push(board[row][col]);
+    var shifted = forward ? [gems[gems.length - 1]].concat(gems.slice(0, gems.length - 1)) : gems.slice(1).concat([gems[0]]);
+    for (var i = 0; i < shifted.length; i += 1) {
+      var gem = shifted[i];
+      var targetRow = start + i;
+      board[targetRow][col] = gem;
+      if (gem) {
+        gem.row = targetRow;
+        gem.col = col;
+        gem.pop = Math.max(gem.pop, 0.08);
+        gem.trail = Math.max(gem.trail || 0, 0.28);
+      }
     }
   }
 
@@ -9329,9 +11781,9 @@
     // FTUE dedupe: while a coach toast is up on a preset level, the inline
     // line stands down so only one instruction reads at a time.
     if (activeCoachTip && currentLevel.id <= 10 && getFirstSessionPreset(currentLevel.id)) return "";
-    if (levelState === "won") return "Track clear. Tap OK after the score card.";
-    if (levelState === "lost") return canAffordContinue() ? "Continue adds 5 moves, or retry the level." : "Retry the level with a fresh board.";
-    if (activeBooster === "hammer") return "Choose one piece to fracture.";
+    if (levelState === "won") return "Constellation clear. Tap OK after the score card.";
+    if (levelState === "lost") return canAffordContinue() ? "Continue adds 5 moves, or retry the level." : "Retry the level with a fresh sky.";
+    if (activeBooster === "hammer") return "Choose one star to fracture.";
     if (movesLeft <= 5) return "Last moves. Specials matter now.";
     return currentLevel.coach;
   }
@@ -9502,14 +11954,14 @@
 
   function getGoalShortName(goal) {
     if (goal.kind === "score") return "Score";
-    if (goal.kind === "collect") return "Clear " + TYPES[goal.type].name;
-    if (goal.kind === "flux") return "Break Shields";
+    if (goal.kind === "collect") return "Collect Stars";
+    if (goal.kind === "flux") return "Break Meteor Shields";
     if (goal.kind === "signal") return "Catch Signals";
     if (goal.kind === "spread") return "Clear Creep";
-    if (goal.kind === "specials") return "Make Specials";
-    if (goal.kind === "fusion") return "Swap 2 Specials";
-    if (goal.kind === "chain") return "Build Cascade";
-    if (goal.kind === "overdrive") return "Hit Overdrive";
+    if (goal.kind === "specials") return "Make Star Powers";
+    if (goal.kind === "fusion") return "Stellar Fusion";
+    if (goal.kind === "chain") return "Build Star Chain";
+    if (goal.kind === "overdrive") return "Hit Stellar Drive";
     return "Goal";
   }
 
@@ -9571,20 +12023,20 @@
       if (isPulseReleaseReady()) return "How: fire Release on a dense board.";
       return "How: matches refill pulse before it empties.";
     }
-    if (!currentLevel) return "How: match three pieces.";
+    if (!currentLevel) return "How: match three stars.";
     if (levelState === "won") return "How: tap OK after your score.";
-    if (levelState === "lost") return canAffordContinue() ? "How: Continue adds 5 moves. Retry is free." : "How: tap Retry for a fresh board.";
+    if (levelState === "lost") return canAffordContinue() ? "How: Continue adds 5 moves. Retry is free." : "How: tap Retry for a fresh sky.";
     var firstOpen = getPrimaryOpenGoal();
     if (!firstOpen || firstOpen.kind === "score") return "How: every clear scores.";
-    if (firstOpen.kind === "collect") return "How: match " + getPieceGuidePhrase(firstOpen.type) + ".";
-    if (firstOpen.kind === "flux") return "How: match the pieces on Shield walls to smash them.";
+    if (firstOpen.kind === "collect") return "How: collect stars by matching " + getPieceGuidePhrase(firstOpen.type) + ".";
+    if (firstOpen.kind === "flux") return "How: match stars beside meteor shields to smash them.";
     if (firstOpen.kind === "signal") return "How: match beside the antenna nodes.";
     if (firstOpen.kind === "spread") return "How: match the infected cells to clear the creep.";
-    if (firstOpen.kind === "specials") return "How: match 4+ for beams or novas.";
-    if (firstOpen.kind === "fusion") return "How: swap two specials together.";
-    if (firstOpen.kind === "chain") return "How: one swap triggers cascades.";
-    if (firstOpen.kind === "overdrive") return "How: keep clearing to ignite frame.";
-    return "How: match three pieces.";
+    if (firstOpen.kind === "specials") return "How: match 4+ for star lines or supernovas.";
+    if (firstOpen.kind === "fusion") return "How: swap two star powers together.";
+    if (firstOpen.kind === "chain") return "How: one swap triggers star cascades.";
+    if (firstOpen.kind === "overdrive") return "How: keep clearing to ignite stellar drive.";
+    return "How: match three stars.";
   }
 
   function updateChallengeStrip() {
@@ -9849,7 +12301,7 @@
     // Read before maybeStartSectorReveal runs so a transition can tell whether the
     // reveal hold will supply the intro (leave bed at 1) or a plain fade-in is needed.
     if (gameMode !== MODE_CAMPAIGN || !currentLevel) return false;
-    return (((currentLevel.id - 1) % 15) + 1) === 1 && !campaignSave.reveals[currentLevel.episodeTheme];
+    return (currentLevel.chapterLevel || getChapterLevelForNumber(currentLevel.id)) === 1 && !campaignSave.reveals[currentLevel.episodeTheme];
   }
 
   function maybeStartSectorReveal(force) {
@@ -9861,17 +12313,10 @@
     writeCampaignSave();
     var revealTheme = getLevelEpisodeTheme(currentLevel);
     parkActiveCallout();
-    addFloater(centerBoardX(), calloutAnchorY(), "TRACK " + pad2(currentLevel.episode) + ": " + revealTheme.name.toUpperCase(), "#46f4ff", 0.92, 24);
-    runLater(900, function spawnFrequencyReveal() {
-      // Hold until the sector line is fully gone so nothing stacks over the frequency reveal.
-      for (var i = 0; i < floaters.length; i += 1) {
-        if ((floaters[i].text || "").indexOf("TRACK ") === 0) {
-          runLater(150, spawnFrequencyReveal);
-          return;
-        }
-      }
+    addFloater(centerBoardX(), calloutAnchorY(), "CONSTELLATION " + pad2(currentLevel.episode) + ": " + revealTheme.name.toUpperCase(), "#46f4ff", 0.6, 24);
+    runLater(300, function () {
       parkActiveCallout();
-      addFloater(centerBoardX(), calloutAnchorY(), "NEW FREQUENCY: " + (getMusicPalette().label || "").toUpperCase(), "#ff4fd8", 1.2, 18);
+      addFloater(centerBoardX(), calloutAnchorY(), "NEW CONSTELLATION: " + (getMusicPalette().label || "").toUpperCase(), "#ff4fd8", 0.8, 18);
     });
     if (audio.ctx && audio.master) {
       // Upsweep into the hold, shaped like playUnlockChirp but climbing an extra step.
@@ -10040,7 +12485,7 @@
   function createCoachTip(id) {
     // One-line toast copy. Keep every string on one line and <= 60 chars.
     var tips = {
-      swap: "Ion pieces are cyan circles. Match 3+ to collect goals.",
+      swap: "Pulsar pieces are cyan circles. Match 3+ to collect goals.",
       special: "Match four in a line to make a beam piece.",
       flux: "Match the pieces on Shield walls to crack and break them.",
       chain: "One swap can cascade. Chains thicken the music.",
@@ -10478,6 +12923,18 @@
     newBoard();
   }
 
+  function exitFromMenu() {
+    closeMenu();
+    closeSplashPanel();
+    levelState = "idle";
+    gameMode = MODE_CAMPAIGN;
+    if (splashPanel) {
+      splashPanel.classList.add("is-open");
+      splashPanel.setAttribute("aria-hidden", "false");
+    }
+    updateSplashStartLabel();
+  }
+
   function openSettingsFromMenu() {
     openSettings();
   }
@@ -10486,6 +12943,7 @@
     campaignSave.wallet = normalizeWallet(campaignSave.wallet);
     campaignSave.purchases = normalizePurchases(campaignSave.purchases);
     creditCountEl.textContent = formatNumber(campaignSave.wallet.credits);
+    if (stardustCountEl) stardustCountEl.textContent = formatNumber(campaignSave.wallet.stardust || 0);
     storeSummaryEl.textContent = getStoreSummaryText();
     storeOffersEl.textContent = "";
     renderStoreRecoveryOffer();
@@ -10560,21 +13018,31 @@
 
   function getStoreOfferMeta(item) {
     if (item.continueMoves && !canUseContinueOffer()) return "Appears after a failed campaign level";
-    var prefix = item.tag ? item.tag + ". " : "";
-    if (item.mockPrice) return prefix + "Mock IAP SKU.";
-    return prefix + "Spends credits.";
+    if (item.iap) {
+      var prefix = item.tag ? item.tag + ". " : "";
+      return prefix + (iapIsNative() ? "Platform purchase." : "Mock IAP (dev mode).");
+    }
+    var prefix2 = item.tag ? item.tag + ". " : "";
+    if (item.mockPrice) return prefix2 + "Mock IAP SKU.";
+    return prefix2 + "Spends credits.";
   }
 
   function getStoreButtonText(item) {
     if (item.singleClaim && campaignSave.purchases[item.id]) return "Claimed";
+    if (item.iap) return item.tag ? item.tag.replace("IAP ", "") : "Buy";
     if (item.mockPrice) return "Mock " + item.mockPrice;
-    return item.creditCost + " Credits";
+    var cost = item.continueMoves ? getContinueCost() : item.creditCost;
+    return cost + " Credits";
   }
 
   function getStoreDisabledReason(item) {
     if (item.singleClaim && campaignSave.purchases[item.id]) return "Already claimed";
+    if (item.iap) return ""; // IAP items are always purchasable
     if (item.continueMoves && !canUseContinueOffer()) return "Continue locked";
-    if (item.creditCost && campaignSave.wallet.credits < item.creditCost) return "Need credits";
+    if (item.creditCost) {
+      var cost = item.continueMoves ? getContinueCost() : item.creditCost;
+      if (campaignSave.wallet.credits < cost) return "Need " + cost + " credits";
+    }
     return "";
   }
 
@@ -10587,17 +13055,14 @@
     if (firstOpen && firstOpen.kind === "chain") return "Shuffle can reset a board with no cascade setup.";
     if (firstOpen && firstOpen.kind === "overdrive") return "Charge can force overdrive for this goal.";
     if (firstOpen && firstOpen.kind === "specials") return "Hammer and Shuffle help set up special pieces.";
-    return "Mock economy. No real payments.";
+    return "Star Coins buy boosters and continues. Stardust buys premium items.";
   }
 
   function canUseContinueOffer() {
     return gameMode === MODE_CAMPAIGN && levelState === "lost";
   }
 
-  function canAffordContinue() {
-    campaignSave.wallet = normalizeWallet(campaignSave.wallet);
-    return canUseContinueOffer() && campaignSave.wallet.credits >= CONTINUE_COST;
-  }
+  // canAffordContinue() is defined with the escalating cost system below.
 
   function buyStoreItem(id) {
     var item = STORE_ITEMS.find(function (candidate) {
@@ -10609,6 +13074,23 @@
     campaignSave.purchases = normalizePurchases(campaignSave.purchases);
 
     if (item.singleClaim && campaignSave.purchases[item.id]) return;
+
+    // IAP items: route through processIAP (mock in browser, native on device).
+    if (item.iap) {
+      if (iapIsNative()) {
+        // Native: platform storeKit handles the transaction.
+        // On success, it calls processIAP(item.productId).
+        // This branch is a placeholder for the Capacitor plugin integration.
+        storeStatusEl.textContent = "Native IAP pending platform plugin.";
+      } else {
+        // Browser dev mode: mock-grant instantly.
+        processIAP(item.productId);
+        storeStatusEl.textContent = "Mock purchase granted.";
+        showStoreReward(item);
+        closeStore();
+      }
+      return;
+    }
 
     if (item.continueMoves) {
       buyContinue(item);
@@ -10637,13 +13119,16 @@
       renderStore();
       return;
     }
-    if (campaignSave.wallet.credits < item.creditCost) {
-      storeStatusEl.textContent = "Not enough credits.";
+    var cost = getContinueCost();
+    if (campaignSave.wallet.credits < cost) {
+      storeStatusEl.textContent = "Not enough credits. Need " + cost + ".";
       return;
     }
-    campaignSave.wallet.credits -= item.creditCost;
+    campaignSave.wallet.credits -= cost;
+    campaignSave.continueCount = (campaignSave.continueCount || 0) + 1;
     campaignSave.purchases[item.id] = (campaignSave.purchases[item.id] || 0) + 1;
     levelState = "playing";
+    syncMissionPlayingClass();
     movesLeft = Math.max(movesLeft, 0) + item.continueMoves;
     activeBooster = null;
     selected = null;
@@ -10656,6 +13141,18 @@
     updateHud();
   }
 
+  // Escalating continue cost: each continue within the same level costs more.
+  // Reset to 0 when a new level starts or a level is won.
+  function getContinueCost() {
+    var idx = Math.min(campaignSave.continueCount || 0, CONTINUE_COST_ESCALATION.length - 1);
+    return CONTINUE_COST_ESCALATION[idx];
+  }
+
+  function canAffordContinue() {
+    campaignSave.wallet = normalizeWallet(campaignSave.wallet);
+    return canUseContinueOffer() && campaignSave.wallet.credits >= getContinueCost();
+  }
+
   function showStoreReward(item) {
     var bonus = item.rewards ? " +" + describeRewardBundle(item.rewards) : item.credits ? " +" + item.credits + " CREDITS" : "";
     addCallout(item.title.toUpperCase() + bonus, "#ffd166", 18);
@@ -10665,9 +13162,12 @@
   function buildCampaignMap() {
     if (mapBuilt) return;
     mapGridEl.textContent = "";
-    var episodes = Math.ceil(campaign.length / 15);
+    var episodes = getCampaignEpisodeCount();
     for (var episode = 1; episode <= episodes; episode += 1) {
       var theme = getEpisodeTheme(episode);
+      var constellationName = getMapConstellationName(episode);
+      var range = getEpisodeLevelRange(episode);
+      var positions = getMapConstellationPositions(episode);
       var section = document.createElement("section");
       var title = document.createElement("div");
       var label = document.createElement("span");
@@ -10675,8 +13175,6 @@
       section.className = "map-sector";
       title.className = "map-sector-title";
       title.dataset.episode = String(episode);
-      // Tracklist card: title, liner line (episode tagline), status tag,
-      // and a lock-condition line filled in by updateCampaignMap.
       var liner = document.createElement("em");
       liner.className = "map-sector-liner";
       liner.textContent = theme.tag;
@@ -10684,48 +13182,83 @@
       var condition = document.createElement("span");
       condition.className = "map-sector-condition";
       condition.hidden = true;
-      // Sleeping Hum in the card corner: the half-drawn outline recording as the
-      // track's levels clear (Zeigarnik pull), painted by updateTracklistCards.
       var humCanvas = document.createElement("canvas");
       humCanvas.className = "map-sector-hum";
       humCanvas.setAttribute("aria-hidden", "true");
-      title.appendChild(document.createTextNode("TRACK " + pad2(episode) + " - " + theme.name));
+      title.appendChild(document.createTextNode(constellationName));
       title.appendChild(liner);
       title.appendChild(label);
       title.appendChild(condition);
       title.appendChild(humCanvas);
-      levels.className = "map-sector-levels";
-
-      for (var slot = 1; slot <= 15; slot += 1) {
-        var levelNumber = (episode - 1) * 15 + slot;
-        if (levelNumber > campaign.length) break;
-        levels.appendChild(createMapNode(levelNumber));
+      levels.className = "map-sector-levels map-constellation";
+      levels.setAttribute("aria-label", constellationName + " constellation levels");
+      levels.appendChild(createConstellationLines(positions));
+      for (var levelNumber = range.start; levelNumber <= range.end && levelNumber <= campaign.length; levelNumber += 1) {
+        var slot = levelNumber - range.start;
+        levels.appendChild(createMapNode(levelNumber, positions[slot] || positions[positions.length - 1]));
       }
-
       section.appendChild(title);
+      // Renovation progress bar: shows task completion per constellation.
+      var reno = getConstellationRenovation(episode);
+      if (reno && !reno.ignited) {
+        var renoBar = document.createElement("div");
+        renoBar.className = "map-reno-bar";
+        renoBar.dataset.episode = String(episode);
+        var renoLabel = document.createElement("span");
+        renoLabel.className = "map-reno-label";
+        renoLabel.textContent = "Renovation " + reno.tasksCompleted + "/" + reno.totalTasks;
+        var renoTrack = document.createElement("div");
+        renoTrack.className = "map-reno-track";
+        var renoFill = document.createElement("div");
+        renoFill.className = "map-reno-fill";
+        renoFill.style.width = ((reno.tasksCompleted / reno.totalTasks) * 100) + "%";
+        renoTrack.appendChild(renoFill);
+        renoBar.appendChild(renoLabel);
+        renoBar.appendChild(renoTrack);
+        section.appendChild(renoBar);
+      } else if (reno && reno.ignited) {
+        var ignited = document.createElement("div");
+        ignited.className = "map-reno-bar map-reno-bar--ignited";
+        ignited.textContent = "✦ IGNITED";
+        section.appendChild(ignited);
+      }
       section.appendChild(levels);
       mapGridEl.appendChild(section);
     }
     mapBuilt = true;
   }
 
-  function createMapNode(levelNumber) {
+  function createConstellationLines(positions) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    var path = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    var points = positions.map(function (pos) {
+      return pos[0] + "," + pos[1];
+    }).join(" ");
+    svg.classList.add("map-constellation-lines");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("aria-hidden", "true");
+    path.setAttribute("points", points);
+    path.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function createMapNode(levelNumber, position) {
     var button = document.createElement("button");
     button.type = "button";
     button.className = "map-node";
     button.dataset.level = String(levelNumber);
-    button.textContent = String(levelNumber);
+    button.style.left = (position ? position[0] : 50) + "%";
+    button.style.top = (position ? position[1] : 50) + "%";
     var level = campaign[levelNumber - 1];
     // Finale positions ((n-1)%10 = 4 or 9) never collide with the HARD/
     // SUPER HARD badge slots (7/8), so one badge line is always enough.
     var badgeText = level && level.badge ? level.badge : isFinaleLevel(level) ? "FINALE" : "";
     if (badgeText) {
       var badgeEl = document.createElement("span");
+      badgeEl.className = "map-node-badge";
       badgeEl.textContent = badgeText;
-      badgeEl.style.display = "block";
-      badgeEl.style.fontSize = "0.42em";
-      badgeEl.style.letterSpacing = "0.08em";
-      badgeEl.style.color = "#ffd166";
       button.appendChild(badgeEl);
     }
     button.addEventListener("click", function () {
@@ -10734,6 +13267,70 @@
       startLevel(target - 1);
     });
     return button;
+  }
+
+  function getMapConstellationName(episode) {
+    var data = getConstellationData(episode);
+    return data ? data.name : "Constellation " + (episode || 1);
+  }
+
+  function getMapConstellationPositions(episode) {
+    // Real star anchors, in the same order as CONSTELLATION_DATA and each
+    // constellation's stars array. Coordinates are normalized RA/Dec-style
+    // positions within each constellation's display bounds; scale to percent
+    // for the CSS map node/line renderer below.
+    var realStarAnchors = [
+      [[0.3,0.2],[0.7,0.15],[0.55,0.5],[0.5,0.52],[0.45,0.54],[0.65,0.85],[0.35,0.8]],
+      [[0.15,0.2],[0.15,0.4],[0.35,0.45],[0.4,0.3],[0.6,0.28],[0.8,0.25],[0.95,0.2]],
+      [[0.15,0.3],[0.05,0.2],[0.5,0.5],[0.75,0.25],[0.95,0.4]],
+      [[0.5,0.1],[0.5,0.4],[0.2,0.45],[0.8,0.45],[0.5,0.9]],
+      [[0.5,0.15],[0.35,0.5],[0.65,0.5],[0.5,0.35]],
+      [[0.3,0.5],[0.85,0.15],[0.8,0.2],[0.82,0.18],[0.6,0.4],[0.75,0.25],[0.5,0.35],[0.4,0.45]],
+      [[0.3,0.8],[0.85,0.4],[0.35,0.55],[0.6,0.35],[0.6,0.55],[0.4,0.45]],
+      [[0.5,0.4],[0.85,0.7],[0.75,0.8],[0.4,0.3],[0.35,0.2],[0.45,0.25],[0.6,0.55],[0.8,0.85]],
+      [[0.5,0.6],[0.25,0.2],[0.55,0.4],[0.4,0.55],[0.45,0.5]],
+      [[0.15,0.5],[0.5,0.5],[0.85,0.4],[0.3,0.45],[0.65,0.55],[0.75,0.5]],
+      [[0.5,0.35],[0.2,0.5],[0.8,0.55],[0.7,0.6],[0.75,0.5],[0.45,0.3],[0.55,0.25]],
+      [[0.25,0.75],[0.25,0.25],[0.75,0.75],[0.9,0.3]],
+      [[0.5,0.85],[0.6,0.55],[0.4,0.7],[0.7,0.4],[0.5,0.35]],
+      [[0.2,0.8],[0.5,0.6],[0.65,0.45],[0.4,0.5],[0.6,0.4],[0.35,0.4]],
+      [[0.5,0.7],[0.35,0.4],[0.45,0.55],[0.4,0.45],[0.55,0.6],[0.3,0.6],[0.6,0.35],[0.4,0.35]],
+      [[0.4,0.4],[0.7,0.7],[0.6,0.75],[0.15,0.35],[0.85,0.8]]
+    ];
+    var data = getConstellationData(episode);
+    var count = Math.max(1, data && data.stars ? data.stars.length : 1);
+    var anchors = realStarAnchors[Math.max(0, (episode || 1) - 1) % realStarAnchors.length];
+    return expandConstellationAnchors(anchors, count);
+  }
+
+  function expandConstellationAnchors(anchors, count) {
+    var positions = [];
+    var anchorCount = anchors ? anchors.length : 0;
+    var index;
+    var scaled;
+    var segment;
+    var local;
+    var start;
+    var end;
+    if (!anchorCount) return [[50,50]];
+    if (anchorCount === count) {
+      for (index = 0; index < anchorCount; index += 1) {
+        positions.push([anchors[index][0] * 100, anchors[index][1] * 100]);
+      }
+      return positions;
+    }
+    for (index = 0; index < count; index += 1) {
+      scaled = count <= 1 ? 0 : (index / (count - 1)) * (anchorCount - 1);
+      segment = Math.min(anchorCount - 2, Math.floor(scaled));
+      local = scaled - segment;
+      start = anchors[segment];
+      end = anchors[segment + 1] || start;
+      positions.push([
+        (start[0] + (end[0] - start[0]) * local) * 100,
+        (start[1] + (end[1] - start[1]) * local) * 100
+      ]);
+    }
+    return positions;
   }
 
   function updateCampaignMap() {
@@ -10745,8 +13342,9 @@
     var nextReward = getNextStarReward(totalStars);
     var levelReward = getLevelRewardPreview(currentLevel);
     var theme = getCurrentEpisodeTheme();
-    mapTitleEl.textContent = "Tracklist";
-    mapSummaryEl.textContent = theme.name + ". " + theme.tag + ". Track " + pad2(currentLevel.episode) + " of " + Math.ceil(campaign.length / 15) + ".";
+    var constellationName = getMapConstellationName(currentLevel.episode);
+    mapTitleEl.textContent = "Star Map";
+    mapSummaryEl.textContent = constellationName + ". " + theme.tag + ". Constellation " + pad2(currentLevel.episode) + " of " + getCampaignEpisodeCount() + ".";
     updateTracklistCards();
     mapUnlockedEl.textContent = Math.min(campaignSave.unlocked, campaign.length) + "/" + campaign.length;
     mapStarsEl.textContent = totalStars + "/" + totalPossibleStars;
@@ -10779,13 +13377,14 @@
       var tagEl = titleEl.querySelector(".map-sector-tag");
       var conditionEl = titleEl.querySelector(".map-sector-condition");
       if (!episode || !tagEl || !conditionEl) return;
-      var locked = (episode - 1) * 15 + 1 > campaignSave.unlocked;
+      var range = getEpisodeLevelRange(episode);
+      var locked = range.start > campaignSave.unlocked;
       var playing = gameMode === MODE_CAMPAIGN && currentLevel && currentLevel.episode === episode;
-      var tag = playing ? "Now Playing" : locked ? "Unreleased" : getSectorStarTotal(episode) + "/45";
+      var tag = playing ? "Now Playing" : locked ? "Unreleased" : getSectorStarTotal(episode) + "/" + (range.count * 3);
       tagEl.textContent = tag;
       tagEl.classList.toggle("is-unreleased", !playing && locked);
       conditionEl.hidden = playing || !locked;
-      conditionEl.textContent = !playing && locked ? "Clear the Track " + pad2(episode - 1) + " Finale" : "";
+      conditionEl.textContent = !playing && locked ? "Clear " + getMapConstellationName(episode - 1) + " Finale" : "";
       var humCanvas = titleEl.querySelector(".map-sector-hum");
       if (humCanvas) drawTracklistHum(humCanvas, episode, locked);
     });
@@ -10800,12 +13399,12 @@
       var episode = Number(titleEl.dataset.episode);
       var humCanvas = titleEl.querySelector(".map-sector-hum");
       if (!episode || !humCanvas) return;
-      var locked = (episode - 1) * 15 + 1 > campaignSave.unlocked;
+      var locked = getEpisodeLevelRange(episode).start > campaignSave.unlocked;
       drawTracklistHum(humCanvas, episode, locked);
     });
   }
 
-  // Paint one track's Hum on its own card canvas. Sleeping tracks show the
+  // Paint one constellation's Hum on its own card canvas. Sleeping constellations show the
   // half-drawn recording outline; woken Finales show the full creature. drawHum
   // strokes through the shared module ctx, so we point it at the card canvas for
   // the duration of the call, then restore it (synchronous, off the rAF loop).
@@ -10840,8 +13439,8 @@
 
   function getSectorStarTotal(episode) {
     var total = 0;
-    for (var slot = 1; slot <= 15; slot += 1) {
-      var levelNumber = (episode - 1) * 15 + slot;
+    var range = getEpisodeLevelRange(episode);
+    for (var levelNumber = range.start; levelNumber <= range.end; levelNumber += 1) {
       total += Math.max(0, Math.min(3, Number(campaignSave.stars[levelNumber]) || 0));
     }
     return total;
@@ -10849,8 +13448,8 @@
 
   function createMapNodeLabel(levelNumber, stars, locked) {
     var level = campaign[levelNumber - 1];
-    var theme = getLevelEpisodeTheme(level);
-    var name = isFinaleLevel(level) ? theme.name + " Finale" : theme.name;
+    var constellationName = getMapConstellationName(level ? level.episode : 1);
+    var name = isFinaleLevel(level) ? constellationName + " Finale" : constellationName;
     if (locked) return name + " level " + levelNumber + " locked";
     if (stars > 0) return name + " level " + levelNumber + ", " + stars + " stars";
     return name + " level " + levelNumber + ", unlocked";
@@ -10956,7 +13555,7 @@
       // Near-miss / loss card
       state = "nearMiss";
       title = name + " says one more take.";
-      line = "Track " + pad2(currentLevel.episode) + " · Level " + currentLevel.id;
+      line = "Constellation " + pad2(currentLevel.episode) + " · Level " + currentLevel.id;
       cta = "Try the seed.";
       poseTime = 0.2;
       eyeOpen = 0.45;
@@ -10972,7 +13571,7 @@
       // First wake moment
       state = "wake";
       title = name + " woke up.";
-      line = "Track " + pad2(currentLevel.episode) + " found its voice.";
+      line = "Constellation " + pad2(currentLevel.episode) + " found its voice.";
       cta = "Can you wake yours?";
       poseTime = 0.42;
       eyeOpen = 1;
@@ -10980,14 +13579,14 @@
       // Recording progress
       state = "recording";
       title = name + " heard another bar.";
-      line = seg + "/" + HUM_SEGMENTS + " notes recorded for Track " + pad2(currentLevel.episode) + ".";
+      line = seg + "/" + HUM_SEGMENTS + " notes recorded for Constellation " + pad2(currentLevel.episode) + ".";
       cta = "Clear the Finale to wake " + name + ".";
       poseTime = 0.3;
       eyeOpen = 0.3;
     } else if (isFinaleLevel(currentLevel)) {
       state = "encore";
-      title = name + " finished the track.";
-      line = "Track " + pad2(currentLevel.episode) + " complete.";
+      title = name + " finished the constellation.";
+      line = "Constellation " + pad2(currentLevel.episode) + " complete.";
       cta = "Beat this take.";
       poseTime = 0.5;
       eyeOpen = 1;
@@ -11015,7 +13614,7 @@
     } else {
       state = "awake";
       title = name + " cleared the take.";
-      line = "Track " + pad2(currentLevel.episode) + " · Level " + currentLevel.id;
+      line = "Constellation " + pad2(currentLevel.episode) + " · Level " + currentLevel.id;
       cta = "Beat this take.";
       poseTime = 0.42;
       eyeOpen = 1;
@@ -11048,7 +13647,7 @@
     var humMoment = buildHumShareMoment(savedMoves, stars, finished, firstClear);
     var text = [
       humMoment.title + " in " + GAME_TITLE + ".",
-      "Track " + pad2(currentLevel.episode) + " · Level " + currentLevel.id + " · " + theme.name,
+      "Constellation " + pad2(currentLevel.episode) + " · Level " + currentLevel.id + " · " + theme.name,
       humMoment.cta,
       "Challenge " + challenge.code + " · Rival " + challenge.rival
     ].join("\n");
@@ -11063,7 +13662,7 @@
     ];
     if (finished) stats = stats.concat(buildGrantLedgerStats());
 
-    // Per-Hum segment progress (X/15) on the win card: the current Track's Hum
+    // Per-Hum segment progress (X/constellation) on the win card: the current Track's Hum
     // records one outline stroke per clear and wakes on the Finale. Shows the
     // player the collection is filling and how it wakes.
     var humId = getHumIdForLevel(currentLevel);
@@ -11102,6 +13701,7 @@
     var goal = getPrimaryOpenGoal();
     var scoreTarget = currentLevel.starTargets[0];
     var out = { near: false, strong: false, title: "Out of Moves", subtitle: "One more take.", callout: "OUT OF MOVES" };
+    if (lastViableMoveCount === 0) return out;
     if (!goal) return out;
     if (goal.kind !== "score") {
       var remaining = Math.max(0, goal.target - getGoalValue(goal));
@@ -11133,7 +13733,7 @@
     var strip = renderWaveformStrip(waveform);
     var hookLine = buildWaveformHookLine();
     var text = [
-      GAME_TITLE + " Campaign: Track " + pad2(currentLevel.episode) + " Level " + currentLevel.id + " · " + getCurrentEpisodeTheme().name,
+      GAME_TITLE + " Campaign: Constellation " + pad2(currentLevel.episode) + " Level " + currentLevel.id + " · " + getCurrentEpisodeTheme().name,
       strip,
       "Score " + formatNumber(score) + " · Moves " + levelStats.movesMade + " · Best chain " + levelStats.maxChain,
       hookLine,
@@ -11161,7 +13761,7 @@
     if (currentLevelIndex + 1 >= campaign.length) return "";
     // Finale clears tease the next track drop, not the next goal; the
     // sector-entry reveal is the payoff this line points at.
-    if (isFinaleLevel(currentLevel)) return "Next: Track " + pad2(currentLevel.episode + 1) + " drops";
+    if (isFinaleLevel(currentLevel)) return "Next: Constellation " + pad2(currentLevel.episode + 1) + " rises";
     var nextLevel = campaign[currentLevelIndex + 1];
     var goals = nextLevel.goals.filter(function (goal) {
       return goal.kind !== "score";
@@ -11173,21 +13773,21 @@
 
   function getCampaignViralMoment(savedMoves, stars, finished, clip) {
     if (!finished) return "Live seed chase";
-    if (isFinaleLevel(currentLevel)) return "Track " + pad2(currentLevel.episode) + " Finale cleared";
-    if (currentLevel.id === 1) return "Ion sweep";
-    if (currentLevel.id === 2 && levelStats.specialsCreated + levelStats.specialsActivated > 0) return "First beam spark";
-    if (currentLevel.id === 3) return "Shield break";
-    if (currentLevel.id === 4) return "Cascade signal";
-    if (currentLevel.id === 5) return "Overdrive ignition";
-    if (currentLevel.id === 6) return "Prism shield sweep";
-    if (currentLevel.id === 7 && levelStats.specialsCreated + levelStats.specialsActivated > 0) return "Nova primer";
-    if (currentLevel.id === 8) return "Fusion fireworks";
-    if (currentLevel.id === 9) return "Core reactor chain";
-    if (currentLevel.id === 10) return "First Gate cracked";
-    if (levelStats.fusions > 0) return "Fusion fireworks";
-    if (savedMoves >= 10) return "Encore bomb";
-    if (levelStats.maxChain >= 3) return "Chain reaction";
-    if (levelStats.overdrives > 0) return "Overdrive clear";
+    if (isFinaleLevel(currentLevel)) return "Constellation " + pad2(currentLevel.episode) + " Finale cleared";
+    if (currentLevel.id === 1) return "First star sweep";
+    if (currentLevel.id === 2 && levelStats.specialsCreated + levelStats.specialsActivated > 0) return "First star-line spark";
+    if (currentLevel.id === 3) return "Meteor shield break";
+    if (currentLevel.id === 4) return "Star-path signal";
+    if (currentLevel.id === 5) return "Stellar drive ignition";
+    if (currentLevel.id === 6) return "Comet shield sweep";
+    if (currentLevel.id === 7 && levelStats.specialsCreated + levelStats.specialsActivated > 0) return "Supernova primer";
+    if (currentLevel.id === 8) return "Stellar fusion fireworks";
+    if (currentLevel.id === 9) return "Galaxy chain";
+    if (currentLevel.id === 10) return "First constellation gate cracked";
+    if (levelStats.fusions > 0) return "Stellar fusion fireworks";
+    if (savedMoves >= 10) return "Encore supernova";
+    if (levelStats.maxChain >= 3) return "Star chain reaction";
+    if (levelStats.overdrives > 0) return "Stellar drive clear";
     if (stars >= 3) return "Three-star clear";
     return clip.reason || "Clean clear";
   }
@@ -11201,7 +13801,7 @@
     var reward = level && FIRST_CLEAR_REWARDS[level.id];
     if (!reward) {
       if (!level || level.id <= 10) return "Star Reactor chase";
-      var drip = level.id % 15 === 0 ? 40 : 15;
+      var drip = isFinaleLevel(level) ? 40 : 15;
       if (firstClear) return "CLEAR BONUS +" + drip + " Credits";
       if ((campaignSave.stars[level.id] || 0) > 0) return "First reward claimed";
       return "+" + drip + " Credits on clear";
@@ -11377,7 +13977,7 @@
     var button = document.createElement("button");
     button.type = "button";
     button.id = "shareContinueButton";
-    button.textContent = "Continue +" + CONTINUE_MOVES + " (" + CONTINUE_COST + "C)";
+    button.textContent = "Continue +" + CONTINUE_MOVES + " (" + getContinueCost() + "C)";
     button.addEventListener("click", function () {
       closeShareCard(false);
       buyStoreItem("continue");
@@ -11452,7 +14052,11 @@
   function resumeAfterShareCard() {
     if (gameMode === MODE_CAMPAIGN && levelState === "won") {
       if (currentLevelIndex + 1 < campaign.length && currentLevelIndex + 1 < campaignSave.unlocked) {
-        startLevel(currentLevelIndex + 1);
+        var nextIndex = currentLevelIndex + 1;
+        var constellationComplete = isFinaleLevel(currentLevel);
+        playStarHop(function () {
+          startLevel(nextIndex);
+        }, constellationComplete);
       }
       return;
     }
@@ -12372,7 +14976,7 @@
   }
 
   function populateMusicPaletteSelect() {
-    var reachedSector = Math.floor((campaignSave.unlocked - 1) / 15);
+    var reachedSector = getEpisodeForLevelNumber(campaignSave.unlocked) - 1;
     musicPaletteSelect.innerHTML = "";
     MUSIC_PALETTES.forEach(function (palette) {
       var alwaysOn = palette.id === "neon" || palette.id === "pulse" || palette.id === "arc";
@@ -12948,12 +15552,13 @@
 
   function computeLevelMotif(level) {
     var prime = normalizeMotif(getTrackMotif());
-    var chapter = ((level.id - 1) % 15) + 1;
-    if (chapter === 15) {
+    var chapter = level.chapterLevel || getChapterLevelForNumber(level.id);
+    var chapterCount = level.episodeLevelCount || getConstellationLevelCount(level.episode);
+    if (chapter === chapterCount) {
       // Track finale reprises the prime form an octave up: the hook returns.
       return { ops: ["O1"], motif: clampMotifDegrees(MOTIF_OPS.O1(prime)) };
     }
-    var tier = chapter <= 5 ? 0 : chapter <= 10 ? 1 : 2;
+    var tier = chapter <= Math.ceil(chapterCount / 3) ? 0 : chapter <= Math.ceil((chapterCount * 2) / 3) ? 1 : 2;
     var tension = tier; // difficulty tier only: live director arousal would change the pool per take
     var pool = tension >= AUDIO_TUNING.motifTensionUrgentMin
       ? MOTIF_TENSION_POOLS.urgent
@@ -13115,8 +15720,22 @@
     return base * getAdaptiveFxMultiplier();
   }
 
-  function bumpShake(amount) {
-    screenShake = Math.min(1, screenShake + amount * fxScale());
+  function isLowFxQuality() {
+    return frameQuality.level >= 2 || fxScale() < 0.5;
+  }
+
+  function essentialFxScale(floor) {
+    return Math.max(floor == null ? 0.55 : floor, fxScale());
+  }
+
+  function essentialGlowBlur(value, floor) {
+    if (!settings.fullFx) return 0;
+    return Math.max(floor == null ? 2 : floor, glowBlur(value));
+  }
+
+  function bumpShake(amount, essential) {
+    var scale = essential ? Math.max(0.65, fxScale()) : fxScale();
+    screenShake = Math.min(1, screenShake + amount * scale);
   }
 
   function getAdaptiveFxMultiplier() {
@@ -13468,7 +16087,7 @@
         pulse = Math.max(0, pulse - dt * drain * actionScale * overdriveScale);
         if (pulse <= 0.24 && !rushCritical) {
           rushCritical = true;
-          addCallout("PULSE LOW", "#ff5e7a", 20);
+          addCallout("STAR FADING", "#ff5e7a", 20);
           playRushWarning();
           vibrate("warning");
         }
@@ -13539,6 +16158,15 @@
       cellFlashes[cf].life -= dt;
       if (cellFlashes[cf].life <= 0) cellFlashes.splice(cf, 1);
     }
+
+    for (var cl = constellationLines.length - 1; cl >= 0; cl -= 1) {
+      constellationLines[cl].life -= dt;
+      if (constellationLines[cl].life <= 0) constellationLines.splice(cl, 1);
+    }
+
+    gravityRotationPulse = Math.max(0, gravityRotationPulse - dt * 2.8);
+    driftPulse = Math.max(0, driftPulse - dt * 3.8);
+    dayNightPulse = Math.max(0, dayNightPulse - dt * 2.6);
 
     for (var r = rays.length - 1; r >= 0; r -= 1) {
       var ray = rays[r];
@@ -13666,13 +16294,25 @@
       ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
     }
     drawStage(time);
+    var tilt = getGravityTiltAmount(time);
+    if (tilt) {
+      ctx.translate(centerBoardX(), centerBoardY());
+      ctx.rotate(tilt);
+      ctx.translate(-centerBoardX(), -centerBoardY());
+    }
     drawBoardBase(time);
+    drawDayNightOverlay(time);
     drawFluxTiles(time);
     drawSpectrumShields(time);
     drawFuseWires(time);
     drawShockwaves();
     drawBeams();
     drawGems(time);
+    drawWormholes(time);
+    drawBlackHoles(time);
+    drawNebulaCells(time);
+    drawAnomalyIntroBadges(time);
+    drawActiveConstellationLines(time);
     drawCellFlashes();
     drawPhaseLocks(time);
     drawFusePulses(time);
@@ -13702,9 +16342,292 @@
     ctx.globalCompositeOperation = "lighter";
     var wash = isMeterHot() ? washGold : washCyan;
     if (wash) {
-      ctx.globalAlpha = Math.min(0.07, flash * 0.12);
+      ctx.globalAlpha = Math.min(0.10, flash * 0.14);
       ctx.fillStyle = wash;
       ctx.fillRect(0, 0, view.width, view.height);
+    }
+    ctx.restore();
+  }
+
+  function regenerateBackdropArt(seed) {
+    var backdrop = getCurrentWorldBackdrop();
+    var random = createSeededRandom(seed || 1);
+    starfield = buildBackdropStars(backdrop, random);
+    backdropMountainLayers = buildBackdropMountains(backdrop, random);
+    backdropParticles = buildBackdropParticles(backdrop, random);
+  }
+
+  function buildBackdropStars(backdrop, random) {
+    var count = Math.max(48, backdrop.stars || 72);
+    var colors = backdrop.starColors || ["#ffffff"];
+    var stars = [];
+    for (var i = 0; i < count; i += 1) {
+      stars.push({
+        x: random(),
+        y: 0.035 + random() * 0.62,
+        size: 0.65 + random() * 1.9,
+        brightness: 0.42 + random() * 0.58,
+        twinklePhase: random() * Math.PI * 2,
+        color: colors[Math.floor(random() * colors.length)]
+      });
+    }
+    return stars;
+  }
+
+  function buildBackdropMountains(backdrop, random) {
+    var layers = [];
+    var colors = backdrop.mountains || ["#050510"];
+    for (var layer = 0; layer < colors.length; layer += 1) {
+      var points = [];
+      var terrain = backdrop.terrain || "mountains";
+      var steps = terrain === "dunes" || terrain === "ridge" ? 8 : 12;
+      for (var i = 0; i <= steps; i += 1) {
+        var x = i / steps;
+        var base = 0.66 + layer * 0.085;
+        var amp = terrain === "dunes" ? 0.05 : terrain === "ridge" ? 0.035 : terrain === "cliffs" ? 0.18 : 0.12;
+        var jitter = (random() - 0.5) * amp;
+        var wave = Math.sin(i * 1.7 + layer * 0.9 + random() * 0.45) * amp * 0.45;
+        if (terrain === "cliffs") jitter = -Math.abs(jitter) * (i % 2 === 0 ? 1.25 : 0.55);
+        if (terrain === "trees" && i % 3 === 1) jitter -= amp * 0.45;
+        if (terrain === "pines" && i % 2 === 1) jitter -= amp * 0.65;
+        points.push({ x: x, y: Math.max(0.48, Math.min(0.9, base + jitter + wave)) });
+      }
+      layers.push({ color: colors[layer], points: points, terrain: terrain, layer: layer });
+    }
+    return layers;
+  }
+
+  function buildBackdropParticles(backdrop, random) {
+    var count = 24;
+    var particles = [];
+    for (var i = 0; i < count; i += 1) {
+      particles.push({
+        x: random(),
+        y: random(),
+        size: 0.6 + random() * 2.2,
+        speed: 0.35 + random() * 0.9,
+        drift: -0.35 + random() * 0.7,
+        phase: random() * Math.PI * 2,
+        alpha: 0.25 + random() * 0.65
+      });
+    }
+    return particles;
+  }
+
+  function drawStageBackground(time) {
+    if (starfield.length === 0 || backdropMountainLayers.length === 0) regenerateBackdropArt(backdropSeed || 1);
+    var backdrop = getCurrentWorldBackdrop();
+    drawBackdropSky(backdrop);
+    drawBackdropStars(time);
+    drawBackdropGroundGlow(backdrop);
+    drawBackdropParticles(time, backdrop);
+    drawBackdropMountains(time, backdrop);
+  }
+
+  function drawBackdropSky(backdrop) {
+    var sky = ctx.createLinearGradient(0, 0, 0, view.height);
+    sky.addColorStop(0, backdrop.skyTop);
+    sky.addColorStop(0.42, backdrop.skyMid);
+    sky.addColorStop(0.74, backdrop.skyLow);
+    sky.addColorStop(1, backdrop.skyGlow);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, view.width, view.height);
+  }
+
+  function drawBackdropStars(time) {
+    var maxStars = frameQuality.level >= 2 ? 56 : frameQuality.level === 1 ? 78 : starfield.length;
+    var count = Math.min(starfield.length, maxStars);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < count; i += 1) {
+      var star = starfield[i];
+      var twinkle = 0.62 + Math.sin(time * (1.2 + star.size * 0.16) + star.twinklePhase) * 0.38;
+      var alpha = (0.30 + star.brightness * twinkle * 1.0) * Math.max(0.55, fxScale());
+      var x = star.x * view.width;
+      var y = star.y * view.height;
+      var r = star.size * (view.width < 600 ? 1.15 : 1.4);
+      ctx.globalAlpha = alpha;
+      ctx.shadowBlur = glowBlur(8 + r * 4);
+      ctx.shadowColor = star.color;
+      ctx.fillStyle = star.color;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawBackdropGroundGlow(backdrop) {
+    var cx = view.width / 2;
+    var horizon = view.height * 0.72;
+    var glow = ctx.createRadialGradient(cx, horizon, 0, cx, horizon, Math.max(view.width, view.height) * 0.62);
+    glow.addColorStop(0, rgbaFromHex(backdrop.skyGlow, 0.38));
+    glow.addColorStop(0.42, rgbaFromHex(backdrop.skyGlow, 0.14));
+    glow.addColorStop(1, rgbaFromHex(backdrop.skyGlow, 0));
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, view.width, view.height);
+    ctx.restore();
+  }
+
+  function drawBackdropParticles(time, backdrop) {
+    var type = backdrop.particles;
+    if (type === "aurora") {
+      drawAuroraBands(time, backdrop);
+      return;
+    }
+    if (type === "mist") drawMistBands(time, backdrop);
+    var maxCount = frameQuality.level >= 2 ? 16 : frameQuality.level === 1 ? 22 : 28;
+    var count = Math.min(backdropParticles.length, maxCount);
+    ctx.save();
+    ctx.globalCompositeOperation = type === "rain" ? "source-over" : "lighter";
+    for (var i = 0; i < count; i += 1) {
+      var p = backdropParticles[i];
+      if (type === "rain") drawRainParticle(time, p, backdrop);
+      else if (type === "snow") drawFallingParticle(time, p, "#ffffff", 0.18, 1.1, 0.5);
+      else if (type === "embers") drawRisingParticle(time, p, "#ff8a3d");
+      else if (type === "petals") drawFallingParticle(time, p, "#ff8fcf", 0.12, 0.55, 1.4);
+      else if (type === "dust") drawFallingParticle(time, p, backdrop.accent === "#ffd166" ? "#ffd166" : "#ffd9a6", 0.07, 0.32, 0.28);
+    }
+    ctx.restore();
+  }
+
+  function drawFallingParticle(time, p, color, baseAlpha, fallSpeed, driftMul) {
+    var x = ((p.x + Math.sin(time * 0.12 + p.phase) * 0.03 * driftMul + time * p.drift * 0.006 * driftMul) % 1 + 1) % 1;
+    var y = ((p.y + time * p.speed * 0.018 * fallSpeed) % 1 + 1) % 1;
+    ctx.globalAlpha = baseAlpha * p.alpha * Math.max(0.45, fxScale());
+    ctx.shadowBlur = glowBlur(5);
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x * view.width, y * view.height * 0.82, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawRisingParticle(time, p, color) {
+    var x = ((p.x + Math.sin(time * 0.4 + p.phase) * 0.018) % 1 + 1) % 1;
+    var y = ((p.y - time * p.speed * 0.026) % 1 + 1) % 1;
+    var fade = Math.max(0, 1 - y);
+    ctx.globalAlpha = (0.08 + fade * 0.16) * p.alpha * Math.max(0.45, fxScale());
+    ctx.shadowBlur = glowBlur(9);
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x * view.width, view.height * (0.38 + y * 0.58), p.size * 1.15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawRainParticle(time, p, backdrop) {
+    var x = ((p.x + time * 0.08 + p.drift * 0.05) % 1 + 1) % 1;
+    var y = ((p.y + time * p.speed * 0.055) % 1 + 1) % 1;
+    ctx.globalAlpha = 0.09 * p.alpha * Math.max(0.45, fxScale());
+    ctx.strokeStyle = backdrop.accent;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x * view.width, y * view.height * 0.78);
+    ctx.lineTo(x * view.width - 12, y * view.height * 0.78 + 24);
+    ctx.stroke();
+  }
+
+  function drawAuroraBands(time, backdrop) {
+    if (frameQuality.level >= 2 && !settings.fullFx) return;
+    var colors = ["#46f4ff", "#65ffd1", "#ff4fd8"];
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < 3; i += 1) {
+      var cx = view.width * (0.2 + i * 0.28 + Math.sin(time * 0.03 + i) * 0.04);
+      var cy = view.height * (0.19 + Math.cos(time * 0.025 + i * 1.7) * 0.05);
+      var rx = view.width * (0.28 + i * 0.04);
+      var ry = view.height * (0.08 + i * 0.025);
+      var gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+      gradient.addColorStop(0, rgbaFromHex(colors[i], 0.09 * Math.max(0.45, fxScale())));
+      gradient.addColorStop(1, rgbaFromHex(colors[i], 0));
+      ctx.fillStyle = gradient;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-0.22 + Math.sin(time * 0.02 + i) * 0.1);
+      ctx.scale(1, ry / rx);
+      ctx.beginPath();
+      ctx.arc(0, 0, rx, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawMistBands(time, backdrop) {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < 3; i += 1) {
+      var y = view.height * (0.52 + i * 0.085 + Math.sin(time * 0.04 + i) * 0.012);
+      var mist = ctx.createLinearGradient(0, y, view.width, y);
+      mist.addColorStop(0, rgbaFromHex(backdrop.accent, 0));
+      mist.addColorStop(0.5, rgbaFromHex(backdrop.accent, 0.035 * Math.max(0.45, fxScale())));
+      mist.addColorStop(1, rgbaFromHex(backdrop.accent, 0));
+      ctx.fillStyle = mist;
+      ctx.fillRect(0, y - 18, view.width, 36);
+    }
+    ctx.restore();
+  }
+
+  function drawBackdropMountains(time, backdrop) {
+    var layers = backdropMountainLayers;
+    for (var i = 0; i < layers.length; i += 1) {
+      drawBackdropMountainLayer(layers[i], i, layers.length, time);
+    }
+  }
+
+  function drawBackdropMountainLayer(layer, index, total, time) {
+    var points = layer.points;
+    var parallax = (total - index) * Math.sin(time * 0.012 + index) * 2.5;
+    var floorY = view.height + 8;
+    ctx.save();
+    ctx.globalAlpha = 0.92 - index * 0.08;
+    ctx.fillStyle = layer.color;
+    ctx.beginPath();
+    ctx.moveTo(-10, floorY);
+    var firstY = points[0].y * view.height;
+    ctx.lineTo(-10, firstY);
+    for (var i = 0; i < points.length; i += 1) {
+      var x = points[i].x * view.width + parallax;
+      var y = points[i].y * view.height;
+      if (layer.terrain === "dunes" || layer.terrain === "ridge") {
+        var next = points[Math.min(points.length - 1, i + 1)];
+        var nx = next.x * view.width + parallax;
+        var ny = next.y * view.height;
+        ctx.quadraticCurveTo(x, y, (x + nx) / 2, (y + ny) / 2);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.lineTo(view.width + 10, points[points.length - 1].y * view.height);
+    ctx.lineTo(view.width + 10, floorY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    if (layer.terrain === "pines" || layer.terrain === "trees") {
+      for (var t = 1; t < points.length - 1; t += 2) {
+        drawBackdropTreeSilhouette(points[t].x * view.width + parallax, points[t].y * view.height, layer.terrain, layer.color);
+      }
+    }
+  }
+
+  function drawBackdropTreeSilhouette(x, y, terrain, color) {
+    var h = terrain === "pines" ? view.height * 0.08 : view.height * 0.055;
+    var w = h * 0.42;
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y - h);
+    ctx.lineTo(x - w, y + 2);
+    ctx.lineTo(x + w, y + 2);
+    ctx.closePath();
+    ctx.fill();
+    if (terrain === "trees") {
+      ctx.beginPath();
+      ctx.arc(x, y - h * 0.72, w * 0.8, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
@@ -13713,9 +16636,7 @@
     var visualDrive = getVisualDrive();
     var pulse = beatPulse * 0.6 + energy * 0.4 + visualDrive * 0.32;
     ctx.save();
-    // GW STYLE: pure black background. No gradients, no nebula, no washes.
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, view.width, view.height);
+    drawStageBackground(time);
 
     var gap = Math.max(34, Math.min(54, view.width / 22)) * (1 + frameQuality.level * 0.34);
     var shift = (time * (22 + visualDrive * 34)) % gap;
@@ -14166,11 +17087,13 @@
     ctx.shadowBlur = glowBlur(10);
     ctx.shadowColor = "#46f4ff";
     var steps = frameQuality.level >= 2 ? 1 : 2;
+    var ox = view.gridOffsetX;
+    var oy = view.gridOffsetY;
     for (var row = 0; row < GRID; row += 1) {
       for (var col = 0; col < GRID; col += 1) {
         if (!isCellActive(row, col)) continue;
-        var left = view.boardX + col * view.cell;
-        var top = view.boardY + row * view.cell;
+        var left = view.boardX + ox + col * view.cell;
+        var top = view.boardY + oy + row * view.cell;
         var right = left + view.cell;
         var bottom = top + view.cell;
         if (!isCellActive(row - 1, col)) drawWarpedLine(left, top, right, top, steps, time, warpStrength);
@@ -14179,6 +17102,252 @@
         if (!isCellActive(row, col + 1)) drawWarpedLine(right, top, right, bottom, steps, time + 0.6, warpStrength);
       }
     }
+    ctx.restore();
+  }
+
+  function drawBlackHoles(time) {
+    if (blackHoles.length === 0) return;
+    var now = performance.now();
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < blackHoles.length; i += 1) {
+      var hole = blackHoles[i];
+      var center = getBoardCellCenter(hole);
+      var flashAmt = hole.flashAt ? Math.max(0, 1 - (now - hole.flashAt) / 420) : 0;
+      var age = Math.min(3, hole.turnsActive || 0);
+      var pulseAmt = 0.5 + Math.sin(time * 5.8 + i) * 0.5;
+      var radius = view.cell * (0.26 + age * 0.035 + pulseAmt * 0.03 + flashAmt * 0.06);
+      ctx.globalAlpha = 0.86;
+      ctx.shadowBlur = essentialGlowBlur(18 + flashAmt * 20, 3);
+      ctx.shadowColor = "#7a6bff";
+      var gradient = ctx.createRadialGradient(center.x, center.y, radius * 0.1, center.x, center.y, radius * 1.55);
+      gradient.addColorStop(0, "rgba(0,0,0,1)");
+      gradient.addColorStop(0.58, "rgba(20,8,38,0.95)");
+      gradient.addColorStop(1, "rgba(122,107,255,0)");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius * 1.55, 0, Math.PI * 2);
+      ctx.fill();
+      // Danger / event horizon ring
+      var dangerR = view.cell * (0.48 + age * 0.045 + pulseAmt * 0.035);
+      ctx.globalAlpha = Math.max(0.18, 0.28 * Math.max(0.55, fxScale()));
+      ctx.strokeStyle = "#46f4ff";
+      ctx.lineWidth = Math.max(1.2, view.cell * 0.02);
+      ctx.setLineDash([view.cell * 0.08, view.cell * 0.05]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, dangerR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // White flash ring on hit
+      if (flashAmt > 0) {
+        ctx.globalAlpha = flashAmt * 0.55;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = Math.max(1.2, view.cell * 0.02);
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, dangerR * 1.1, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.lineWidth = Math.max(1.4, view.cell * 0.025);
+      for (var arm = 0; arm < 3; arm += 1) {
+        var start = time * (1.4 + arm * 0.24) + arm * Math.PI * 2 / 3;
+        ctx.globalAlpha = Math.max(0.24, (0.40 + flashAmt * 0.30) * Math.max(0.45, fxScale()));
+        ctx.strokeStyle = arm === 1 ? "#46f4ff" : "#ff4fd8";
+        ctx.beginPath();
+        for (var s = 0; s <= 18; s += 1) {
+          var t = s / 18;
+          var a = start + t * Math.PI * 1.45;
+          var r = radius * (1.35 - t * 0.92);
+          var x = center.x + Math.cos(a) * r;
+          var y = center.y + Math.sin(a) * r;
+          if (s === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "#02030a";
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius * 0.62, 0, Math.PI * 2);
+      ctx.fill();
+      drawAnomalyPips(center.x, center.y + view.cell * 0.34, hole.chargesLeft, "#8b5cff");
+    }
+    ctx.restore();
+  }
+
+  function drawWormholes(time) {
+    if (wormholes.length === 0) return;
+    var now = performance.now();
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < wormholes.length; i += 1) {
+      var pair = wormholes[i];
+      var a = getBoardCellCenter({ row: pair.rowA, col: pair.colA });
+      var b = getBoardCellCenter({ row: pair.rowB, col: pair.colB });
+      var flashAmt = pair.flashAt ? Math.max(0, 1 - (now - pair.flashAt) / 360) : 0;
+      var connectorAlpha = Math.max(0.24, (0.26 + flashAmt * 0.34) * Math.max(0.5, fxScale()));
+      ctx.globalAlpha = connectorAlpha;
+      ctx.strokeStyle = "#7a6bff";
+      ctx.lineWidth = Math.max(1.6, view.cell * 0.026);
+      ctx.setLineDash([view.cell * 0.1, view.cell * 0.08]);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // White core pass for readability at low FX quality
+      ctx.globalAlpha = Math.max(0.12, connectorAlpha * 0.45);
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = Math.max(0.8, view.cell * 0.012);
+      ctx.setLineDash([view.cell * 0.1, view.cell * 0.08]);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      drawPortalAt(a.x, a.y, time + i, "#7a6bff", "#46f4ff", flashAmt);
+      drawPortalAt(b.x, b.y, -time + i * 0.7, "#46f4ff", "#ff4fd8", flashAmt);
+    }
+    ctx.restore();
+  }
+
+  function drawPortalAt(cx, cy, time, colorA, colorB, flashAmt) {
+    var pulseAmt = 0.5 + Math.sin(time * 4.6) * 0.5;
+    var radius = view.cell * (0.25 + pulseAmt * 0.035 + flashAmt * 0.05);
+    ctx.shadowBlur = glowBlur(14 + flashAmt * 18);
+    ctx.shadowColor = colorA;
+    ctx.globalAlpha = 0.62 + flashAmt * 0.22;
+    ctx.strokeStyle = colorA;
+    ctx.lineWidth = Math.max(1.5, view.cell * 0.035);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, time * 1.8, time * 1.8 + Math.PI * 1.55);
+    ctx.stroke();
+    ctx.strokeStyle = colorB;
+    ctx.lineWidth = Math.max(1, view.cell * 0.022);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.68, -time * 1.5, -time * 1.5 + Math.PI * 1.45);
+    ctx.stroke();
+    ctx.globalAlpha = 0.2 + flashAmt * 0.28;
+    ctx.fillStyle = colorA;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawNebulaCells(time) {
+    if (nebulaCells.length === 0) return;
+    var sprite = getNebulaCanvas();
+    var now = performance.now();
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (var i = 0; i < nebulaCells.length; i += 1) {
+      var fog = nebulaCells[i];
+      var center = getBoardCellCenter(fog);
+      var flashAmt = fog.flashAt ? Math.max(0, 1 - (now - fog.flashAt) / 420) : 0;
+      var fogLevel = Math.max(0, Math.min(1, fog.fogLevel));
+      var wobbleX = Math.sin(time * 0.9 + fog.row) * view.cell * 0.04;
+      var wobbleY = Math.cos(time * 0.8 + fog.col) * view.cell * 0.04;
+      var size = view.cell * (1.38 + flashAmt * 0.12);
+      var fogAlpha = Math.max(0.34 * fogLevel, (0.52 * fogLevel + flashAmt * 0.14) * Math.max(0.55, fxScale()));
+      ctx.globalAlpha = fogAlpha;
+      ctx.drawImage(sprite, center.x + wobbleX - size / 2, center.y + wobbleY - size / 2, size, size);
+      var ringAlpha = Math.max(0.18 * fogLevel, (0.26 * fogLevel + flashAmt * 0.18) * Math.max(0.55, fxScale()));
+      if (flashAmt > 0) ringAlpha = Math.max(ringAlpha, 0.38);
+      ctx.globalAlpha = ringAlpha;
+      ctx.strokeStyle = "#b68cff";
+      ctx.lineWidth = Math.max(1, view.cell * 0.018);
+      ctx.shadowBlur = essentialGlowBlur(8, 2);
+      ctx.shadowColor = "#7a6bff";
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, view.cell * (0.34 + Math.sin(time * 2 + i) * 0.025), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawAnomalyPips(cx, cy, count, color) {
+    ctx.save();
+    ctx.shadowBlur = essentialGlowBlur(5, 1);
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+    for (var i = 0; i < count; i += 1) {
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.arc(cx + (i - (count - 1) / 2) * view.cell * 0.11, cy, Math.max(1.8, view.cell * 0.032), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Dim empty-slot outlines showing remaining charge capacity
+    for (var e = count; e < 3; e += 1) {
+      ctx.globalAlpha = 0.25;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(1, view.cell * 0.012);
+      ctx.beginPath();
+      ctx.arc(cx + (e - 1) * view.cell * 0.11, cy, Math.max(1.4, view.cell * 0.024), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // First-encounter micro-labels for stellar anomalies.
+  // Shows small text near each anomaly for the first 3 seconds or until first move.
+  var anomalyIntroStartTime = 0;
+  function drawAnomalyIntroBadges(time) {
+    if (!currentLevel || levelState !== "playing") return;
+    if (levelStats && levelStats.movesMade > 0) return;
+    if (blackHoles.length === 0 && wormholes.length === 0 && nebulaCells.length === 0) return;
+    if (anomalyIntroStartTime === 0) anomalyIntroStartTime = performance.now();
+    var elapsed = (performance.now() - anomalyIntroStartTime) / 1000;
+    if (elapsed > 5) return;
+    var fadeAlpha = elapsed < 3.5 ? 0.7 : Math.max(0, 0.7 * (1 - (elapsed - 3.5) / 1.5));
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    var fontSize = Math.max(9, Math.min(13, view.cell * 0.22));
+    ctx.font = "600 " + fontSize + "px ui-sans-serif, system-ui, sans-serif";
+
+    for (var bi = 0; bi < blackHoles.length; bi += 1) {
+      var bhCenter = getBoardCellCenter(blackHoles[bi]);
+      ctx.globalAlpha = fadeAlpha;
+      ctx.fillStyle = "rgba(139, 92, 255, 0.95)";
+      ctx.shadowBlur = essentialGlowBlur(6, 1);
+      ctx.shadowColor = "#8b5cff";
+      ctx.fillText("BLACK HOLE", bhCenter.x, bhCenter.y - view.cell * 0.55);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(200, 180, 255, 0.8)";
+      ctx.font = "400 " + Math.max(8, fontSize - 2) + "px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillText("match around it", bhCenter.x, bhCenter.y - view.cell * 0.38);
+      ctx.font = "600 " + fontSize + "px ui-sans-serif, system-ui, sans-serif";
+    }
+
+    for (var wi = 0; wi < wormholes.length; wi += 1) {
+      var wp = wormholes[wi];
+      var wCenter = getBoardCellCenter({ row: wp.rowA, col: wp.colA });
+      ctx.globalAlpha = fadeAlpha;
+      ctx.fillStyle = "rgba(70, 244, 255, 0.95)";
+      ctx.shadowBlur = essentialGlowBlur(6, 1);
+      ctx.shadowColor = "#46f4ff";
+      ctx.fillText("WORMHOLE", wCenter.x, wCenter.y - view.cell * 0.55);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(180, 240, 255, 0.8)";
+      ctx.font = "400 " + Math.max(8, fontSize - 2) + "px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillText("paired portals", wCenter.x, wCenter.y - view.cell * 0.38);
+      ctx.font = "600 " + fontSize + "px ui-sans-serif, system-ui, sans-serif";
+    }
+
+    for (var ni = 0; ni < nebulaCells.length; ni += 1) {
+      var nCenter = getBoardCellCenter(nebulaCells[ni]);
+      ctx.globalAlpha = fadeAlpha;
+      ctx.fillStyle = "rgba(214, 200, 255, 0.95)";
+      ctx.shadowBlur = essentialGlowBlur(6, 1);
+      ctx.shadowColor = "#b68cff";
+      ctx.fillText("NEBULA", nCenter.x, nCenter.y - view.cell * 0.55);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(200, 190, 240, 0.8)";
+      ctx.font = "400 " + Math.max(8, fontSize - 2) + "px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillText("fog hides colors", nCenter.x, nCenter.y - view.cell * 0.38);
+      ctx.font = "600 " + fontSize + "px ui-sans-serif, system-ui, sans-serif";
+    }
+
     ctx.restore();
   }
 
@@ -14192,8 +17361,8 @@
         // isCellActive — render wherever there is a live charge.
         var charge = tileCharges[row] && tileCharges[row][col];
         if (!charge) continue;
-        var x = view.boardX + col * view.cell;
-        var y = view.boardY + row * view.cell;
+        var x = view.boardX + view.gridOffsetX + col * view.cell;
+        var y = view.boardY + view.gridOffsetY + row * view.cell;
         var pulse = 0.55 + Math.sin(time * 5 + row * 0.7 + col * 0.4) * 0.18;
         drawShieldWall(x, y, view.cell, {
           pulse: pulse,
@@ -14224,8 +17393,8 @@
     ctx.save();
     for (var i = 0; i < beatGateList.length; i += 1) {
       var cell = beatGateList[i];
-      var x = view.boardX + cell.col * view.cell;
-      var y = view.boardY + cell.row * view.cell;
+      var x = view.boardX + view.gridOffsetX + cell.col * view.cell;
+      var y = view.boardY + view.gridOffsetY + cell.row * view.cell;
       var cx = x + view.cell / 2;
       var cy = y + view.cell / 2;
 
@@ -14294,8 +17463,8 @@
       var broken = shield.remaining.length === 0;
       var breakFade = broken ? Math.max(0, 1 - (now - shield.brokeAt) / 460) : 1;
       if (broken && breakFade <= 0) continue;
-      var x = view.boardX + shield.col * view.cell;
-      var y = view.boardY + shield.row * view.cell;
+      var x = view.boardX + view.gridOffsetX + shield.col * view.cell;
+      var y = view.boardY + view.gridOffsetY + shield.row * view.cell;
       var pulse = 0.55 + Math.sin(time * 5 + shield.row * 0.7 + shield.col * 0.4) * 0.18;
 
       // Solid neon wall that cracks per hit (same look as flux Shields), with
@@ -14322,8 +17491,8 @@
     ctx.save();
     for (var i = 0; i < signalNodeList.length; i += 1) {
       var node = signalNodeList[i];
-      var x = view.boardX + node.col * view.cell;
-      var y = view.boardY + node.row * view.cell;
+      var x = view.boardX + view.gridOffsetX + node.col * view.cell;
+      var y = view.boardY + view.gridOffsetY + node.row * view.cell;
       var cx = x + view.cell / 2;
       var cy = y + view.cell / 2;
       var flash = node.flashAt ? Math.max(0, 1 - (now - node.flashAt) / 420) : 0;
@@ -14373,8 +17542,8 @@
     ctx.save();
     for (var i = 0; i < producerList.length; i += 1) {
       var p = producerList[i];
-      var x = view.boardX + p.col * view.cell;
-      var y = view.boardY + p.row * view.cell;
+      var x = view.boardX + view.gridOffsetX + p.col * view.cell;
+      var y = view.boardY + view.gridOffsetY + p.row * view.cell;
       var cx = x + view.cell / 2;
       var cy = y + view.cell / 2;
       var flash = p.flashAt ? Math.max(0, 1 - (now - p.flashAt) / 360) : 0;
@@ -14384,8 +17553,8 @@
       if (p.beamTo) {
         var beam = Math.max(0, 1 - (now - p.beamTo.at) / 300);
         if (beam > 0) {
-          var bx = view.boardX + p.beamTo.col * view.cell + view.cell / 2;
-          var by = view.boardY + p.beamTo.row * view.cell + view.cell / 2;
+          var bx = view.boardX + view.gridOffsetX + p.beamTo.col * view.cell + view.cell / 2;
+          var by = view.boardY + view.gridOffsetY + p.beamTo.row * view.cell + view.cell / 2;
           ctx.globalAlpha = beam * 0.85;
           ctx.shadowBlur = glowBlur(10);
           ctx.shadowColor = color;
@@ -14448,15 +17617,15 @@
 
   function drawSpreaders(time) {
     if (spreaderList.length === 0) return;
-    var intensity = Math.max(0.4, fxScale());
+    var intensity = Math.max(0.55, essentialFxScale(0.5));
     var now = performance.now();
-    var CREEP_HOT = "rgba(238, 255, 176, 0.92)"; // pale acid highlight / hot heart
+    var CREEP_HOT = "rgba(255, 255, 255, 0.95)"; // white hot heart — max contrast
     ctx.save();
     ctx.lineJoin = "round";
     for (var i = 0; i < spreaderList.length; i += 1) {
       var sp = spreaderList[i];
-      var x = view.boardX + sp.col * view.cell;
-      var y = view.boardY + sp.row * view.cell;
+      var x = view.boardX + view.gridOffsetX + sp.col * view.cell;
+      var y = view.boardY + view.gridOffsetY + sp.row * view.cell;
       var cx = x + view.cell / 2;
       var cy = y + view.cell / 2;
       var seed = sp.row * 2.3 + sp.col * 1.7;
@@ -14482,16 +17651,16 @@
         if (p === 0) ctx.moveTo(mpx, mpy); else ctx.lineTo(mpx, mpy);
       }
       ctx.closePath();
-      ctx.globalAlpha = (0.26 + pulse * 0.12 + spawn * 0.2) * intensity * tame;
+      ctx.globalAlpha = (0.42 + pulse * 0.15 + spawn * 0.2) * intensity * tame;
       ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(174, 255, 40, 0.24)";
+      ctx.fillStyle = "rgba(255, 61, 110, 0.38)";
       ctx.fill();
       // thick bright membrane rim + heavy glow
-      ctx.globalAlpha = Math.min(1, 0.6 + pulse * 0.3 + spawn * 0.4) * intensity;
-      ctx.shadowBlur = glowBlur(12 + pulse * 8 + spawn * 16);
+      ctx.globalAlpha = Math.min(1, 0.75 + pulse * 0.25 + spawn * 0.3) * intensity;
+      ctx.shadowBlur = essentialGlowBlur(14 + pulse * 8 + spawn * 16, 4);
       ctx.shadowColor = SPREAD_COLOR;
       ctx.strokeStyle = SPREAD_COLOR;
-      ctx.lineWidth = Math.max(2, view.cell * 0.055);
+      ctx.lineWidth = Math.max(2.5, view.cell * 0.07);
       ctx.stroke();
       // hot inner highlight tracing the same membrane
       ctx.globalAlpha = (0.45 + throb * 0.3) * intensity * tame;
@@ -14517,7 +17686,7 @@
         var ex = cx + Math.cos(a0) * (baseR + len);
         var ey = cy + Math.sin(a0) * (baseR + len);
         ctx.globalAlpha = (0.5 + pulse * 0.35) * intensity * tame;
-        ctx.shadowBlur = glowBlur(8 + pulse * 6);
+        ctx.shadowBlur = essentialGlowBlur(8 + pulse * 6, 3);
         ctx.lineWidth = Math.max(1.5, view.cell * 0.035);
         ctx.beginPath();
         ctx.moveTo(sx, sy);
@@ -14530,15 +17699,32 @@
       }
       ctx.lineCap = "butt";
 
+      // 2b. Biohazard X-cross: bold white-purple X overlay so the creep is
+      // unmistakably "infected" at a glance, even on purple Galaxy gems.
+      var xLen = view.cell * 0.26 * grow;
+      ctx.globalAlpha = Math.min(1, 0.8 + throb * 0.2) * intensity * tame;
+      ctx.shadowBlur = essentialGlowBlur(10 + throb * 8, 4);
+      ctx.shadowColor = "#ffffff";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.lineWidth = Math.max(3, view.cell * 0.065);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(cx - xLen, cy - xLen);
+      ctx.lineTo(cx + xLen, cy + xLen);
+      ctx.moveTo(cx + xLen, cy - xLen);
+      ctx.lineTo(cx - xLen, cy + xLen);
+      ctx.stroke();
+      ctx.lineCap = "butt";
+
       // 3. Pulsing nucleus: a dark toxic well with a hot throbbing heart.
       ctx.globalAlpha = (0.4 + pulse * 0.2) * intensity;
       ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(24, 42, 0, 0.7)";
+      ctx.fillStyle = "rgba(40, 0, 12, 0.75)";
       ctx.beginPath();
       ctx.arc(cx, cy, view.cell * 0.13 * grow, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = Math.min(1, 0.7 + throb * 0.3) * intensity;
-      ctx.shadowBlur = glowBlur(10 + throb * 12);
+      ctx.shadowBlur = essentialGlowBlur(10 + throb * 12, 4);
       ctx.shadowColor = SPREAD_COLOR;
       ctx.fillStyle = SPREAD_COLOR;
       ctx.beginPath();
@@ -14554,7 +17740,7 @@
       // 4. Contained: a cyan locking ring shows a clear held it back this cycle.
       if (sp.contained) {
         ctx.globalAlpha = 0.7 * intensity;
-        ctx.shadowBlur = glowBlur(6);
+        ctx.shadowBlur = essentialGlowBlur(6, 2);
         ctx.shadowColor = "#bffcff";
         ctx.strokeStyle = "rgba(191, 252, 255, 0.85)";
         ctx.lineWidth = Math.max(1.5, view.cell * 0.03);
@@ -14576,8 +17762,8 @@
       var live = Boolean(phaseLockMap[lock.row + ":" + lock.col]);
       var breakFade = live ? 1 : Math.max(0, 1 - (now - lock.brokeAt) / 420);
       if (!live && breakFade <= 0) continue;
-      var x = view.boardX + lock.col * view.cell;
-      var y = view.boardY + lock.row * view.cell;
+      var x = view.boardX + view.gridOffsetX + lock.col * view.cell;
+      var y = view.boardY + view.gridOffsetY + lock.row * view.cell;
       var rejectFlash = lock.flashAt ? Math.max(0, 1 - (now - lock.flashAt) / 320) : 0;
       var shimmer = 0.5 + Math.sin(time * 4 + lock.row * 1.3 + lock.col * 0.9) * 0.22;
       // Glitch offset while the shatter fades.
@@ -14745,9 +17931,27 @@
     var cy = y + size / 2;
     var rand = crackRng(seed);
     ctx.save();
+    // Glow pass: warm light bleeding through cracks
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = Math.min(0.55, (0.20 + count * 0.12) * (alpha == null ? 1 : alpha));
+    ctx.strokeStyle = "rgba(255, 220, 180, 0.8)";
+    ctx.shadowBlur = essentialGlowBlur(8 + count * 5, 2);
+    ctx.shadowColor = "rgba(255, 200, 150, 0.9)";
+    ctx.lineCap = "round";
+    for (var gi = 0; gi < count; gi += 1) {
+      var gang = rand() * Math.PI * 2;
+      var greach = size * (0.32 + rand() * 0.14);
+      ctx.lineWidth = Math.max(2, size * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(gang) * greach, cy + Math.sin(gang) * greach);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    // Main crack lines
     ctx.globalAlpha = 0.85 * (alpha == null ? 1 : alpha);
     ctx.strokeStyle = "rgba(255, 240, 252, 0.92)";
-    ctx.shadowBlur = glowBlur(6);
+    ctx.shadowBlur = 0;
     ctx.shadowColor = "#ffffff";
     ctx.lineCap = "round";
     for (var i = 0; i < count; i += 1) {
@@ -14822,7 +18026,7 @@
     ctx.stroke();
     // Bright neon frame — the wall edge.
     ctx.globalAlpha = Math.min(1, 0.6 + pulse * 0.3) * alpha;
-    ctx.shadowBlur = glowBlur(12 + pulse * 8);
+    ctx.shadowBlur = essentialGlowBlur(12 + pulse * 8, 2);
     ctx.shadowColor = frameCol;
     ctx.strokeStyle = frameCol;
     ctx.lineWidth = Math.max(2, size * 0.055);
@@ -14832,6 +18036,24 @@
       ctx.globalAlpha = 0.7 * alpha;
       ctx.lineWidth = Math.max(1.5, size * 0.03);
       ctx.strokeRect(px + size * 0.1, py + size * 0.1, pw - size * 0.2, ph - size * 0.2);
+      // Diagonal gold braces for structural readability (color-blind friendly)
+      ctx.globalAlpha = 0.42 * alpha;
+      ctx.strokeStyle = "#ffd166";
+      ctx.lineWidth = Math.max(1.5, size * 0.035);
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.moveTo(px + size * 0.15, py + size * 0.15);
+      ctx.lineTo(px + pw - size * 0.15, py + ph - size * 0.15);
+      ctx.moveTo(px + pw - size * 0.15, py + size * 0.15);
+      ctx.lineTo(px + size * 0.15, py + ph - size * 0.15);
+      ctx.stroke();
+      // Warm fill for reinforced shields (gold/orange vs magenta/pink)
+      var rgrad = ctx.createLinearGradient(px, py, px, py + ph);
+      rgrad.addColorStop(0, "rgba(255, 209, 102, " + (0.25 * alpha).toFixed(3) + ")");
+      rgrad.addColorStop(1, "rgba(255, 138, 61, " + (0.34 * alpha).toFixed(3) + ")");
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = rgrad;
+      ctx.fillRect(px, py, pw, ph);
     }
     ctx.shadowBlur = 0;
     ctx.restore();
@@ -14880,18 +18102,127 @@
     ctx.restore();
   }
 
+  function getGravityTiltAmount(time) {
+    if (gravityRotationPulse <= 0) return 0;
+    var vector = getGravityVector(gravityDirection);
+    var target = Math.atan2(vector.row, vector.col) - Math.PI / 2;
+    return Math.sin(gravityRotationPulse * Math.PI) * 0.045 * (target >= 0 ? 1 : -1);
+  }
+
+  function drawDayNightOverlay(time) {
+    if (!isNightActive()) return;
+    var pulse = 0.5 + Math.sin(time * 2.2) * 0.5;
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.4, 0.32 + pulse * 0.04 + dayNightPulse * 0.08);
+    ctx.fillStyle = "#02030a";
+    ctx.fillRect(view.boardX, view.boardY, view.boardSize, view.boardSize);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.08 + pulse * 0.04;
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = Math.max(1, view.cell * 0.018);
+    ctx.strokeRect(view.boardX + 6, view.boardY + 6, view.boardSize - 12, view.boardSize - 12);
+    ctx.restore();
+  }
+
+  function drawEnvironmentIndicators(x, y, size, time) {
+    var layout = getLevelEnvironmentLayout();
+    if (!layout || !layout.worldModifier) return;
+    if (layout.drift) drawDriftIndicator(x, y, size, time, layout.drift.direction || "left");
+    if (layout.gravityRotation) drawGravityIndicator(x, y, size, time);
+    if (layout.dayNight) drawDayNightIndicator(x, y, size, time);
+  }
+
+  function drawDriftIndicator(x, y, size, time, direction) {
+    var alpha = 0.28 + driftPulse * 0.42 + Math.sin(time * 3.1) * 0.04;
+    var cx = x + size - view.cell * 0.46;
+    var cy = y + view.cell * 0.48;
+    var angle = direction === "right" ? 0 : direction === "down" ? Math.PI / 2 : direction === "up" ? -Math.PI / 2 : Math.PI;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = "#46f4ff";
+    ctx.fillStyle = "#46f4ff";
+    ctx.shadowBlur = glowBlur(10 + driftPulse * 16);
+    ctx.shadowColor = "#46f4ff";
+    ctx.lineWidth = Math.max(1.5, view.cell * 0.035);
+    ctx.beginPath();
+    ctx.moveTo(-view.cell * 0.24, 0);
+    ctx.lineTo(view.cell * 0.18, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(view.cell * 0.26, 0);
+    ctx.lineTo(view.cell * 0.08, -view.cell * 0.12);
+    ctx.lineTo(view.cell * 0.08, view.cell * 0.12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawGravityIndicator(x, y, size, time) {
+    var vector = getGravityVector(gravityDirection);
+    var cx = x + view.cell * 0.48;
+    var cy = y + view.cell * 0.48;
+    var angle = Math.atan2(vector.row, vector.col);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.26 + gravityRotationPulse * 0.55;
+    ctx.strokeStyle = "#ffd166";
+    ctx.fillStyle = "#ffd166";
+    ctx.shadowBlur = glowBlur(12 + gravityRotationPulse * 18);
+    ctx.shadowColor = "#ffd166";
+    ctx.lineWidth = Math.max(1.5, view.cell * 0.032);
+    ctx.beginPath();
+    ctx.arc(0, 0, view.cell * 0.25, -1.1, 1.1);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(view.cell * 0.3, 0);
+    ctx.lineTo(view.cell * 0.12, -view.cell * 0.11);
+    ctx.lineTo(view.cell * 0.12, view.cell * 0.11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawDayNightIndicator(x, y, size, time) {
+    var night = isNightActive();
+    var cx = x + size - view.cell * 0.5;
+    var cy = y + size - view.cell * 0.5;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.36 + dayNightPulse * 0.44;
+    ctx.shadowBlur = glowBlur(12);
+    ctx.shadowColor = night ? "#ffd166" : "#46f4ff";
+    ctx.fillStyle = night ? "#ffd166" : "#46f4ff";
+    ctx.beginPath();
+    ctx.arc(cx, cy, view.cell * 0.14, 0, Math.PI * 2);
+    ctx.fill();
+    if (night) {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(0,0,0,0.85)";
+      ctx.beginPath();
+      ctx.arc(cx + view.cell * 0.07, cy - view.cell * 0.04, view.cell * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawBoardFrame(time) {
     var x = view.boardX;
     var y = view.boardY;
     var size = view.boardSize;
     var overdrive = isMeterHot() ? 0.24 : 0;
     var pulse = 0.35 + energy * 0.35 + beatPulse * 0.3 + overdrive;
+    var accent = getCurrentWorldAccent();
 
     ctx.save();
     ctx.lineWidth = 2;
     ctx.shadowBlur = 20 + pulse * 28;
-    ctx.shadowColor = "#46f4ff";
-    ctx.strokeStyle = "rgba(70, 244, 255, 0.66)";
+    ctx.shadowColor = accent;
+    ctx.strokeStyle = rgbaFromHex(accent, 0.66);
     ctx.strokeRect(x - 1, y - 1, size + 2, size + 2);
 
     ctx.globalAlpha = 0.62;
@@ -14926,6 +18257,8 @@
 
     drawDriveMeter(x, y, size, time);
     drawBoardMaskOutline(time, "rgba(255, 79, 216, 0.24)", 1.5, 6 + pulse * 8);
+
+    drawEnvironmentIndicators(x, y, size, time);
 
     if (armedSpecial) drawArmedSpecialPreview(x, y, time);
 
@@ -15449,32 +18782,56 @@
     ctx.scale(scale * breath, scale * breath);
     drawGemBacking(radius, type.color, gem.special, gem.birth);
 
-    // GW STYLE: bright neon halo — additive, thick, heavy glow. On all tiers.
+    // Bright neon halo — additive, vibrant outline that carries piece identity.
     {
       ctx.save();
       ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = 0.5 + haloPulse + gem.pop * 0.3;
-      ctx.lineWidth = coreWidth * 3;
+      ctx.globalAlpha = 0.62 + haloPulse + gem.pop * 0.3;
+      ctx.lineWidth = coreWidth * 3.2;
       ctx.strokeStyle = type.color;
-      ctx.shadowBlur = glowBlur(12 + beatPulse * 14);
+      ctx.shadowBlur = glowBlur(14 + beatPulse * 16);
       ctx.shadowColor = type.color;
       drawShape(type.shape, radius, time + gem.spin, type.color);
       ctx.restore();
     }
 
-    // GW STYLE: crisp white-hot core outline. This is the shape identity.
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = coreWidth * 1.3;
-    ctx.shadowBlur = glowBlur(6 + beatPulse * 6);
+    // Crisp bright core outline — the shape identity, thin and sharp.
+    ctx.globalAlpha = 0.92;
+    ctx.lineWidth = coreWidth * 1.4;
+    ctx.shadowBlur = glowBlur(8 + beatPulse * 8);
     ctx.shadowColor = type.color;
     var birthWhite = Math.min(1, (gem.birth || 0) / 0.8);
     ctx.strokeStyle = birthWhite > 0 ? type.birthColors[Math.min(3, Math.round(birthWhite * 3))] : type.coreColor;
     drawShape(type.shape, radius, time + gem.spin, type.color);
     ctx.globalAlpha = 1;
+    if (!gem.special) drawStarRays(radius, type.color, time + gem.spin, gem);
     // ART POLISH: inner sparkle for lit-from-within depth.
     drawGemInnerSparkle(radius, type.color, time + gem.spin, gem.type * 97 + Math.round(gem.tx + gem.ty), gem.special);
     if (gem.special) drawSpecialOverlay(gem.special, radius, time + gem.spin, type.color);
     if (gem.drop) drawDropBadge(gem.drop, radius, time);
+    if (gem.scoreMultiplier && gem.scoreMultiplier > 1) drawBonusMultiplierGlow(radius, time);
+    ctx.restore();
+  }
+
+  function drawBonusMultiplierGlow(radius, time) {
+    var pulseAmount = 0.5 + Math.sin(time * 5.8) * 0.5;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.48 + pulseAmount * 0.28;
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = Math.max(1.5, view.cell * 0.026);
+    ctx.shadowBlur = glowBlur(16 + pulseAmount * 14);
+    ctx.shadowColor = "#ffd166";
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * (1.22 + pulseAmount * 0.06), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "900 " + Math.max(8, Math.round(radius * 0.46)) + "px Inter, ui-sans-serif, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("2×", radius * 0.44, radius * 0.48);
     ctx.restore();
   }
 
@@ -15690,13 +19047,13 @@
 
   function getBoardCellCenter(cell) {
     return {
-      x: view.boardX + cell.col * view.cell + view.cell / 2,
-      y: view.boardY + cell.row * view.cell + view.cell / 2
+      x: view.boardX + view.gridOffsetX + cell.col * view.cell + view.cell / 2,
+      y: view.boardY + view.gridOffsetY + cell.row * view.cell + view.cell / 2
     };
   }
 
-  // GW STYLE: gem backing is pure glow — no fills, no gradients inside the shape.
-  // The shadowBlur on the outline stroke IS the color body. Brighter = more vibrant.
+  // Translucent star pieces: soft radial glow that lets background peek through.
+  // The shape outline + star rays carry the visual identity, not a solid fill.
   function drawGemBacking(radius, color, special, birth) {
     birth = birth || 0;
     var visualDrive = getVisualDrive();
@@ -15706,15 +19063,117 @@
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // GW STYLE: a single bright glow disc. No gradient fill, no rim.
-    // The shadowBlur creates the bloom that IS the gem's color body.
-    ctx.globalAlpha = (0.15 + birth * 0.25 + beat * 0.12 + (special ? 0.1 : 0)) * Math.max(0.5, fxScale());
-    ctx.fillStyle = color;
-    ctx.shadowBlur = glowBlur(22 + birth * 28 + beat * 20);
+    // Soft radial glow instead of solid disc — translucent center, transparent edges.
+    // Background shows through the piece body. Only the glow halo is opaque.
+    var grad = ctx.createRadialGradient(0, 0, 0, 0, 0, glowR);
+    grad.addColorStop(0, color);
+    grad.addColorStop(0.35, color);
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalAlpha = (0.08 + birth * 0.15 + beat * 0.08 + (special ? 0.06 : 0)) * Math.max(frameQuality.level >= 2 ? 0.62 : 0.4, fxScale());
+    ctx.fillStyle = grad;
+    ctx.shadowBlur = essentialGlowBlur(18 + birth * 22 + beat * 16, 3);
     ctx.shadowColor = color;
     ctx.beginPath();
     ctx.arc(0, 0, glowR, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
+
+  // Starburst rays: subtle additive spokes that make ordinary pieces read as stars.
+  // Starburst rays: delicate, snowflaky, bursting star pattern.
+  // Long primary rays + short cross-rays at offset angles + sparkle dots at tips.
+  function drawStarRays(radius, color, time, gem) {
+    var s = fxScale();
+    if (s <= 0.05) return;
+    var lowFx = isLowFxQuality();
+    var seed = gem ? (gem.type * 1.37 + gem.tx * 0.011 + gem.ty * 0.017) : 0;
+    var count = 4 + (Math.floor(seed * 10) % 3); // 4-6 primary rays
+    var inner = radius * 0.72;
+    var outerBase = radius * (1.45 + 0.10 * s + (lowFx ? 0.08 : 0));
+    var spin = (gem && gem.spin ? gem.spin : 0) * 0.42;
+    var afPrimary = lowFx ? 0.48 : 0.35;
+    var afCross = lowFx ? 0.30 : 0.20;
+    var afDots = lowFx ? 0.42 : 0.30;
+    var afRing = lowFx ? 0.24 : 0.12;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = mixColor(color, "#ffffff", 0.55);
+    ctx.shadowColor = color;
+
+    // Layer 1: long primary rays
+    var pulse1 = Math.max(afPrimary, (0.38 + Math.max(0, Math.sin(time * 2.4 + seed)) * 0.25 + beatPulse * 0.10) * Math.min(1, s));
+    ctx.globalAlpha = pulse1;
+    ctx.lineWidth = Math.max(lowFx ? 1.6 : 1.2, Math.min(2.1, radius * 0.06));
+    ctx.shadowBlur = essentialGlowBlur(10 + beatPulse * 8, 2);
+    ctx.rotate(spin + seed);
+    ctx.beginPath();
+    for (var i = 0; i < count; i += 1) {
+      var angle = (Math.PI * 2 * i) / count + Math.sin(time * 0.9 + seed + i) * 0.05;
+      var outer = outerBase * (0.92 + ((i + Math.floor(seed * 7)) % 2) * 0.12);
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+    }
+    ctx.stroke();
+    // Low-FX white readability pass
+    if (lowFx) {
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = Math.max(0.8, radius * 0.026);
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      for (var i2 = 0; i2 < count; i2 += 1) {
+        var angle2 = (Math.PI * 2 * i2) / count + Math.sin(time * 0.9 + seed + i2) * 0.05;
+        var outer2 = outerBase * (0.92 + ((i2 + Math.floor(seed * 7)) % 2) * 0.12);
+        ctx.moveTo(Math.cos(angle2) * inner, Math.sin(angle2) * inner);
+        ctx.lineTo(Math.cos(angle2) * outer2, Math.sin(angle2) * outer2);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = mixColor(color, "#ffffff", 0.55);
+    }
+
+    // Layer 2: short cross-rays at offset angles (snowflake effect)
+    var crossCount = count * 2; // double the rays, interleaved
+    var crossOuter = outerBase * 0.68;
+    var pulse2 = Math.max(afCross, (0.22 + Math.max(0, Math.sin(time * 2.4 + seed + 1.5)) * 0.15 + beatPulse * 0.06) * Math.min(1, s));
+    ctx.globalAlpha = pulse2;
+    ctx.lineWidth = Math.max(lowFx ? 0.9 : 0.6, Math.min(1.2, radius * 0.032));
+    ctx.shadowBlur = essentialGlowBlur(6 + beatPulse * 4, 1);
+    ctx.beginPath();
+    for (var j = 0; j < crossCount; j += 1) {
+      if (j % 2 === 0) continue; // skip every other to interleave
+      var cAngle = (Math.PI * 2 * j) / crossCount + Math.sin(time * 0.7 + seed + j * 0.5) * 0.04;
+      var cOuter = crossOuter * (0.85 + ((j + Math.floor(seed * 5)) % 2) * 0.1);
+      ctx.moveTo(Math.cos(cAngle) * inner, Math.sin(cAngle) * inner);
+      ctx.lineTo(Math.cos(cAngle) * cOuter, Math.sin(cAngle) * cOuter);
+    }
+    ctx.stroke();
+
+    // Layer 3: tiny sparkle dots at primary ray tips
+    var dotPulse = Math.max(afDots, (0.35 + Math.max(0, Math.sin(time * 3.1 + seed)) * 0.3) * Math.min(1, s));
+    ctx.globalAlpha = dotPulse;
+    ctx.fillStyle = mixColor(color, "#ffffff", 0.7);
+    ctx.shadowBlur = essentialGlowBlur(8, 2);
+    for (var k = 0; k < count; k += 1) {
+      var dotAngle = (Math.PI * 2 * k) / count + Math.sin(time * 0.9 + seed + k) * 0.05;
+      var dotR = outerBase * (0.92 + ((k + Math.floor(seed * 7)) % 2) * 0.12);
+      var dx = Math.cos(dotAngle) * dotR;
+      var dy = Math.sin(dotAngle) * dotR;
+      var dotSize = Math.max(0.8, radius * 0.04);
+      ctx.beginPath();
+      ctx.arc(dx, dy, dotSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Layer 4: thin inner ring (delicate halo)
+    var ringPulse = Math.max(afRing, (0.15 + Math.max(0, Math.sin(time * 1.8 + seed + 2)) * 0.08) * Math.min(1, s));
+    ctx.globalAlpha = ringPulse;
+    ctx.lineWidth = Math.max(lowFx ? 0.7 : 0.4, radius * 0.014);
+    ctx.shadowBlur = essentialGlowBlur(4, 1);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 1.08, 0, Math.PI * 2);
+    ctx.stroke();
+
     ctx.restore();
   }
 
@@ -16608,7 +20067,7 @@
   }
 
   // Under each cell: an awake Hum's name, or an undiscovered Hum's recording
-  // progress (X/15) so the collection reads as "in progress", not a blank lock.
+  // progress (X/constellation) so the collection reads as "in progress", not a blank lock.
   function drawGreenroomName(gctx, spec, cell, lay, sleeping, seg) {
     var y = cell.y + lay.size + lay.cellH * 0.17;
     if (sleeping) {
@@ -16789,7 +20248,7 @@
   // missing. Pure cosmetic: never touches board or save state.
   // Shared center-stage anchor for the wake ritual and its born-from-light burst,
   // so the outline, the Hum, the spotlight, and the particle flourish all line up.
-  // Sits high-center, above the LEVEL CLEAR title, and larger than the cameo so
+  // Sits high-center, above the CONSTELLATION COMPLETE title, and larger than the cameo so
   // the wake reads as a headline moment, not a corner pop.
   function humWakeAnchor() {
     return { cx: centerBoardX(), cy: view.boardY + view.cell * 1.15, size: view.cell * 1.55 };
@@ -16944,6 +20403,41 @@
     ctx.restore();
   }
 
+  function drawActiveConstellationLines(time) {
+    if (constellationLines.length === 0) return;
+    ctx.save();
+    for (var i = 0; i < constellationLines.length; i += 1) {
+      var line = constellationLines[i];
+      drawConstellationLines(line.cells, line.color, time, line);
+    }
+    ctx.restore();
+  }
+
+  function drawConstellationLines(cells, color, time, line) {
+    if (!cells || cells.length < 2) return;
+    var alpha = line ? Math.max(0, line.life / line.ttl) : 1;
+    var pulse = 0.84 + Math.sin(time * 18 + (line ? line.born : 0)) * 0.16;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = alpha * 0.5 * pulse;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(0.75, Math.min(1.5, view.cell * 0.025));
+    ctx.shadowBlur = glowBlur(8);
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    for (var i = 0; i < cells.length; i += 1) {
+      var pos = getBoardCellCenter(cells[i]);
+      if (i === 0) ctx.moveTo(pos.x, pos.y);
+      else ctx.lineTo(pos.x, pos.y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = alpha * 0.22;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = Math.max(0.5, Math.min(1, view.cell * 0.012));
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawRays() {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
@@ -17008,6 +20502,13 @@
       var size = Math.max(13, Math.min(34, floater.size * floater.scale));
       ctx.globalAlpha = Math.min(1, alpha * 1.25);
       ctx.font = "900 " + size + "px Inter, ui-sans-serif, system-ui, sans-serif";
+      // Auto-scale font to fit within board width
+      var floaterTextWidth = ctx.measureText(floater.text).width;
+      var floaterMaxWidth = view.boardSize * 0.92;
+      if (floaterTextWidth > floaterMaxWidth) {
+        size = Math.max(10, Math.floor(size * floaterMaxWidth / floaterTextWidth));
+        ctx.font = "900 " + size + "px Inter, ui-sans-serif, system-ui, sans-serif";
+      }
       ctx.shadowBlur = blur;
       ctx.shadowColor = floater.color;
       ctx.lineWidth = Math.max(3, size * 0.18);
@@ -17022,8 +20523,15 @@
       var calloutSize = Math.max(13, Math.min(34, activeCallout.size * activeCallout.scale));
       var calloutX = centerBoardX();
       var calloutY = calloutAnchorY();
-      ctx.globalAlpha = Math.min(1, calloutAlpha * 1.6);
+      // Auto-scale font to fit within board width
       ctx.font = "900 " + calloutSize + "px Inter, ui-sans-serif, system-ui, sans-serif";
+      var textWidth = ctx.measureText(activeCallout.text).width;
+      var maxWidth = view.boardSize * 0.92;
+      if (textWidth > maxWidth) {
+        calloutSize = Math.max(10, Math.floor(calloutSize * maxWidth / textWidth));
+        ctx.font = "900 " + calloutSize + "px Inter, ui-sans-serif, system-ui, sans-serif";
+      }
+      ctx.globalAlpha = Math.min(1, calloutAlpha * 1.6);
       ctx.shadowBlur = blur;
       ctx.shadowColor = activeCallout.color;
       ctx.lineWidth = Math.max(3, calloutSize * 0.18);
@@ -17041,6 +20549,13 @@
           : Math.max(16, Math.min(pop.kind === "title" ? 38 : 30, (pop.kind === "title" ? 34 : 27) * pop.scale));
         ctx.globalAlpha = Math.max(0, Math.min(1, pop.alpha));
         ctx.font = "900 " + popSize + "px Inter, ui-sans-serif, system-ui, sans-serif";
+        // Auto-scale font to fit within board width
+        var popTextWidth = ctx.measureText(pop.text).width;
+        var popMaxWidth = view.boardSize * 0.92;
+        if (popTextWidth > popMaxWidth) {
+          popSize = Math.max(10, Math.floor(popSize * popMaxWidth / popTextWidth));
+          ctx.font = "900 " + popSize + "px Inter, ui-sans-serif, system-ui, sans-serif";
+        }
         ctx.shadowBlur = blur;
         ctx.shadowColor = pop.color;
         ctx.lineWidth = Math.max(3, popSize * 0.18);
@@ -17067,8 +20582,8 @@
       var flashCell = cellFlashes[i];
       var alpha = Math.max(0, flashCell.life / flashCell.ttl);
       var eased = alpha * alpha;
-      var px = view.boardX + flashCell.col * view.cell;
-      var py = view.boardY + flashCell.row * view.cell;
+      var px = view.boardX + view.gridOffsetX + flashCell.col * view.cell;
+      var py = view.boardY + view.gridOffsetY + flashCell.row * view.cell;
       ctx.globalAlpha = eased * 0.5;
       ctx.fillStyle = flashCell.color;
       ctx.fillRect(px + 3, py + 3, view.cell - 6, view.cell - 6);
@@ -17196,6 +20711,20 @@
     }
   }
 
+  // ORCHID: Soft clipping saturation curve for analog warmth.
+  // k controls intensity. Low k = gentle tape-style harmonic richness.
+  // Curve: tanh(x * k) / tanh(k) — smooth S-curve, no hard clipping.
+  function makeSaturationCurve(k) {
+    var n = 4096;
+    var curve = new Float32Array(n);
+    var tanhk = Math.tanh(k);
+    for (var i = 0; i < n; i += 1) {
+      var x = (i / (n - 1)) * 2 - 1; // -1 to 1
+      curve[i] = Math.tanh(x * k) / tanhk;
+    }
+    return curve;
+  }
+
   function ensureAudioGraph() {
     if (audio.ctx) return true;
     var palette = getMusicPalette();
@@ -17220,23 +20749,52 @@
     audio.bed.gain.value = 1;
     audio.impact = audio.ctx.createGain();
     audio.impact.gain.value = audio.muted ? 0 : audio.volume * AUDIO_TUNING.impactLevel;
-    audio.master.gain.value = audio.muted ? 0 : audio.volume * 0.72;
-    audio.compressor.threshold.value = -18;
-    audio.compressor.knee.value = 18;
-    audio.compressor.ratio.value = 5;
-    audio.compressor.attack.value = 0.006;
-    audio.compressor.release.value = 0.18;
+    audio.master.gain.value = audio.muted ? 0 : audio.volume * 0.55; // ORCHID: even lower for warm headroom
+
+    // ORCHID: Analog warmth chain — waveshaper saturation + pre-filter
+    // 1. Waveshaper: soft clipping curve that adds harmonic warmth (tape-style saturation)
+    audio.saturation = audio.ctx.createWaveShaper();
+    audio.saturation.curve = makeSaturationCurve(2.5); // gentle soft clip
+    audio.saturation.oversample = "2x";
+
+    // 2. Pre-filter: second lowpass before the compressor, kills remaining digital edge
+    audio.prefilter = audio.ctx.createBiquadFilter();
+    audio.prefilter.type = "lowpass";
+    audio.prefilter.frequency.value = 6000; // warm ceiling
+    audio.prefilter.Q.value = 0.3;
+
+    // 3. High-shelf cut: roll off treble harshness above 4kHz
+    audio.tilt = audio.ctx.createBiquadFilter();
+    audio.tilt.type = "highshelf";
+    audio.tilt.frequency.value = 4000;
+    audio.tilt.gain.value = -4; // -4dB shelf
+
+    audio.compressor.threshold.value = -24; // ORCHID: very gentle
+    audio.compressor.knee.value = 28; // ORCHID: wide, smooth knee
+    audio.compressor.ratio.value = 3; // ORCHID: gentle glue
+    audio.compressor.attack.value = 0.015; // ORCHID: slow, lets transients soften
+    audio.compressor.release.value = 0.30; // ORCHID: very slow release
     audio.delay.delayTime.value = getDelaySeconds();
     audio.feedback.gain.value = palette.feedbackBase;
     audio.wet.gain.value = palette.delayBase;
     audio.delay.connect(audio.feedback);
     audio.feedback.connect(audio.delay);
-    audio.delay.connect(audio.wet);
+    // ORCHID: filter the delay return so echoes get progressively darker/warmer
+    audio.delayFilter = audio.ctx.createBiquadFilter();
+    audio.delayFilter.type = "lowpass";
+    audio.delayFilter.frequency.value = 3000; // dark, warm echoes
+    audio.delayFilter.Q.value = 0.2;
+    audio.delay.connect(audio.delayFilter);
+    audio.delayFilter.connect(audio.wet);
     audio.wet.connect(audio.master);
     audio.master.connect(audio.bed);
     audio.bed.connect(audio.macro);
     audio.macro.connect(audio.duck);
-    audio.duck.connect(audio.compressor);
+    // ORCHID: duck → saturation → prefilter → tilt → compressor → destination
+    audio.duck.connect(audio.saturation);
+    audio.saturation.connect(audio.prefilter);
+    audio.prefilter.connect(audio.tilt);
+    audio.tilt.connect(audio.compressor);
     audio.impact.connect(audio.compressor);
     audio.compressor.connect(audio.ctx.destination);
 
@@ -17291,7 +20849,8 @@
 
   var AUDIO_GRAPH_HANDLE_KEYS = [
     "ctx", "master", "compressor", "delay", "feedback", "wet", "macro", "duck", "bed", "impact",
-    "pulseWaves", "pwmLfo", "pwmLfoGain", "vinyl", "vinylFilter", "vinylGain", "noiseBuffer"
+    "pulseWaves", "pwmLfo", "pwmLfoGain", "vinyl", "vinylFilter", "vinylGain", "noiseBuffer",
+    "saturation", "prefilter", "tilt", "delayFilter"
   ];
 
   function resetAudioGraphHandles() {
@@ -17384,7 +20943,7 @@
       var now = audio.ctx.currentTime;
       masterParam.cancelScheduledValues(now);
       masterParam.setValueAtTime(masterParam.value, now);
-      masterParam.setTargetAtTime(audio.muted ? 0 : audio.volume * 0.72, now, 0.06);
+      masterParam.setTargetAtTime(audio.muted ? 0 : audio.volume * 0.55, now, 0.06); // ORCHID: match warm init gain
     }
     if (audio.ctx && audio.impact) {
       audio.impact.gain.setTargetAtTime(audio.muted ? 0 : audio.volume * AUDIO_TUNING.impactLevel, audio.ctx.currentTime, 0.06);
@@ -17487,12 +21046,13 @@
         break;
       }
     }
-    var chapter = ((currentLevel.id - 1) % 15) + 1;
-    var tier = chapter <= 5 ? 0 : chapter <= 10 ? 1 : 2;
+    var chapter = currentLevel.chapterLevel || getChapterLevelForNumber(currentLevel.id);
+    var chapterCount = currentLevel.episodeLevelCount || getConstellationLevelCount(currentLevel.episode);
+    var tier = chapter <= Math.ceil(chapterCount / 3) ? 0 : chapter <= Math.ceil((chapterCount * 2) / 3) ? 1 : 2;
     // PROGRESSION: per-sector energy profile — DJ-set ebb and flow.
     // Each sector gets its own floor scale + energy cap so the music
     // varies across the campaign like a DJ set, not a flat ramp.
-    var sector = Math.floor((currentLevel.id - 1) / 15); // 0-15
+    var sector = Math.max(0, (currentLevel.episode || getEpisodeForLevelNumber(currentLevel.id)) - 1);
     var sectorProfile = getSectorEnergyProfile(sector);
     var cap = sectorProfile.cap;
     if (tier === 0) {
@@ -17958,7 +21518,7 @@
     if (!audio.master || !audio.ctx) return;
     if (audio.muted) return;
     var dangerAmount = typeof danger === "number" ? danger : getPulseDangerAmount();
-    var target = audio.volume * (0.68 - dangerAmount * 0.36);
+    var target = audio.volume * (0.55 - dangerAmount * 0.36); // ORCHID: match warm master level
     audio.master.gain.setTargetAtTime(target, time, dangerAmount > 0 ? 0.18 : 0.08);
   }
 
@@ -19140,7 +22700,7 @@
     audio.volume = value;
     if (audio.muted) return;
     if (audio.master && audio.ctx) {
-      audio.master.gain.setTargetAtTime(value * 0.68, audio.ctx.currentTime, 0.025);
+      audio.master.gain.setTargetAtTime(value * 0.55, audio.ctx.currentTime, 0.025); // ORCHID: warm headroom
     }
     if (audio.impact && audio.ctx) {
       audio.impact.gain.setTargetAtTime(value * AUDIO_TUNING.impactLevel, audio.ctx.currentTime, 0.025);
@@ -19160,6 +22720,12 @@
           animating: animating,
           legalMoves: getLegalMoves().length,
           edgeLegalMoves: getEdgeLegalMoves().length,
+          environment: {
+            turnCount: environmentTurnCount,
+            worldModifier: currentLevel && currentLevel.layout ? currentLevel.layout.worldModifier : null,
+            gravityDirection: gravityDirection,
+            isNight: isNightActive()
+          },
           view: {
             boardX: view.boardX,
             boardY: view.boardY,
@@ -19353,7 +22919,11 @@
             fluxTarget: currentLevel.layout.fluxTarget,
             gates: (currentLevel.layout.gates || []).map(function (cell) {
               return { row: cell.row, col: cell.col };
-            })
+            }),
+            worldModifier: currentLevel.layout.worldModifier || null,
+            drift: currentLevel.layout.drift || null,
+            dayNight: currentLevel.layout.dayNight || null,
+            gravityRotation: currentLevel.layout.gravityRotation || null
           },
           beatGates: beatGateList.length === 0 ? null : {
             cells: beatGateList.map(function (cell) {
@@ -20160,6 +23730,10 @@
   bindPrimaryPress(splashStartButton, startSplashRun);
   bindPrimaryPress(splashDailyButton, startDailyFromSplash);
   bindPrimaryPress(splashMenuButton, openMenu);
+  if (starHop) {
+    starHop.addEventListener("pointerdown", skipStarHop);
+    starHop.addEventListener("click", skipStarHop);
+  }
   bindMenuPress(menuResumeButton, resumeFromMenu);
   bindMenuPress(menuAudioButton, startAudioFromMenu);
   window.addEventListener("pointerdown", resumeAudioFromGesture);
@@ -20206,6 +23780,7 @@
   bindMenuPress(menuSetlistButton, openSetlistFromMenu);
   if (menuGreenroomButton) bindMenuPress(menuGreenroomButton, openGreenroomFromMenu);
   bindMenuPress(menuRestartButton, restartFromMenu);
+  if (menuExitButton) bindMenuPress(menuExitButton, exitFromMenu);
   bindMenuPress(menuSettingsButton, openSettingsFromMenu);
   closeStoreButton.addEventListener("click", closeStore);
   shareButton.addEventListener("click", function () {
@@ -20270,7 +23845,11 @@
   });
   nextLevelButton.addEventListener("click", function () {
     if (currentLevelIndex + 1 < campaignSave.unlocked && currentLevelIndex + 1 < campaign.length) {
-      startLevel(currentLevelIndex + 1);
+      var nextIndex = currentLevelIndex + 1;
+      var constellationComplete = gameMode === MODE_CAMPAIGN && isFinaleLevel(currentLevel);
+      playStarHop(function () {
+        startLevel(nextIndex);
+      }, constellationComplete);
     }
   });
   volumeInput.addEventListener("input", function (event) {

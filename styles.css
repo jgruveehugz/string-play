@@ -99,10 +99,9 @@ textarea {
   padding: max(28px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(4, 6, 12, 0.92), #05070d),
-    repeating-linear-gradient(90deg, rgba(70, 244, 255, 0.08) 0 1px, transparent 1px 46px),
-    repeating-linear-gradient(0deg, rgba(255, 79, 216, 0.055) 0 1px, transparent 1px 46px);
-  background-color: #05070d;
+    radial-gradient(circle at 50% 73%, rgba(70, 244, 255, .13), transparent 22%),
+    radial-gradient(circle at 50% 17%, rgba(255, 209, 102, .08), transparent 29%),
+    linear-gradient(180deg, #030515 0%, #060721 40%, #0a0a2e 74%, #111033 100%);
   opacity: 0;
   pointer-events: none;
   transition: opacity 190ms ease;
@@ -113,56 +112,403 @@ textarea {
   pointer-events: auto;
 }
 
-.splash-stage {
+/* Aurora */
+.splash-aurora {
+  position: absolute;
+  inset: -20% -25% 26%;
+  background:
+    radial-gradient(ellipse at 24% 35%, rgba(70, 244, 255, .15), transparent 36%),
+    radial-gradient(ellipse at 74% 17%, rgba(127, 91, 255, .16), transparent 40%),
+    radial-gradient(ellipse at 50% 56%, rgba(255, 209, 102, .06), transparent 32%);
+  filter: blur(24px);
+  opacity: .72;
+  animation: splashBreathe 8s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+@keyframes splashBreathe {
+  from { transform: translate3d(-8px, 3px, 0) scale(1); opacity: .52; }
+  to { transform: translate3d(8px, -7px, 0) scale(1.04); opacity: .82; }
+}
+
+/* Stars */
+.splash-stars,
+.splash-mountains,
+.splash-foreground,
+.splash-creature,
+.splash-falling-star,
+.splash-landing-glow,
+.splash-vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.splash-ring {
+.splash-stars { z-index: 1; }
+.splash-mountains { top: auto; height: 38%; bottom: 0; z-index: 2; }
+.splash-foreground { top: auto; bottom: 0; height: 23%; z-index: 4; }
+.splash-creature { display: grid; place-items: end center; padding-bottom: 22%; z-index: 9; filter: drop-shadow(0 16px 20px rgba(0,0,0,.45)); }
+.splash-vignette { z-index: 30; }
+
+.ss-star {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 248, 224, .95);
+  box-shadow: 0 0 10px rgba(255, 248, 224, .72);
+  opacity: .72;
+  animation: ssTwinkle var(--twinkle, 4.4s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.ss-star.teal {
+  background: rgba(70, 244, 255, .8);
+  box-shadow: 0 0 12px rgba(70, 244, 255, .6);
+}
+
+@keyframes ssTwinkle {
+  0%, 100% { transform: scale(.72); opacity: .38; }
+  45% { transform: scale(1.18); opacity: .98; }
+  70% { transform: scale(.9); opacity: .6; }
+}
+
+/* Falling star */
+.splash-falling-star {
+  width: 16px;
+  height: 16px;
+  left: 50%;
+  top: 5%;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 18%, #fff8e0 24% 43%, #ffd166 48% 72%, transparent 73%);
+  filter: drop-shadow(0 0 11px rgba(255, 248, 224, .95)) drop-shadow(0 0 24px rgba(255, 209, 102, .78));
+  animation: splashComet 6.4s cubic-bezier(.42, 0, .16, 1) infinite;
+  z-index: 8;
+}
+
+.splash-falling-star::before {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 188px;
+  left: 4px;
+  bottom: 8px;
+  border-radius: 999px;
+  background: linear-gradient(0deg, rgba(255, 248, 224, .92) 0%, rgba(255, 209, 102, .43) 42%, rgba(70, 244, 255, .16) 72%, transparent 100%);
+  transform-origin: bottom center;
+  filter: blur(.2px);
+  opacity: .82;
+}
+
+.splash-falling-star::after {
+  content: "";
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 209, 102, .34), rgba(255, 209, 102, .1) 35%, transparent 64%);
+  animation: splashStarPulse 6.4s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes splashComet {
+  0% { transform: translate3d(-104px, -92px, 0) rotate(22deg) scale(.28); opacity: 0; }
+  7% { opacity: 1; }
+  45% { transform: translate3d(-18px, 322px, 0) rotate(22deg) scale(.82); opacity: 1; }
+  64% { transform: translate3d(2px, 515px, 0) rotate(22deg) scale(1.06); opacity: 1; }
+  70% { transform: translate3d(2px, 529px, 0) rotate(22deg) scale(.55); opacity: .05; }
+  100% { transform: translate3d(2px, 529px, 0) rotate(22deg) scale(.2); opacity: 0; }
+}
+
+@keyframes splashStarPulse {
+  0%, 57% { opacity: .6; transform: scale(.85); }
+  64% { opacity: 1; transform: scale(1.35); }
+  72%, 100% { opacity: 0; transform: scale(2.1); }
+}
+
+/* Between-level star hop transition */
+.star-hop {
+  position: fixed;
+  inset: 0;
+  z-index: 46;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 56%, rgba(70, 244, 255, .12), transparent 34%),
+    linear-gradient(180deg, rgba(1, 3, 12, .42), rgba(1, 3, 12, .78));
+  transition: opacity 120ms ease;
+}
+
+.star-hop.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.star-hop::before,
+.star-hop::after {
+  content: "";
+  position: absolute;
+  inset: 12% 9%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.star-hop::before {
+  background:
+    linear-gradient(24deg, transparent 0 44%, rgba(255, 248, 224, .92) 45% 47%, transparent 48% 100%),
+    linear-gradient(-18deg, transparent 0 52%, rgba(70, 244, 255, .62) 53% 54%, transparent 55% 100%),
+    radial-gradient(circle at 21% 64%, rgba(255, 248, 224, .95) 0 2px, transparent 3px),
+    radial-gradient(circle at 45% 51%, rgba(70, 244, 255, .9) 0 2px, transparent 3px),
+    radial-gradient(circle at 66% 39%, rgba(255, 209, 102, .95) 0 2px, transparent 3px),
+    radial-gradient(circle at 82% 31%, rgba(255, 248, 224, .95) 0 2px, transparent 3px);
+  filter: drop-shadow(0 0 10px rgba(70, 244, 255, .7)) drop-shadow(0 0 18px rgba(255, 209, 102, .48));
+  transform: scale(.96);
+}
+
+.star-hop::after {
+  inset: 0;
+  background: radial-gradient(circle at 62% 55%, rgba(255, 209, 102, .24), rgba(70, 244, 255, .10) 30%, transparent 58%);
+  transform: scale(.72);
+}
+
+.star-hop.is-constellation::before {
+  animation: starHopConstellationDraw 2500ms ease-out forwards;
+}
+
+.star-hop.is-constellation::after {
+  animation: starHopConstellationGlow 2500ms ease-out forwards;
+}
+
+.star-hop-star {
   position: absolute;
   left: 50%;
-  top: 42%;
-  width: min(78vw, 520px);
-  aspect-ratio: 1;
-  border: 1px solid rgba(70, 244, 255, 0.5);
-  box-shadow:
-    0 0 36px rgba(70, 244, 255, 0.18),
-    inset 0 0 36px rgba(255, 79, 216, 0.08);
-  transform: translate(-50%, -50%) rotate(45deg);
-  animation: splashSpin 18s linear infinite;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 18%, #fff8e0 24% 43%, #ffd166 48% 72%, transparent 73%);
+  filter: drop-shadow(0 0 12px rgba(255, 248, 224, .98)) drop-shadow(0 0 28px rgba(255, 209, 102, .82));
+  transform: translate3d(-62vw, -48vh, 0) rotate(124deg) scale(.34);
+  opacity: 0;
 }
 
-.splash-ring--two {
-  width: min(58vw, 380px);
-  border-color: rgba(255, 209, 102, 0.44);
-  animation-duration: 12s;
-  animation-direction: reverse;
+.star-hop-star::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: min(38vh, 260px);
+  left: 4px;
+  bottom: 8px;
+  border-radius: 999px;
+  background: linear-gradient(0deg, rgba(255, 248, 224, .95) 0%, rgba(255, 209, 102, .52) 38%, rgba(70, 244, 255, .2) 70%, transparent 100%);
+  transform-origin: bottom center;
+  filter: blur(.2px);
+  opacity: .86;
 }
 
-.splash-ray {
+.star-hop-star::after {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 209, 102, .38), rgba(255, 209, 102, .12) 35%, transparent 64%);
+  z-index: -1;
+}
+
+.star-hop.is-active .star-hop-star {
+  animation: starHopComet 1500ms cubic-bezier(.22, .68, .18, 1) forwards;
+}
+
+.star-hop.is-constellation .star-hop-star {
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  filter: drop-shadow(0 0 16px rgba(255, 248, 224, 1)) drop-shadow(0 0 40px rgba(255, 209, 102, .9)) drop-shadow(0 0 56px rgba(70, 244, 255, .52));
+  animation-duration: 2500ms;
+}
+
+.star-hop.is-constellation .star-hop-star::before {
+  width: 11px;
+  height: min(52vh, 360px);
+  left: 5px;
+  opacity: .98;
+  background: linear-gradient(0deg, rgba(255, 255, 255, .98) 0%, rgba(255, 209, 102, .68) 34%, rgba(70, 244, 255, .34) 72%, transparent 100%);
+}
+
+.star-hop-skip {
   position: absolute;
   left: 50%;
-  top: 42%;
-  width: min(82vw, 560px);
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(70, 244, 255, 0.72), transparent);
-  box-shadow: 0 0 24px rgba(70, 244, 255, 0.4);
-  transform: translate(-50%, -50%) rotate(-18deg);
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 18px));
+  transform: translateX(-50%);
+  color: rgba(255, 248, 224, .72);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0;
+  text-shadow: 0 0 12px rgba(255, 209, 102, .45);
 }
 
-.splash-ray--two {
-  background: linear-gradient(90deg, transparent, rgba(255, 79, 216, 0.62), transparent);
-  transform: translate(-50%, -50%) rotate(36deg);
+.star-hop.is-active .star-hop-skip {
+  animation: starHopSkip 1500ms ease-out forwards;
+}
+
+.star-hop.is-constellation .star-hop-skip {
+  animation-duration: 2500ms;
+}
+
+@keyframes starHopComet {
+  0% { transform: translate3d(-62vw, -48vh, 0) rotate(124deg) scale(.32); opacity: 0; }
+  8% { opacity: 1; }
+  58% { transform: translate3d(2vw, -2vh, 0) rotate(124deg) scale(1.02); opacity: 1; }
+  82% { transform: translate3d(34vw, 28vh, 0) rotate(124deg) scale(.9); opacity: .92; }
+  100% { transform: translate3d(52vw, 42vh, 0) rotate(124deg) scale(.22); opacity: 0; }
+}
+
+@keyframes starHopConstellationDraw {
+  0%, 44% { opacity: 0; clip-path: inset(0 100% 0 0); }
+  62% { opacity: .82; clip-path: inset(0 28% 0 0); }
+  82% { opacity: .9; clip-path: inset(0 0 0 0); transform: scale(1); }
+  100% { opacity: 0; clip-path: inset(0 0 0 0); transform: scale(1.04); }
+}
+
+@keyframes starHopConstellationGlow {
+  0%, 48% { opacity: 0; transform: scale(.72); }
+  68% { opacity: .65; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.28); }
+}
+
+@keyframes starHopSkip {
+  0%, 22% { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  42%, 78% { opacity: .76; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+}
+
+/* Landing glow */
+.splash-landing-glow {
+  top: auto;
+  bottom: 23%;
+  left: 50%;
+  width: 190px;
+  height: 190px;
+  margin-left: -95px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 248, 224, .46) 0 8%, rgba(255, 209, 102, .26) 17%, rgba(70, 244, 255, .13) 34%, transparent 66%);
+  filter: blur(2px);
+  opacity: 0;
+  transform: scale(.44);
+  animation: splashLandGlow 6.4s ease-in-out infinite;
+  z-index: 5;
+}
+
+@keyframes splashLandGlow {
+  0%, 57% { opacity: 0; transform: scale(.4); }
+  64% { opacity: .96; transform: scale(1); }
+  77% { opacity: .42; transform: scale(1.25); }
+  100% { opacity: .12; transform: scale(.95); }
+}
+
+/* Mountains */
+.splash-ridge {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  bottom: var(--bottom);
+  height: var(--height);
+  clip-path: polygon(0 72%, 9% 63%, 18% 68%, 29% 44%, 39% 61%, 51% 34%, 62% 58%, 72% 45%, 83% 66%, 100% 46%, 100% 100%, 0 100%);
+  background: var(--color);
+  opacity: var(--opacity);
+  filter: blur(var(--blur, 0px));
+}
+
+.splash-mist {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: 22%;
+  height: 72px;
+  background: linear-gradient(90deg, transparent, rgba(70,244,255,.1), rgba(255,248,224,.09), rgba(70,244,255,.08), transparent);
+  filter: blur(14px);
+  animation: splashMistMove 12s ease-in-out infinite alternate;
+  opacity: .68;
+}
+
+@keyframes splashMistMove {
+  from { transform: translateX(-18px); }
+  to { transform: translateX(18px); }
+}
+
+/* Foreground */
+.splash-foreground {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 209, 102, .12), transparent 45%),
+    linear-gradient(180deg, rgba(8, 7, 34, .15), rgba(2, 3, 15, .94) 52%, #02030f 100%);
+}
+
+.splash-ground-line {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 42px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(70, 244, 255, .35), rgba(255, 209, 102, .45), rgba(70, 244, 255, .28), transparent);
+  opacity: .62;
+}
+
+/* Creature */
+.splash-creature-glow {
+  position: absolute;
+  width: 112px;
+  height: 92px;
+  bottom: 20%;
+  left: 50%;
+  margin-left: -56px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,248,224,.42), rgba(255,209,102,.24) 28%, rgba(70,244,255,.13) 55%, transparent 72%);
+  opacity: .16;
+  transform: scale(.75);
+  animation: splashCreatureGlow 6.4s ease-in-out infinite;
+  filter: blur(3px);
+}
+
+@keyframes splashCreatureGlow {
+  0%, 55% { opacity: .14; transform: scale(.75); }
+  64% { opacity: .82; transform: scale(1.18); }
+  82% { opacity: .36; transform: scale(.98); }
+  100% { opacity: .2; transform: scale(.86); }
+}
+
+.splash-creature-svg {
+  position: relative;
+  width: 82px;
+  height: 110px;
+  overflow: visible;
+  transform: translateY(0);
+  animation: splashWonder 6.4s ease-in-out infinite;
+}
+
+@keyframes splashWonder {
+  0%, 44%, 100% { transform: translateY(0) rotate(0deg); }
+  59% { transform: translateY(-2px) rotate(-2.5deg); }
+  68% { transform: translateY(-1px) rotate(-1.5deg); }
+}
+
+/* Vignette */
+.splash-vignette {
+  background: radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,.32) 100%);
 }
 
 .splash-copy {
   position: relative;
+  z-index: 12;
   display: grid;
   gap: 8px;
   align-self: center;
   justify-items: center;
   text-align: center;
+  pointer-events: none;
 }
 
 .splash-copy span {
@@ -173,25 +519,27 @@ textarea {
 }
 
 .splash-copy strong {
-  color: #ffffff;
-  font-size: clamp(48px, 14vw, 96px);
-  font-weight: 950;
-  line-height: 0.88;
-  text-shadow:
-    0 0 22px rgba(70, 244, 255, 0.48),
-    0 0 48px rgba(255, 79, 216, 0.34);
+  color: rgba(255, 248, 224, .97);
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  font-size: clamp(36px, 11vw, 52px);
+  font-weight: 300;
+  letter-spacing: .085em;
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(255, 209, 102, .42), 0 0 32px rgba(70, 244, 255, .18);
 }
 
 .splash-copy em {
-  color: var(--amber);
-  font-size: 13px;
+  color: rgba(70, 244, 255, .72);
+  font-size: 10px;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 500;
+  letter-spacing: .38em;
   text-transform: uppercase;
 }
 
 .splash-actions {
   position: relative;
+  z-index: 12;
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
@@ -1140,6 +1488,13 @@ button:active {
   text-transform: uppercase;
 }
 
+/* Hide Map/Store/Share during active gameplay */
+.mission.is-playing .mission-actions #mapButton,
+.mission.is-playing .mission-actions #storeButton,
+.mission.is-playing .mission-actions #shareButton {
+  display: none;
+}
+
 .mission-actions button.is-attention {
   border-color: rgba(255, 209, 102, 0.9);
   background: rgba(255, 209, 102, 0.12);
@@ -1158,6 +1513,116 @@ button:active {
 .mission-actions button:disabled {
   cursor: default;
   opacity: 0.35;
+}
+
+/* ===== GAMEPLAY MINIMAL UI (Royal Match-style) ===== */
+/* When .is-playing is active, strip HUD and mission panel to essentials */
+
+/* HUD: fade brand, Best, Chain, Voices. Hide most control buttons, keep Menu */
+.hud.is-playing .brand { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.hud.is-playing .stat--best,
+.hud.is-playing .stat--chain,
+.hud.is-playing .stat--voices { opacity: 0.25; transition: opacity 0.3s ease; }
+
+/* Hide individual control buttons during play, keep Menu */
+.hud.is-playing .controls #audioButton,
+.hud.is-playing .controls #modeButton,
+.hud.is-playing .controls #dailyButton,
+.hud.is-playing .controls #resetButton,
+.hud.is-playing .controls #settingsButton,
+.hud.is-playing .controls .volume {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Keep Menu button visible during gameplay as a small floating escape button */
+.hud.is-playing .controls #menuButton {
+  opacity: 0.45;
+  pointer-events: auto;
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 41;
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  font-size: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 12, 18, 0.5);
+  backdrop-filter: blur(8px);
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+.hud.is-playing .controls #menuButton:hover,
+.hud.is-playing .controls #menuButton:active {
+  opacity: 1;
+  border-color: rgba(70, 244, 255, 0.5);
+}
+.hud.is-playing .hud-toggle { opacity: 0.3; }
+
+/* HUD: shrink the panel itself - less padding, tighter */
+.hud.is-playing {
+  border-color: rgba(130, 241, 255, 0.06);
+  background: rgba(8, 12, 18, 0.32);
+  box-shadow: none;
+  min-height: 36px;
+  padding: 4px 8px;
+  transition: all 0.3s ease;
+}
+
+/* HUD: stat boxes become ghost-like */
+.hud.is-playing .stat {
+  border-color: transparent;
+  background: transparent;
+  min-width: 52px;
+}
+.hud.is-playing .stat span {
+  font-size: 9px;
+  opacity: 0.5;
+}
+.hud.is-playing .stat strong {
+  font-size: 15px;
+  opacity: 0.85;
+}
+
+/* Mission panel: fade non-essential elements during play */
+.mission.is-playing .challenge-strip { display: none; }
+.mission.is-playing .goal-stack { display: none; }
+.mission.is-playing .goal-hint { display: none; }
+.mission.is-playing .coach { display: none; }
+.mission.is-playing .daily-mission,
+.mission.is-playing #dailyMission { display: none; }
+.mission.is-playing .mission-progress { opacity: 0.25; transition: opacity 0.3s ease; }
+.mission.is-playing #prevLevelButton,
+.mission.is-playing #nextLevelButton { display: none; }
+
+/* Mission panel: shrink the panel during play */
+.mission.is-playing {
+  border-color: rgba(255, 209, 102, 0.06);
+  background: rgba(8, 12, 18, 0.32);
+  box-shadow: none;
+  padding: 6px 8px;
+  min-height: 42px;
+  transition: all 0.3s ease;
+}
+
+/* Mission panel: keep goal rail but make it compact */
+.mission.is-playing .mission-copy strong {
+  font-size: 13px;
+}
+.mission.is-playing .mission-copy span {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Keep boosters visible (they're functional) but ghost them slightly */
+.mission.is-playing .boosters button {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+.mission.is-playing .boosters button:hover,
+.mission.is-playing .boosters button:active {
+  opacity: 1;
 }
 
 .menu-panel {
@@ -1385,6 +1850,12 @@ button:active {
   border-radius: 50%;
 }
 
+.menu-action--exit::before {
+  border-color: var(--rose, #ff4fd8);
+  border-left-color: transparent;
+  border-radius: 2px;
+}
+
 .menu-action--settings::before {
   border-color: var(--amber);
   transform: rotate(45deg);
@@ -1504,18 +1975,26 @@ button:active {
 
 .map-sector {
   display: grid;
-  grid-template-columns: 88px 1fr;
-  gap: 8px;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(70, 244, 255, 0.09);
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 120% at 78% 18%, rgba(70, 244, 255, 0.07), rgba(70, 244, 255, 0) 54%),
+    rgba(255, 255, 255, 0.025);
 }
 
 .map-sector-title {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 950;
   line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .map-sector-title span {
@@ -1529,15 +2008,20 @@ button:active {
   font-size: 10px;
   font-style: italic;
   font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .map-sector-title .map-sector-tag {
   color: var(--amber);
+  letter-spacing: 0.08em;
 }
 
 .map-sector-title .map-sector-tag.is-unreleased,
 .map-sector-title .map-sector-condition {
   color: rgba(239, 249, 255, 0.42);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .map-sector-hum {
@@ -1548,63 +2032,188 @@ button:active {
   pointer-events: none;
 }
 
+/* Renovation progress bar on campaign map */
+.map-reno-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  margin: 2px 0 4px;
+  border-radius: 4px;
+  background: rgba(79, 195, 247, 0.06);
+  border: 1px solid rgba(79, 195, 247, 0.12);
+}
+
+.map-reno-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(239, 249, 255, 0.7);
+  white-space: nowrap;
+}
+
+.map-reno-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.map-reno-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #4fc3f7, #ffd166);
+  transition: width 300ms ease;
+}
+
+.map-reno-bar--ignited {
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #ffd166;
+  background: rgba(255, 209, 102, 0.08);
+  border-color: rgba(255, 209, 102, 0.2);
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.4);
+}
+
 .map-sector-levels {
-  display: grid;
-  grid-template-columns: repeat(15, minmax(34px, 1fr));
-  gap: 6px;
+  position: relative;
+  min-height: 190px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.08) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 24%, rgba(70, 244, 255, 0.12) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(255, 209, 102, 0.11) 0 1px, transparent 2px),
+    linear-gradient(180deg, rgba(4, 9, 22, 0.88), rgba(1, 3, 9, 0.94));
+}
+
+.map-constellation-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 0 7px rgba(70, 244, 255, 0.18));
+}
+
+.map-constellation-lines polyline {
+  fill: none;
+  stroke: rgba(140, 216, 255, 0.28);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .map-node {
+  position: absolute;
+  z-index: 1;
   display: grid;
   place-items: center;
-  min-width: 0;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   min-height: 38px;
   padding: 0;
-  border-color: rgba(70, 244, 255, 0.2);
-  color: #eff9ff;
-  font-size: 12px;
-  font-weight: 950;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  font-size: 0;
   line-height: 1;
-  position: relative;
+  transform: translate(-50%, -50%);
+  touch-action: manipulation;
+}
+
+.map-node::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #eff9ff;
+  box-shadow:
+    0 0 8px rgba(239, 249, 255, 0.9),
+    0 0 18px rgba(70, 244, 255, 0.45);
+  content: "";
 }
 
 .map-node::after {
   position: absolute;
-  right: 4px;
-  bottom: 3px;
+  left: 50%;
+  top: calc(50% + 11px);
   color: var(--amber);
   content: attr(data-stars);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 0 8px rgba(255, 209, 102, 0.65);
+  transform: translateX(-50%);
+}
+
+.map-node-badge {
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  padding: 1px 4px;
+  border: 1px solid rgba(255, 209, 102, 0.32);
+  border-radius: 999px;
+  background: rgba(5, 9, 16, 0.88);
+  color: #ffd166;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .map-node.is-current {
-  border-color: rgba(255, 209, 102, 0.92);
-  background: rgba(255, 209, 102, 0.9);
-  color: #08101a;
-  box-shadow: 0 0 28px rgba(255, 209, 102, 0.5);
-  animation: mapPulse 1.6s ease-in-out infinite alternate;
+  animation: mapPulse 1.35s ease-in-out infinite alternate;
+}
+
+.map-node.is-current::before {
+  width: 13px;
+  height: 13px;
+  background: #ffd166;
+  box-shadow:
+    0 0 10px rgba(255, 209, 102, 0.95),
+    0 0 28px rgba(255, 209, 102, 0.74),
+    0 0 46px rgba(255, 138, 61, 0.35);
 }
 
 @keyframes mapPulse {
   from {
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 
   to {
-    transform: scale(1.05);
+    transform: translate(-50%, -50%) scale(1.16);
   }
 }
 
-.map-node.is-complete {
-  border-color: rgba(140, 255, 107, 0.38);
+.map-node.is-complete::before {
+  width: 12px;
+  height: 12px;
+  background: #8cff6b;
+  box-shadow:
+    0 0 10px rgba(140, 255, 107, 0.88),
+    0 0 24px rgba(140, 255, 107, 0.48);
 }
 
 .map-node.is-locked {
-  color: rgba(239, 249, 255, 0.38);
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.025);
-  opacity: 0.3;
+  opacity: 1;
+}
+
+.map-node.is-locked::before {
+  width: 8px;
+  height: 8px;
+  background: rgba(239, 249, 255, 0.32);
+  box-shadow: 0 0 7px rgba(239, 249, 255, 0.12);
 }
 
 #closeMapButton,
@@ -1992,8 +2601,9 @@ button:active {
 
 .store-wallet {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto 1fr auto;
   align-items: center;
+  gap: 4px 12px;
   min-height: 48px;
   padding: 10px 12px;
   border: 1px solid rgba(70, 244, 255, 0.2);
@@ -2660,7 +3270,7 @@ input[type="range"] {
   }
 
   .map-sector-levels {
-    grid-template-columns: repeat(5, 1fr);
+    min-height: 220px;
   }
 }
 
@@ -3135,11 +3745,14 @@ input[type="range"] {
   }
 
   .map-node {
-    min-height: 48px;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
   }
 
   .map-sector-levels {
-    grid-template-columns: repeat(3, 1fr);
+    min-height: 240px;
   }
 
   .map-copy strong {
@@ -3307,5 +3920,35 @@ input[type="range"] {
 
   100% {
     filter: brightness(1) drop-shadow(0 0 0 rgba(255, 209, 102, 0));
+  }
+}
+
+/* ===== GAMEPLAY MINIMAL UI — Mobile overrides ===== */
+@media (max-width: 719px) {
+  /* On mobile, the HUD collapse already moves things around.
+     During play, hide the collapsed controls entirely */
+  .hud.is-playing .hud-sheet { display: none; }
+  .hud.is-playing .hud-toggle { opacity: 0; pointer-events: none; }
+
+  /* Mission panel: even more compact on phone */
+  .mission.is-playing {
+    padding: 4px 6px;
+    min-height: 36px;
+  }
+  .mission.is-playing .mission-copy strong {
+    font-size: 11px;
+  }
+  .mission.is-playing .mission-copy span {
+    font-size: 9px;
+  }
+  .mission.is-playing .goal-rail {
+    gap: 4px;
+  }
+
+  /* Boosters: compact on phone during play */
+  .mission.is-playing .boosters button {
+    min-height: 32px;
+    padding: 0 4px;
+    font-size: 10px;
   }
 }
