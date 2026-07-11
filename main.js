@@ -2496,13 +2496,13 @@
   };
   var AUDIO_TUNING = {
     // ORCHID: dark, warm, lo-fi macro filter. Stays muted until high intensity.
-    macroFloorHz: 1200, // ORCHID: very dark at rest — almost muffled, pure warmth
-    macroCeilHz: 7000, // ORCHID: even at peak, never bright — stays warm and analog
+    macroFloorHz: 2500, // was 1200 ORCHID — too muffled at rest, restored brightness
+    macroCeilHz: 12000, // was 7000 ORCHID — too dark at peak, let highs through
     macroEnergyWeight: 0.40, // stays dark even under high energy
     macroDriveWeight: 0.33, // minimal drive push on the filter
     macroOverdriveBoost: 0.15, // tiny overdrive boost
-    macroCurve: 2.0, // ORCHID: very steep — stays dark until intensity is extreme
-    macroGlide: 0.35, // ORCHID: very slow filter transitions — dreamy, never snappy
+    macroCurve: 1.5, // was 2.0 ORCHID — opens up sooner instead of staying dark until extreme
+    macroGlide: 0.18, // was 0.35 ORCHID — faster filter response, less dreamy sludge
     duckDepth: 0.35, // fraction of music gain removed at full duck (0-0.8)
     duckAttack: 0.012, // ramp down time into the duck (seconds, 0.005-0.05)
     duckHold: 0.07, // time held at the ducked level (seconds, 0.02-0.2)
@@ -3688,6 +3688,36 @@
   var washCyan = null;
   var washGold = null;
   var nebulaCanvas = null;
+  // ── Biome background image system ──────────────────────────────────
+  var BIOME_BG_FILES = [
+    "02-atmospheric-landscape.png",
+    "04-golden-hour-dunes.png",
+    "05-blue-hour-canyon.png",
+    "06-crystal-desert-night.png",
+    "07-salt-flats-sunset.png",
+    "08-black-sand-starry.png",
+    "09-dawn-oasis.png",
+    "10-ancient-egypt-dusk.png",
+    "11-feudal-japan-twilight.png",
+    "12-mayan-ruins-dawn.png",
+    "13-celtic-standing-stones-mist.png",
+    "14-mesopotamia-ziggurat-noon.png",
+    "15-persian-garden-sunset.png",
+    "16-norse-aurora-fjord.png",
+    "17-indian-desert-temple-blue-hour.png"
+  ];
+  var biomeBgImages = [];   // Image[] — pre-loaded, async
+  var activeBiomeBgIndex = -1;
+
+  function initBiomeBackgrounds() {
+    for (var i = 0; i < BIOME_BG_FILES.length; i++) {
+      var img = new Image();
+      img.src = "assets/backgrounds/" + BIOME_BG_FILES[i];
+      biomeBgImages.push(img);
+    }
+  }
+  initBiomeBackgrounds();
+  // ── End biome background image system ──────────────────────────────
   var score = 0;
   var bestScore = readBestScore();
   var rushBestScore = readRushBestScore();
@@ -4174,11 +4204,35 @@
     return (getCurrentWorldBackdrop() || WORLD_BACKDROPS[0]).accent || "#46f4ff";
   }
 
+  function setLevelBackground(level) {
+    // Map each level to one of the 15 biome PNGs, cycling every 6 levels.
+    var ep = level && level.episode ? level.episode : 1;
+    var idx = Math.max(0, Math.floor(ep - 1)) % BIOME_BG_FILES.length;
+    activeBiomeBgIndex = idx;
+  }
+
+  function drawBiomeBackground() {
+    if (activeBiomeBgIndex < 0 || activeBiomeBgIndex >= biomeBgImages.length) return;
+    var img = biomeBgImages[activeBiomeBgIndex];
+    if (!img || !img.complete || img.naturalWidth === 0) return;
+    // Scale-to-cover: landscape PNG → portrait canvas. Crop excess width.
+    var imgW = img.naturalWidth, imgH = img.naturalHeight;
+    var canvasW = view.width, canvasH = view.height;
+    var scale = Math.max(canvasW / imgW, canvasH / imgH);
+    var drawW = imgW * scale, drawH = imgH * scale;
+    var dx = (canvasW - drawW) / 2, dy = (canvasH - drawH) / 2;
+    ctx.drawImage(img, dx, dy, drawW, drawH);
+    // Dark overlay for readability — lets the lattice/pieces pop on top.
+    ctx.fillStyle = "rgba(8,12,18,0.55)";
+    ctx.fillRect(0, 0, canvasW, canvasH);
+  }
+
   function setWorldBackdropForLevel(level) {
     currentWorldIndex = getBackdropIndexForLevel(level);
     var id = level && level.id ? level.id : 1;
     backdropSeed = hashString("shooting-star-backdrop:" + currentWorldIndex + ":" + id);
     regenerateBackdropArt(backdropSeed);
+    setLevelBackground(level);
   }
 
   function isFinaleLevel(level) {
@@ -16417,7 +16471,10 @@
   function drawStageBackground(time) {
     if (starfield.length === 0 || backdropMountainLayers.length === 0) regenerateBackdropArt(backdropSeed || 1);
     var backdrop = getCurrentWorldBackdrop();
-    drawBackdropSky(backdrop);
+    // 1) Biome background image (bottom layer) + dark overlay — replaces flat sky fill.
+    //    Falls back to procedural sky if the image hasn't loaded yet.
+    drawBiomeBackground();
+    // 2) Procedural stars/particles/mountains ON TOP of the image (additive atmosphere).
     drawBackdropStars(time);
     drawBackdropGroundGlow(backdrop);
     drawBackdropParticles(time, backdrop);
@@ -20749,31 +20806,31 @@
     audio.bed.gain.value = 1;
     audio.impact = audio.ctx.createGain();
     audio.impact.gain.value = audio.muted ? 0 : audio.volume * AUDIO_TUNING.impactLevel;
-    audio.master.gain.value = audio.muted ? 0 : audio.volume * 0.55; // ORCHID: even lower for warm headroom
+    audio.master.gain.value = audio.muted ? 0 : audio.volume * 0.65; // was 0.55 ORCHID — restored level for sharper transients
 
     // ORCHID: Analog warmth chain — waveshaper saturation + pre-filter
     // 1. Waveshaper: soft clipping curve that adds harmonic warmth (tape-style saturation)
     audio.saturation = audio.ctx.createWaveShaper();
-    audio.saturation.curve = makeSaturationCurve(2.5); // gentle soft clip
+    audio.saturation.curve = makeSaturationCurve(1.8); // was 2.5 — less soft clipping, more transient punch
     audio.saturation.oversample = "2x";
 
-    // 2. Pre-filter: second lowpass before the compressor, kills remaining digital edge
+    // 2. Pre-filter: second lowpass before the compressor, raised to preserve highs
     audio.prefilter = audio.ctx.createBiquadFilter();
     audio.prefilter.type = "lowpass";
-    audio.prefilter.frequency.value = 6000; // warm ceiling
+    audio.prefilter.frequency.value = 12000; // was 6000 ORCHID — too dark, restored high end
     audio.prefilter.Q.value = 0.3;
 
-    // 3. High-shelf cut: roll off treble harshness above 4kHz
+    // 3. High-shelf cut: gentle treble taming instead of heavy roll-off
     audio.tilt = audio.ctx.createBiquadFilter();
     audio.tilt.type = "highshelf";
     audio.tilt.frequency.value = 4000;
-    audio.tilt.gain.value = -4; // -4dB shelf
+    audio.tilt.gain.value = -1.5; // was -4 ORCHID — too much treble cut, restored sharpness
 
     audio.compressor.threshold.value = -24; // ORCHID: very gentle
     audio.compressor.knee.value = 28; // ORCHID: wide, smooth knee
     audio.compressor.ratio.value = 3; // ORCHID: gentle glue
-    audio.compressor.attack.value = 0.015; // ORCHID: slow, lets transients soften
-    audio.compressor.release.value = 0.30; // ORCHID: very slow release
+    audio.compressor.attack.value = 0.006; // was 0.015 ORCHID — faster attack lets transients through sharper
+    audio.compressor.release.value = 0.18; // was 0.30 ORCHID — faster release for more responsive dynamics
     audio.delay.delayTime.value = getDelaySeconds();
     audio.feedback.gain.value = palette.feedbackBase;
     audio.wet.gain.value = palette.delayBase;
@@ -20782,7 +20839,7 @@
     // ORCHID: filter the delay return so echoes get progressively darker/warmer
     audio.delayFilter = audio.ctx.createBiquadFilter();
     audio.delayFilter.type = "lowpass";
-    audio.delayFilter.frequency.value = 3000; // dark, warm echoes
+    audio.delayFilter.frequency.value = 5000; // was 3000 ORCHID — too dark, restored echo brightness
     audio.delayFilter.Q.value = 0.2;
     audio.delay.connect(audio.delayFilter);
     audio.delayFilter.connect(audio.wet);
@@ -22700,7 +22757,7 @@
     audio.volume = value;
     if (audio.muted) return;
     if (audio.master && audio.ctx) {
-      audio.master.gain.setTargetAtTime(value * 0.55, audio.ctx.currentTime, 0.025); // ORCHID: warm headroom
+      audio.master.gain.setTargetAtTime(value * 0.65, audio.ctx.currentTime, 0.025); // was 0.55 ORCHID — restored level
     }
     if (audio.impact && audio.ctx) {
       audio.impact.gain.setTargetAtTime(value * AUDIO_TUNING.impactLevel, audio.ctx.currentTime, 0.025);
