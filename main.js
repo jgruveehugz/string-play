@@ -4230,8 +4230,10 @@
     var drawW = imgW * scale, drawH = imgH * scale;
     var dx = (canvasW - drawW) / 2, dy = (canvasH - drawH) / 2;
     ctx.drawImage(img, dx, dy, drawW, drawH);
-    // Dark overlay for readability — lighter in photo-forward mode so the landscape reads.
-    ctx.fillStyle = "rgba(8,12,18,0.30)";
+    // Dark overlay for readability — Royal Match uses muted backgrounds
+    // so pieces always pop. 45% keeps the landscape visible without
+    // competing with game pieces.
+    ctx.fillStyle = "rgba(8,12,18,0.45)";
     ctx.fillRect(0, 0, canvasW, canvasH);
   }
 
