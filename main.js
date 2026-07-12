@@ -2785,11 +2785,11 @@
       scoreTarget: 2000,
       goals: [
         { kind: "score", target: 2000 },
-        { kind: "collect", type: 0, target: 8 }
+        { kind: "collect", type: 0, target: 12 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 4, leftCol: 1, rightCol: 5 }, activeColors: [0, 1, 2] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", activeColors: [0, 1, 2] },
       coach: "Welcome to the sky. Swap any two stars that touch. Match three of the same color to clear them.",
-      pressure: "Take your time. Every swap teaches the rhythm. Cyan stars are the only kind here."
+      pressure: "Take your time. Every swap teaches the rhythm. Three colors to learn."
     },
     {
       number: 2,
@@ -2798,9 +2798,9 @@
       scoreTarget: 2400,
       goals: [
         { kind: "score", target: 2400 },
-        { kind: "collect", type: 1, target: 10 }
+        { kind: "collect", type: 1, target: 14 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 4, leftCol: 1, rightCol: 5 }, activeColors: [0, 1, 2] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", activeColors: [0, 1, 2] },
       coach: "Pink stars join the sky. Now two colors to match. Same swap, new color.",
       pressure: "Two colors, more choices. Match what you need first, then go for pink."
     },
@@ -2813,7 +2813,7 @@
         { kind: "score", target: 3000 },
         { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 5, leftCol: 1, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", activeColors: [0, 1, 2, 3] },
       coach: "Match FOUR stars in a row to create a star line. Tap it to fire across the sky.",
       pressure: "Find four in a row. The star line clears a whole lane. Try it and feel the power."
     },
@@ -2824,9 +2824,9 @@
       scoreTarget: 3600,
       goals: [
         { kind: "score", target: 3600 },
-        { kind: "collect", type: 2, target: 22 }
+        { kind: "collect", type: 2, target: 28 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 5, leftCol: 1, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", activeColors: [0, 1, 2, 3] },
       starterSpecials: [
         { row: 4, col: 3, special: "lineH" }
       ],
@@ -2842,7 +2842,7 @@
         { kind: "score", target: 3400 },
         { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", activeColors: [0, 1, 2, 3] },
       coach: "Match FIVE in a row to create a supernova. Tap to arm it, tap again to fire. It clears a whole color.",
       pressure: "Five in a row is the big one. Build it, arm it, fire it. Watch one color vanish."
     },
@@ -2855,7 +2855,7 @@
         { kind: "score", target: 4200 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", activeColors: [0, 1, 2, 3] },
       coach: "Make one star line AND one supernova. Use both powers on the same board.",
       pressure: "Two powers to build. Play with star lines and supernovas. No pressure, just practice."
     },
@@ -2866,7 +2866,7 @@
       scoreTarget: 4800,
       goals: [
         { kind: "score", target: 4800 },
-        { kind: "collect", type: 4, target: 24 }
+        { kind: "collect", type: 4, target: 28 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
       coach: "Orange stars join the sky. Four colors now. Collect a cluster of orange.",
@@ -2892,7 +2892,7 @@
       scoreTarget: 5000,
       goals: [
         { kind: "score", target: 5000 },
-        { kind: "collect", type: 5, target: 18 }
+        { kind: "collect", type: 5, target: 22 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", producers: [{ row: 3, col: 3 }] },
       coach: "The center Producer feeds you a violet star every move. Match the violet stars it makes.",
@@ -2905,7 +2905,7 @@
       scoreTarget: 5500,
       goals: [
         { kind: "score", target: 5500 },
-        { kind: "collect", type: 0, target: 10 }
+        { kind: "collect", type: 0, target: 15 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
       coach: "Milestone take. No new tricks. Play loose, make big matches, bank your moves.",
@@ -2988,7 +2988,7 @@
       scoreTarget: 6400,
       goals: [
         { kind: "score", target: 6400 },
-        { kind: "collect", type: 3, target: 10 },
+        { kind: "collect", type: 3, target: 15 },
         { kind: "flux", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "diamond", blockers: [{ row: 3, col: 4 }, { row: 4, col: 3 }, { row: 4, col: 4 }] },
@@ -6205,7 +6205,7 @@
     var bottomPad = view.width < 600 ? 178 : 112;
     var minUsableHeight = 300;
     var minBoardSize = 280;
-    var boardScale = 0.94;
+    var boardScale = 0.96;
     if (view.width < 600) {
       // shortPhone catches SE (667px) and anything compact;
       // modern iPhones (812px+) get the normal phone layout
@@ -6228,7 +6228,7 @@
     var usableHeight = Math.max(minUsableHeight, view.height - topReserve - bottomPad);
     var usableWidth = view.width < 600 ? Math.max(300, view.width - 12) : Math.max(280, view.width - 28);
     view.boardSize = Math.floor(Math.min(usableWidth, usableHeight) * boardScale);
-    view.boardSize = Math.max(minBoardSize, Math.min(view.boardSize, 690));
+    view.boardSize = Math.max(minBoardSize, Math.min(view.boardSize, 920));
     // Always size cells to the full 8×8 grid, even when gridExtent shrinks the
     // active area for tutorial levels. The board frame stays the same size; a
     // 5×5 extent just has more breathing room, not larger pieces.
