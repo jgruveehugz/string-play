@@ -21970,8 +21970,18 @@
     }
     if (stars === 3) {
       var bonusStart = start + motif.deg.length * AUDIO_TUNING.winMotifSpacing + 0.07;
-      playTone(getHarmonyToneFreq(audio.step, 5, 2), bonusStart, 0.28, "sine", 0.052, 0, 5600, audio.impact);
-      stingEnd = Math.max(stingEnd, bonusStart + 0.28);
+      // 3-star shimmer: ascending 3-note sparkle instead of one note.
+      playTone(getHarmonyToneFreq(audio.step, 4, 2), bonusStart, 0.2, "sine", 0.04, -0.2, 5600, audio.impact);
+      playTone(getHarmonyToneFreq(audio.step, 5, 2), bonusStart + 0.06, 0.24, "sine", 0.048, 0, 5800, audio.impact);
+      playTone(getHarmonyToneFreq(audio.step, 7, 3), bonusStart + 0.12, 0.3, "sine", 0.04, 0.2, 6000, audio.impact);
+      stingEnd = Math.max(stingEnd, bonusStart + 0.3);
+    }
+    // Shimmer layer: high sine partials for fireworks/triumph quality.
+    var shimmerStart = start + motif.deg.length * AUDIO_TUNING.winMotifSpacing * 0.5;
+    var shimmerDegrees = [0, 2, 4, 5];
+    for (var si = 0; si < shimmerDegrees.length; si += 1) {
+      playTone(getHarmonyToneFreq(audio.step, shimmerDegrees[si], 3), shimmerStart, 0.3, "sine", 0.02, -0.3 + si * 0.2, 6000 + si * 500);
+      stingEnd = Math.max(stingEnd, shimmerStart + 0.3);
     }
     return stingEnd;
   }
@@ -22245,7 +22255,7 @@
         playTone(
           freq * (i % 2 === 0 ? 2 : 1) * pvOctave,
           start + i * (overdrive ? 0.036 : 0.045),
-          overdrive ? 0.105 : 0.13,
+          overdrive ? 0.105 : 0.10,
           overdrive ? "triangle" : "triangle", // ORCHID: was square, now warm triangle
           Math.min(AUDIO_TUNING.responseToneGainCap, (0.048 + chain * 0.008 + (overdrive ? 0.012 : 0)) * boost) * AUDIO_TUNING.pieceVoiceGainTrim * pv.gain,
           pan,
@@ -22347,6 +22357,25 @@
       // addSixthPad surprise: a nova detonation may widen the next pad chord
       // to degrees [0,2,3,4,5] once.
       if (trySpendSurprise("addSixthPad")) audio.surprise.padDegrees = [0, 2, 3, 4, 5];
+      return;
+    }
+    if (special === "bomb") {
+      // Bomb: weighty detonation. Downward sine sweep + low noise burst + sparkle.
+      duckMusic(start, 1);
+      playTone(freq * 1.2, start, 0.04, "sine", Math.min(AUDIO_TUNING.responseToneGainCap, 0.07 * boost), 0, 400, audio.impact);
+      playTone(freq * 0.4, start + 0.04, 0.28, "sine", Math.min(AUDIO_TUNING.responseToneGainCap, 0.085 * boost), 0, 200, audio.impact);
+      playNoise(start, 0.18, 0.08 + chain * 0.01, 760, 0.5, audio.impact);
+      playTone(freq * 8, start + 0.06, 0.08, "triangle", Math.min(AUDIO_TUNING.responseToneGainCap, 0.03 * boost), 0, 5000);
+      addComboLayer(chain + 1, 8);
+      return;
+    }
+    if (special === "seeker") {
+      // Seeker: ascending whoosh + pitch glide. Zips to its target.
+      duckMusic(start, AUDIO_TUNING.duckSmallScale);
+      playNoise(start + 0.02, 0.12, 0.05 + chain * 0.008, 800, 0.8);
+      playTone(freq, start, 0.06, "triangle", Math.min(AUDIO_TUNING.responseToneGainCap, 0.04 * boost), -0.3, 2400);
+      playTone(freq * 2, start + 0.06, 0.1, "triangle", Math.min(AUDIO_TUNING.responseToneGainCap, 0.045 * boost), 0.3, 3600);
+      playNoise(start + 0.08, 0.06, 0.03, 4000, 0.6);
       return;
     }
 
@@ -22765,7 +22794,7 @@
     filter.Q.setValueAtTime(0.7 + energy * 2.4, start);
 
     gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, gainValue), start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, gainValue), start + 0.004);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
 
     srcOut.connect(filter);
