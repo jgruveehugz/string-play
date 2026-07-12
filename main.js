@@ -3789,6 +3789,12 @@
   // not just named. novaPrimerGem tracks the debut nova between cascades.
   var novaPrimerSwap = null;
   var novaPrimerGem = null;
+  // Line special guide: on L3 (debut) and L4 (seeded loan), guide the player
+  // to tap the line special to arm it, then tap again to fire it. Without this,
+  // the player creates a power-up but doesn't see what it does.
+  // Design: Koster #5 (feedback shows available actions), Sirlin #10 (UI teaches).
+  var lineSpecialGuideActive = false;
+  var lineSpecialGuideGem = null;
   var animating = false;
   var hitStop = 0;
   var animatingClock = 0;
@@ -6509,7 +6515,10 @@
     if ((phaseLockList.length > 0 || blackHoles.length > 0 || wormholes.length > 0) && !hasAnyMove()) forcePlayableMove();
     novaPrimerSwap = null;
     novaPrimerGem = null;
+    lineSpecialGuideActive = false;
+    lineSpecialGuideGem = null;
     if (currentLevel.id === 5) plantNovaPrimer();
+    if (currentLevel.id === 3 || currentLevel.id === 4) lineSpecialGuideActive = true;
     setTargets();
     queueLevelCoachTips(currentLevel.id);
     if (!isSplashOpen()) claimCampaignStartRewards();
@@ -7491,6 +7500,54 @@
     }
     var gem = board[armedSpecial.row] && board[armedSpecial.row][armedSpecial.col];
     if (!gem || gem.special !== armedSpecial.special) armedSpecial = null;
+  }
+
+  function updateLineSpecialGuide(dt) {
+    if (!lineSpecialGuideActive) return;
+    if (gameMode !== MODE_CAMPAIGN || levelState !== "playing") return;
+    if (guidedMove) return;
+    if (currentLevel.id !== 3 && currentLevel.id !== 4) return;
+
+    // Find a line special on the board that hasn't been fired.
+    if (lineSpecialGuideGem && (!board[lineSpecialGuideGem.row] ||
+        board[lineSpecialGuideGem.row][lineSpecialGuideGem.col] !== lineSpecialGuideGem ||
+        lineSpecialGuideGem.special !== "lineH" && lineSpecialGuideGem.special !== "lineV")) {
+      lineSpecialGuideGem = null;
+    }
+    if (!lineSpecialGuideGem) lineSpecialGuideGem = findBoardLineSpecial();
+    if (lineSpecialGuideGem) {
+      // If armed, show "tap again to fire" label. Otherwise "tap to arm".
+      if (armedSpecial && sameCell(armedSpecial, { row: lineSpecialGuideGem.row, col: lineSpecialGuideGem.col })) {
+        // Already armed: don't override the guidedMove, let the armed preview show.
+        return;
+      }
+      guidedMove = {
+        a: { row: lineSpecialGuideGem.row, col: lineSpecialGuideGem.col },
+        b: { row: lineSpecialGuideGem.row, col: lineSpecialGuideGem.col },
+        tap: true,
+        label: "Tap the star line twice to fire it"
+      };
+    }
+  }
+
+  function findBoardLineSpecial() {
+    for (var row = 0; row < GRID; row += 1) {
+      for (var col = 0; col < GRID; col += 1) {
+        var gem = board[row] && board[row][col];
+        if (gem && (gem.special === "lineH" || gem.special === "lineV") && !isPhaseLocked(row, col)) return gem;
+      }
+    }
+    return null;
+  }
+
+  function finishLineSpecialGuide() {
+    lineSpecialGuideGem = null;
+    lineSpecialGuideActive = false;
+    if (guidedMove && guidedMove.tap) guidedMove = null;
+    if (!coachSeen.lineTap) {
+      coachSeen.lineTap = true;
+      writeCoachSeen();
+    }
   }
 
   function updateSwapHint(dt) {
@@ -11237,6 +11294,8 @@
     // Nova primer: the guided tap fired. Mark the lesson learned and
     // release the input gate.
     if (guidedMove && guidedMove.tap && sameCell(guidedMove.a, arm)) finishNovaPrimerGuide();
+    // Line special guide: the guided tap fired. Mark the lesson learned.
+    if (guidedMove && guidedMove.tap && sameCell(guidedMove.a, arm)) finishLineSpecialGuide();
 
     // DESIGN REVIEW (mandate A5): tap-firing a special costs a move, same
     // bookkeeping as attemptSwap's committed path. Revisit if free-fire
@@ -16349,6 +16408,7 @@
     novaWarpPulse = Math.max(0, novaWarpPulse - dt * 2.2);
     screenShake = Math.max(0, screenShake - dt * 2.35);
     updateArmedSpecial();
+    updateLineSpecialGuide(dt);
     updateSwapHint(dt);
     updateInputWatchdog(dt);
     updateFuseState();
@@ -19308,7 +19368,12 @@
     drawHintRing(center.x, center.y, radius, "#ffd166", pulseAmount);
     ctx.restore();
 
-    drawGuidedLabel("Tap the nova twice", center, center, cell.row);
+    // Label depends on special type: nova vs line.
+    var label = "Tap the nova twice";
+    if (gem.special === "lineH" || gem.special === "lineV") {
+      label = guidedMove.label || "Tap the star line twice to fire it";
+    }
+    drawGuidedLabel(label, center, center, cell.row);
   }
 
   function drawGuidedLabel(labelText, a, b, maxGuidedRow) {
