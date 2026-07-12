@@ -2807,7 +2807,7 @@
     {
       number: 3,
       title: "Line Spark",
-      moves: 28,
+      moves: 30,
       scoreTarget: 3000,
       goals: [
         { kind: "score", target: 3000 },
@@ -2820,10 +2820,10 @@
     {
       number: 4,
       title: "Beam Loan",
-      moves: 25,
-      scoreTarget: 3600,
+      moves: 28,
+      scoreTarget: 3400,
       goals: [
-        { kind: "score", target: 3600 },
+        { kind: "score", target: 3400 },
         { kind: "collect", type: 2, target: 28 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", activeColors: [0, 1, 2, 3] },
@@ -2849,7 +2849,7 @@
     {
       number: 6,
       title: "Twin Circuit",
-      moves: 28,
+      moves: 30,
       scoreTarget: 4200,
       goals: [
         { kind: "score", target: 4200 },
@@ -2862,10 +2862,10 @@
     {
       number: 7,
       title: "Toolkit Relay",
-      moves: 25,
-      scoreTarget: 4800,
+      moves: 30,
+      scoreTarget: 4400,
       goals: [
-        { kind: "score", target: 4800 },
+        { kind: "score", target: 4400 },
         { kind: "collect", type: 4, target: 28 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
@@ -2875,10 +2875,10 @@
     {
       number: 8,
       title: "Cascade Signal",
-      moves: 28,
-      scoreTarget: 4400,
+      moves: 30,
+      scoreTarget: 4800,
       goals: [
-        { kind: "score", target: 4400 },
+        { kind: "score", target: 4800 },
         { kind: "chain", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
@@ -2888,7 +2888,7 @@
     {
       number: 9,
       title: "Echo Chamber",
-      moves: 25,
+      moves: 30,
       scoreTarget: 5000,
       goals: [
         { kind: "score", target: 5000 },
@@ -2902,9 +2902,9 @@
       number: 10,
       title: "First Encore",
       moves: 35,
-      scoreTarget: 5500,
+      scoreTarget: 6500,
       goals: [
-        { kind: "score", target: 5500 },
+        { kind: "score", target: 6500 },
         { kind: "collect", type: 0, target: 15 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
@@ -2914,7 +2914,7 @@
     {
       number: 11,
       title: "Shield Debut",
-      moves: 25,
+      moves: 28,
       scoreTarget: 5200,
       goals: [
         { kind: "score", target: 5200 },
@@ -2927,10 +2927,10 @@
     {
       number: 12,
       title: "Shield Current",
-      moves: 22,
-      scoreTarget: 5800,
+      moves: 28,
+      scoreTarget: 5600,
       goals: [
-        { kind: "score", target: 5800 },
+        { kind: "score", target: 5600 },
         { kind: "flux", target: 5 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 4, col: 4, strength: 2 }, { row: 5, col: 2 }, { row: 5, col: 5 }] },
@@ -2940,10 +2940,10 @@
     {
       number: 13,
       title: "Shield Forge",
-      moves: 25,
-      scoreTarget: 6400,
+      moves: 28,
+      scoreTarget: 6000,
       goals: [
-        { kind: "score", target: 6400 },
+        { kind: "score", target: 6000 },
         { kind: "flux", target: 5 },
         { kind: "specials", target: 1 }
       ],
@@ -2957,10 +2957,10 @@
     {
       number: 14,
       title: "Creep Debut",
-      moves: 25,
-      scoreTarget: 6200,
+      moves: 28,
+      scoreTarget: 5800,
       goals: [
-        { kind: "score", target: 6200 },
+        { kind: "score", target: 5800 },
         { kind: "spread", target: 5 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", spreaders: [{ row: 3, col: 3 }] },
@@ -2970,10 +2970,10 @@
     {
       number: 15,
       title: "Track Gate",
-      moves: 25,
-      scoreTarget: 7600,
+      moves: 30,
+      scoreTarget: 7000,
       goals: [
-        { kind: "score", target: 7600 },
+        { kind: "score", target: 7000 },
         { kind: "flux", target: 8 },
         { kind: "specials", target: 2 }
       ],

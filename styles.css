@@ -1522,9 +1522,13 @@ button:active {
 
 /* HUD: fade brand, Best, Chain, Voices. Hide most control buttons, keep Menu */
 .hud.is-playing .brand { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+/* Hide secondary stats during gameplay — Royal Match shows only 3 (Level, Moves, Score).
+   Best/Chain/Voices are still updated in the DOM for end-of-level and menu screens. */
 .hud.is-playing .stat--best,
 .hud.is-playing .stat--chain,
-.hud.is-playing .stat--voices { opacity: 0.25; transition: opacity 0.3s ease; }
+.hud.is-playing .stat--voices {
+  display: none !important;
+}
 
 /* Hide individual control buttons during play, keep Menu */
 .hud.is-playing .controls #audioButton,
