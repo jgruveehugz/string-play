@@ -12059,7 +12059,10 @@
       if (gameMode === MODE_DAILY) return "Daily seed " + formatDailyId(dailyId) + ". Same board for everyone.";
       return "Keep the strings charged as long as possible.";
     }
-    if (guidedMove && guidedMove.tap) return "Tap the nova to arm it, then tap again to fire the sweep.";
+    if (guidedMove && guidedMove.tap) {
+      if (guidedMove.label) return guidedMove.label;
+      return "Tap the nova to arm it, then tap again to fire the sweep.";
+    }
     // Guided swaps carry their own board label; the inline line stands
     // down so one instruction reads at a time (L1 first move, L5 primer).
     if (guidedMove) return "";
