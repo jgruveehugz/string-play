@@ -10621,9 +10621,18 @@
   }
 
   function chooseSpecialSpawn(groups, anchors) {
+    // FTUE GATE: suppress special creation on levels that haven't introduced
+    // specials yet. L1-L2 are pure collect levels. L3 introduces line (match-4).
+    // L5 introduces nova (match-5). L18+ introduces bomb/seeker.
+    // Without this gate, cascades on L1-L2 can accidentally spawn specials
+    // the player hasn't been taught about. Violates the +2 rule.
+    if (currentLevel && currentLevel.id <= 2) return null;
+
     // 2x2 square match → Seeker (smart targeting). Check before cross/bomb.
     var squareGroup = groups.find(function (g) { return g.square; });
     if (squareGroup) {
+      // Seeker debuts at L22+. Suppress before that.
+      if (!currentLevel || currentLevel.id < 22) return null;
       return {
         cell: pickSpawnCell(squareGroup, anchors),
         special: "seeker"
@@ -10633,6 +10642,8 @@
     var crossCell = findCrossCell(groups);
     if (crossCell) {
       // L/T-shaped cross match → Bomb (area blast). 5-in-a-line → Nova (below).
+      // Bomb debuts at L18+. Suppress before that.
+      if (!currentLevel || currentLevel.id < 18) return null;
       return {
         cell: crossCell,
         special: "bomb"
@@ -10649,7 +10660,18 @@
     });
 
     var group = worthy[0];
-    // Match-4 in a line → Line special. (2x2 squares are caught above as Seeker.)
+    // Match-5 in a line → Nova (color clear). Debut at L5.
+    // Suppress nova before L5.
+    if (group.length >= 5) {
+      if (!currentLevel || currentLevel.id < 5) return null;
+      return {
+        cell: pickSpawnCell(group, anchors),
+        special: "nova"
+      };
+    }
+    // Match-4 in a line → Line special. Debut at L3.
+    // Suppress line specials before L3.
+    if (!currentLevel || currentLevel.id < 3) return null;
     if (group.length === 4 && !group.horizontal) {
       return {
         cell: pickSpawnCell(group, anchors),
@@ -10658,7 +10680,7 @@
     }
     return {
       cell: pickSpawnCell(group, anchors),
-      special: group.length >= 5 ? "nova" : group.horizontal ? "lineH" : "lineV"
+      special: group.horizontal ? "lineH" : "lineV"
     };
   }
 
