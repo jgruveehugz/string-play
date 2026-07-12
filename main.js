@@ -3687,21 +3687,21 @@
   var nebulaCanvas = null;
   // ── Biome background image system ──────────────────────────────────
   var BIOME_BG_FILES = [
-    "02-atmospheric-landscape.png",
-    "04-golden-hour-dunes.png",
-    "05-blue-hour-canyon.png",
-    "06-crystal-desert-night.png",
-    "07-salt-flats-sunset.png",
-    "08-black-sand-starry.png",
-    "09-dawn-oasis.png",
-    "10-ancient-egypt-dusk.png",
-    "11-feudal-japan-twilight.png",
-    "12-mayan-ruins-dawn.png",
-    "13-celtic-standing-stones-mist.png",
-    "14-mesopotamia-ziggurat-noon.png",
-    "15-persian-garden-sunset.png",
-    "16-norse-aurora-fjord.png",
-    "17-indian-desert-temple-blue-hour.png"
+    "02-atmospheric-landscape.webp",
+    "04-golden-hour-dunes.webp",
+    "05-blue-hour-canyon.webp",
+    "06-crystal-desert-night.webp",
+    "07-salt-flats-sunset.webp",
+    "08-black-sand-starry.webp",
+    "09-dawn-oasis.webp",
+    "10-ancient-egypt-dusk.webp",
+    "11-feudal-japan-twilight.webp",
+    "12-mayan-ruins-dawn.webp",
+    "13-celtic-standing-stones-mist.webp",
+    "14-mesopotamia-ziggurat-noon.webp",
+    "15-persian-garden-sunset.webp",
+    "16-norse-aurora-fjord.webp",
+    "17-indian-desert-temple-blue-hour.webp"
   ];
   var biomeBgImages = [];   // Image[] — pre-loaded, async
   var activeBiomeBgIndex = -1;
