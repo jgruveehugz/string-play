@@ -8880,9 +8880,23 @@
       if (next === 0) {
         // Broken: the wall opens. Un-mask the cell so the next collapse fills it.
         boardMask[r][c] = isCellActiveForShape(currentBoardShape || "full", r, c);
-        // Bigger, brighter smash: a double shockwave (white flash + magenta ring).
+        // Shield shatter: glass-break particle burst + double shockwave.
+        var shatterCol = current > 1 ? "#ffd166" : "#ff4fd8";
+        for (var si = 0; si < 8; si += 1) {
+          var sa = (Math.PI * 2 * si) / 8 + Math.random() * 0.4;
+          particles.push({
+            x: x, y: y,
+            vx: Math.cos(sa) * (120 + Math.random() * 180),
+            vy: Math.sin(sa) * (120 + Math.random() * 180),
+            life: 0.36 + Math.random() * 0.2,
+            ttl: 0.36 + Math.random() * 0.2,
+            size: 3 + Math.random() * 3,
+            color: si % 2 === 0 ? "#ffffff" : shatterCol,
+            ember: true
+          });
+        }
         addShockwave(x, y, "#ffffff", view.cell * 0.1, view.cell * 0.7, 0.18, 6);
-        addShockwave(x, y, "#ff4fd8", view.cell * 0.16, view.cell * 1.05, 0.3, 10);
+        addShockwave(x, y, shatterCol, view.cell * 0.16, view.cell * 1.05, 0.3, 10);
         // JUICE PASS: fly a piece to the flux goal chip on break.
         if (gameMode === MODE_CAMPAIGN && levelState === "playing" && currentLevel && currentLevel.goals) {
           var hasFluxGoal = currentLevel.goals.some(function (g) { return g.kind === "flux"; });
@@ -9254,7 +9268,7 @@
       }
     }
 
-    var totalMs = Math.round(startMs + 600);
+    var totalMs = Math.round(startMs + 1400);
     // Hold the card long enough for the Hum wake ritual so the result card never
     // opens over the born-from-light sequence. Applies to the Finale wake and the
     // early first wake alike (holdForWake).
@@ -18937,7 +18951,7 @@
 
   function drawSingleGem(gem, time) {
     var type = TYPES[gem.type];
-    var radius = view.cell * (0.34 + gem.pop * 0.09);
+    var radius = view.cell * (0.40 + gem.pop * 0.09);
     var coreWidth = Math.max(1.5, view.cell * 0.028);
     var scale = gem.scale + gem.pop * 0.25 + beatPulse * 0.035;
     var driftX = gem.x - gem.tx;
@@ -19266,9 +19280,9 @@
     // Background shows through the piece body. Only the glow halo is opaque.
     var grad = ctx.createRadialGradient(0, 0, 0, 0, 0, glowR);
     grad.addColorStop(0, color);
-    grad.addColorStop(0.35, color);
+    grad.addColorStop(0.5, color);
     grad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.globalAlpha = (0.08 + birth * 0.15 + beat * 0.08 + (special ? 0.06 : 0)) * Math.max(frameQuality.level >= 2 ? 0.62 : 0.4, fxScale());
+    ctx.globalAlpha = (0.22 + birth * 0.15 + beat * 0.08 + (special ? 0.06 : 0)) * Math.max(frameQuality.level >= 2 ? 0.72 : 0.5, fxScale());
     ctx.fillStyle = grad;
     ctx.shadowBlur = essentialGlowBlur(18 + birth * 22 + beat * 16, 3);
     ctx.shadowColor = color;

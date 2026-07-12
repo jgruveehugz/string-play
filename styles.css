@@ -558,7 +558,8 @@ textarea {
   letter-spacing: 0.2em;
   border: 2px solid rgba(70, 244, 255, 0.72);
   border-radius: 16px;
-  background: rgba(70, 244, 255, 0.18);
+  background: rgba(70, 244, 255, 0.25);
+  text-shadow: 0 0 12px rgba(70, 244, 255, 0.6);
   animation: splashCta 1.6s ease-in-out alternate infinite;
 }
 
@@ -868,7 +869,7 @@ button {
   padding: 0 16px;
   border: 1.5px solid rgba(255, 255, 255, 0.18);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.12);
   color: #f6fbff;
   font-size: 14px;
   font-weight: 800;
