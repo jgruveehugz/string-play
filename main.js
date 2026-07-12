@@ -3800,6 +3800,13 @@
   var lastMoveSurgeActive = false;
   var lastViableMoveCount = 0;
   var overdrivePulse = 0;
+  // Overdrive streak: tracks how long (seconds) the drive meter has been
+  // continuously above threshold. Sustained overdrive = escalating multiplier.
+  // Design: Koster #7 (pacing peak), Madigan (variable reward), Sirlin #6
+  // (comeback). No time-limit penalty. The meter cools if you stop, but
+  // sustained play is rewarded, not punished.
+  var overdriveStreakTime = 0;
+  var overdriveStreakTier = 0;
   var meterHotActive = false;
   var overdriveExitPulse = 0;
   var screenShake = 0;
@@ -4208,9 +4215,11 @@
   }
 
   function setLevelBackground(level) {
-    // Map each level to one of the 15 biome PNGs, cycling every 6 levels.
-    var ep = level && level.episode ? level.episode : 1;
-    var idx = Math.max(0, Math.floor(ep - 1)) % BIOME_BG_FILES.length;
+    // Map each level to one of the 15 biome PNGs, cycling every 3 levels
+    // for visual variety. Royal Match changes worlds every ~20 levels but
+    // rotates background art more frequently within each world.
+    var num = level && level.id ? level.id : 1;
+    var idx = Math.max(0, (num - 1)) % BIOME_BG_FILES.length;
     activeBiomeBgIndex = idx;
   }
 
@@ -4230,10 +4239,10 @@
     var drawW = imgW * scale, drawH = imgH * scale;
     var dx = (canvasW - drawW) / 2, dy = (canvasH - drawH) / 2;
     ctx.drawImage(img, dx, dy, drawW, drawH);
-    // Dark overlay for readability — Royal Match uses muted backgrounds
-    // so pieces always pop. 45% keeps the landscape visible without
-    // competing with game pieces.
-    ctx.fillStyle = "rgba(8,12,18,0.45)";
+    // Dark overlay for readability. 38% darkens the photo enough that neon
+    // pieces pop on the pure-black board, but the landscape still reads.
+    // Royal Match: muted backgrounds, but not invisible.
+    ctx.fillStyle = "rgba(8,12,18,0.38)";
     ctx.fillRect(0, 0, canvasW, canvasH);
   }
 
@@ -6421,8 +6430,10 @@
     lastMoveSurgeActive = false;
     lastViableMoveCount = 0;
     overdrivePulse = 0;
-    meterHotActive = false;
+    overdriveStreakTime = 0;
+    overdriveStreakTier = 0;
     overdriveExitPulse = 0;
+    meterHotActive = false;
     screenShake = 0;
     audio.layers = [];
     resetMusicPhrase();
@@ -6571,8 +6582,10 @@
     energy = 0.2;
     drive = 0;
     overdrivePulse = 0;
-    meterHotActive = false;
+    overdriveStreakTime = 0;
+    overdriveStreakTier = 0;
     overdriveExitPulse = 0;
+    meterHotActive = false;
     screenShake = 0;
     audio.layers = [];
     resetMusicPhrase();
@@ -6654,8 +6667,10 @@
     energy = 0.24;
     drive = 0;
     overdrivePulse = 0;
-    meterHotActive = false;
+    overdriveStreakTime = 0;
+    overdriveStreakTier = 0;
     overdriveExitPulse = 0;
+    meterHotActive = false;
     screenShake = 0;
     audio.layers = [];
     resetMusicPhrase();
@@ -8084,7 +8099,8 @@
 
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
-    var multiplier = (wasOverdrive ? 2 : 1) * getBonusScoreMultiplier(clearCells);
+    var multiplier = getOverdriveMultiplier(wasOverdrive) * getBonusScoreMultiplier(clearCells);
+
     var comboScore = Math.floor((clearCells.length * 145 + specialHits.length * 220) * multiplier);
 
     // Name the fusion through the single-anchor callout and flash its whole
@@ -8297,7 +8313,7 @@
     });
     var types = collectMatchedTypes(clearCells);
     var wasOverdrive = drive >= 0.72;
-    var multiplier = (wasOverdrive ? 2 : 1) * getBonusScoreMultiplier(clearCells);
+    var multiplier = getOverdriveMultiplier(wasOverdrive) * getBonusScoreMultiplier(clearCells);
     var matchScore = Math.floor(clearCells.length * 90 * chain * multiplier * getCascadeBonus());
 
     combo = Math.max(combo, chain);
@@ -8418,7 +8434,7 @@
 
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
-    var multiplier = (wasOverdrive ? 2 : 1) * getBonusScoreMultiplier(clearCells);
+    var multiplier = getOverdriveMultiplier(wasOverdrive) * getBonusScoreMultiplier(clearCells);
     var releaseScore = Math.floor((clearCells.length * 128 + specialHits.length * 210 + 900) * multiplier);
 
     combo = Math.max(combo, 5);
@@ -10347,6 +10363,41 @@
     playOverdriveStart();
   }
 
+  // Sustained overdrive = escalating score multiplier. No time limit.
+  // The longer you stay above threshold, the bigger the multiplier.
+  // Design: positive reinforcement (Madigan variable reward). The meter
+  // cools if you stop, but sustained play is rewarded, never punished.
+  // Tiers: 0-5s = 2x, 5-10s = 3x, 10-15s = 4x, 15s+ = 5x.
+  function getOverdriveMultiplier(wasOverdrive) {
+    if (!wasOverdrive && drive < OVERDRIVE_THRESHOLD) return 1;
+    if (overdriveStreakTier === 0) return 2;
+    if (overdriveStreakTier === 1) return 3;
+    if (overdriveStreakTier === 2) return 4;
+    return 5;
+  }
+
+  function updateOverdriveStreak(dt) {
+    var inOverdrive = drive >= OVERDRIVE_THRESHOLD;
+    if (inOverdrive) {
+      overdriveStreakTime += dt;
+      var newTier = overdriveStreakTime < 5 ? 0 : overdriveStreakTime < 10 ? 1 : overdriveStreakTime < 15 ? 2 : 3;
+      if (newTier > overdriveStreakTier) {
+        overdriveStreakTier = newTier;
+        var labels = ["", "STELLAR SURGE x3", "COSMIC FRENZY x4", "GALACTIC APEX x5"];
+        var colors = ["", "#7fdfff", "#ff4fd8", "#ffd166"];
+        if (labels[newTier]) {
+          addCallout(labels[newTier], colors[newTier], 24);
+          flash = Math.min(1, flash + 0.15);
+          bumpShake(0.1);
+          vibrate("overdrive");
+        }
+      }
+    } else {
+      overdriveStreakTime = 0;
+      overdriveStreakTier = 0;
+    }
+  }
+
   // Cool-down edge for the drive meter: the enter beat lives in triggerOverdrive,
   // so this only marks the OVERDRIVE badge leaving with a matching callout, a soft
   // in-key fall (playOverdriveEnd), and a short badge contraction (overdriveExitPulse).
@@ -11129,7 +11180,7 @@
     expandSpecialClears([hit], clearMap, 3);
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
-    var multiplier = wasOverdrive ? 2 : 1;
+    var multiplier = getOverdriveMultiplier(wasOverdrive);
     var points = Math.floor(clearCells.length * 90 * multiplier);
 
     combo = Math.max(combo, 2);
@@ -11203,7 +11254,7 @@
     expandSpecialClears([hit], clearMap, 3);
     var clearCells = cellsFromMap(clearMap);
     var wasOverdrive = drive >= OVERDRIVE_THRESHOLD;
-    var multiplier = wasOverdrive ? 2 : 1;
+    var multiplier = getOverdriveMultiplier(wasOverdrive);
     var points = Math.floor(clearCells.length * 90 * multiplier);
 
     combo = Math.max(combo, 2);
@@ -16288,6 +16339,7 @@
     energy = Math.max(0.1, energy - dt * 0.035);
     updateDirectorEmas(dt);
     drive = Math.max(0, drive - dt * (drive >= 0.72 ? 0.028 : 0.018));
+    updateOverdriveStreak(dt);
     rushSurgeCooldown = Math.max(0, rushSurgeCooldown - dt);
     beatGateAnim = Math.min(1, beatGateAnim + dt * 5.5);
     beatGateFlash = Math.max(0, beatGateFlash - dt * 3.2);
