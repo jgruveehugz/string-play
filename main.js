@@ -2820,58 +2820,57 @@
     {
       number: 4,
       title: "Beam Loan",
-      moves: 11,
-      scoreTarget: 3200,
+      moves: 16,
+      scoreTarget: 3000,
       goals: [
-        { kind: "score", target: 3200 },
-        { kind: "collect", type: 2, target: 26 }
+        { kind: "score", target: 3000 },
+        { kind: "collect", type: 2, target: 22 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", gridExtent: { topRow: 0, bottomRow: 5, leftCol: 1, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 5, leftCol: 1, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
       starterSpecials: [
         { row: 4, col: 3, special: "lineH" }
       ],
       coach: "A star line is loaded. Swap it to fire across the sky.",
-      pressure: "The loaner star line is yours. Spend it anywhere."
+      pressure: "The loaner star line is yours. Spend it anywhere. Plenty of moves to play."
     },
     {
       number: 5,
       title: "Nova Primer",
-      moves: 18,
-      scoreTarget: 3100,
+      moves: 20,
+      scoreTarget: 2900,
       goals: [
-        { kind: "score", target: 3100 },
-        { kind: "specials", target: 2 }
+        { kind: "score", target: 2900 },
+        { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "soft-diamond", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
       coach: "Match five for a supernova. Tap it to arm, tap again to fire.",
-      pressure: "Make the five. Tap the supernova to arm, tap again to sweep the sky."
+      pressure: "One supernova is all you need. Open board, lots of moves. Learn the arm-and-fire."
     },
     {
       number: 6,
       title: "Twin Circuit",
-      moves: 13,
-      scoreTarget: 4200,
+      moves: 18,
+      scoreTarget: 3600,
       goals: [
-        { kind: "score", target: 4200 },
-        { kind: "collect", type: 3, target: 26 },
+        { kind: "score", target: 3600 },
         { kind: "specials", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
-      coach: "Gold stars join the sky. Build two star powers.",
-      pressure: "Star lines and supernovas together. No new tricks."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", gridExtent: { topRow: 0, bottomRow: 6, leftCol: 0, rightCol: 6 }, activeColors: [0, 1, 2, 3] },
+      coach: "Both star powers in one take. Make a line and a supernova. No new tricks.",
+      pressure: "Play with your powers. Star lines and supernovas together, open board."
     },
     {
       number: 7,
       title: "Toolkit Relay",
-      moves: 10,
-      scoreTarget: 5000,
+      moves: 15,
+      scoreTarget: 4200,
       goals: [
-        { kind: "score", target: 5000 },
-        { kind: "collect", type: 4, target: 34 }
+        { kind: "score", target: 4200 },
+        { kind: "collect", type: 4, target: 24 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wide-gate" },
-      coach: "Orange stars are bright hexes. Clear a big cluster of them.",
-      pressure: "Win this take and the booster bar opens."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      coach: "Orange stars join the sky. Clear a cluster of them.",
+      pressure: "New color, open board. Win this take and the booster bar opens."
     },
     {
       number: 8,
@@ -2882,23 +2881,22 @@
         { kind: "score", target: 3900 },
         { kind: "chain", target: 2 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "staircase" },
-      coach: "Set one clear that drops into another.",
-      pressure: "Star chains finish goals with fewer moves."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full" },
+      coach: "Set one clear that drops into another. That is a chain.",
+      pressure: "Open board to learn chains. Star chains finish goals with fewer moves."
     },
     {
       number: 9,
       title: "Echo Chamber",
-      moves: 11,
-      scoreTarget: 5200,
+      moves: 18,
+      scoreTarget: 4400,
       goals: [
-        { kind: "score", target: 5200 },
-        { kind: "collect", type: 5, target: 26 },
-        { kind: "chain", target: 2 }
+        { kind: "score", target: 4400 },
+        { kind: "collect", type: 5, target: 18 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", producers: [{ row: 4, col: 4 }] },
-      coach: "The center Producer feeds you a violet star every move. Chain them.",
-      pressure: "The Producer keeps making violet stars. Cascade them into star chains."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", producers: [{ row: 3, col: 3 }] },
+      coach: "The center Producer feeds you a violet star every move. Collect them.",
+      pressure: "Watch the Producer work. It keeps making violet stars, open board to gather them."
     },
     {
       number: 10,
@@ -2916,74 +2914,72 @@
     {
       number: 11,
       title: "Shield Debut",
-      moves: 8,
+      moves: 15,
+      scoreTarget: 4600,
+      goals: [
+        { kind: "score", target: 4600 },
+        { kind: "flux", target: 3 }
+      ],
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 3, col: 3 }, { row: 4, col: 4 }, { row: 5, col: 3 }] },
+      coach: "Meteor shields are solid debris. Stars fall through them. Match right beside debris to break it open.",
+      pressure: "You can't match debris. Clear next to it to break it. Take your time, plenty of moves."
+    },
+    {
+      number: 12,
+      title: "Shield Current",
+      moves: 12,
       scoreTarget: 5200,
       goals: [
         { kind: "score", target: 5200 },
         { kind: "flux", target: 5 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "corner-bites", blockers: [{ row: 3, col: 2 }, { row: 3, col: 5 }, { row: 4, col: 3 }, { row: 5, col: 2 }, { row: 5, col: 5 }] },
-      coach: "Meteor shields are solid debris. Stars fall through them. Match right beside debris to break it open.",
-      pressure: "You can't match debris. Clear next to it to break it, then the cell opens up."
-    },
-    {
-      number: 12,
-      title: "Shield Current",
-      moves: 7,
-      scoreTarget: 6200,
-      goals: [
-        { kind: "score", target: 6200 },
-        { kind: "flux", target: 7 },
-        { kind: "chain", target: 2 }
-      ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "cross", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 5, col: 4, strength: 2 }, { row: 6, col: 3 }] },
-      coach: "Break meteor walls by matching beside them. Star chains break more at once.",
-      pressure: "Meteor walls plus star chains. Stars fall through until you break them."
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 4, col: 4, strength: 2 }, { row: 5, col: 2 }, { row: 5, col: 5 }] },
+      coach: "Some meteor walls are reinforced. Gold ones take two hits. Match beside them to break them down.",
+      pressure: "Reinforced walls need two hits. Chip away, you have the moves for it."
     },
     {
       number: 13,
       title: "Shield Forge",
-      moves: 10,
-      scoreTarget: 6000,
+      moves: 14,
+      scoreTarget: 5800,
       goals: [
-        { kind: "score", target: 6000 },
-        { kind: "flux", target: 6 },
-        { kind: "specials", target: 2 }
+        { kind: "score", target: 5800 },
+        { kind: "flux", target: 5 },
+        { kind: "specials", target: 1 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "twin-towers", blockers: [{ row: 2, col: 1 }, { row: 3, col: 6 }, { row: 4, col: 0, strength: 2 }, { row: 5, col: 7, strength: 2 }, { row: 6, col: 2 }, { row: 6, col: 5 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", blockers: [{ row: 2, col: 2 }, { row: 3, col: 5 }, { row: 4, col: 3, strength: 2 }, { row: 5, col: 4 }] },
       starterSpecials: [
-        { row: 6, col: 3, special: "lineH" },
-        { row: 6, col: 4, special: "lineV" }
+        { row: 6, col: 3, special: "lineH" }
       ],
-      coach: "Fire a star line beside a meteor wall to smash it. Two star lines wait in the sky.",
-      pressure: "Star powers break meteor walls fast. Stars fall through until then."
+      coach: "Fire a star line beside a meteor wall to smash it. One star line waits in the sky.",
+      pressure: "Star powers break meteor walls fast. Combine what you know."
     },
     {
       number: 14,
       title: "Creep Debut",
-      moves: 14,
-      scoreTarget: 6000,
+      moves: 16,
+      scoreTarget: 5600,
       goals: [
-        { kind: "score", target: 6000 },
-        { kind: "spread", target: 7 }
+        { kind: "score", target: 5600 },
+        { kind: "spread", target: 5 }
       ],
-      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "wave", spreaders: [{ row: 2, col: 3 }, { row: 5, col: 4 }] },
+      layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "full", spreaders: [{ row: 3, col: 3 }] },
       coach: "The Creep (red infection) spreads to a new cell every few moves. Match an infected cell to clear it.",
-      pressure: "Clear next to the Creep to contain it. Match it to remove it."
+      pressure: "One Creep to learn on. Clear next to it to contain it, match it to remove it."
     },
     {
       number: 15,
       title: "Track Gate",
-      moves: 11,
-      scoreTarget: 7500,
+      moves: 14,
+      scoreTarget: 7000,
       goals: [
-        { kind: "score", target: 7500 },
-        { kind: "flux", target: 10 },
+        { kind: "score", target: 7000 },
+        { kind: "flux", target: 8 },
         { kind: "specials", target: 2 }
       ],
       layout: { pattern: "none", strength: 0, fluxTarget: 0, boardShape: "vault", blockers: [{ row: 2, col: 3, strength: 2 }, { row: 3, col: 4 }, { row: 6, col: 3, strength: 2 }, { row: 7, col: 5 }] },
       coach: "The finale meteor wall. Break beside the meteor shields. Gold ones take two hits.",
-      pressure: "Break the meteor walls and bank a big finish. Some are reinforced."
+      pressure: "Everything you learned, one board. Break the walls and bank a big finish."
     },
     {
       number: 16,
